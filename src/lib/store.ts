@@ -102,6 +102,7 @@ interface StoreState {
   // ---- agent chat ----
   chat: ChatMessage[]; // the live conversation thread (empty = show demo cards)
   chatBusy: boolean; // a generation is in flight (disables send, shows spinner)
+  chatSessionId: string | null; // id of the active chat session (→ ~/.relay/chats)
 
   // ---- actions ----
   setActiveDoc: (docId: string) => void;
@@ -132,17 +133,23 @@ interface StoreState {
   setLastEngine: (engine: string) => void;
   // Open a captured capsule's detail in the Capture panel (null = picker view).
   selectCaptured: (id: string | null) => void;
+  // Merge durable capsules (read from disk on load) into the overlay WITHOUT the
+  // selection/engine side effects of addCapsule — pure hydration, dedup by id.
+  hydrateCapsules: (capsules: CapturedCapsule[]) => void;
   // Append a whole message (user turn, or the empty assistant turn to stream into).
   pushChat: (message: ChatMessage) => void;
   // Grow the last assistant message in place as stream chunks arrive.
   appendChat: (chunk: string) => void;
   setChatBusy: (busy: boolean) => void;
   clearChat: () => void;
+  // Ensure the active session has an id (created lazily on the first message),
+  // returning it so the caller can save under it.
+  ensureChatSession: () => string;
 }
 
 export const useStore = create<StoreState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
   // ---- initial state ----
   openPanel: null,
   activeDocId: 'Technical Requirements',
@@ -167,6 +174,7 @@ export const useStore = create<StoreState>()(
   lastEngine: null,
   chat: [],
   chatBusy: false,
+  chatSessionId: null,
 
   // ---- actions ----
   // Single source of truth for the open document — the sidebar tree row tint
@@ -258,6 +266,17 @@ export const useStore = create<StoreState>()(
     })),
   setLastEngine: (engine) => set({ lastEngine: engine }),
   selectCaptured: (id) => set({ selectedCapturedId: id }),
+  hydrateCapsules: (capsules) =>
+    set((s) => {
+      const seen = new Set(s.capturedCapsules.map((c) => c.id));
+      const fresh = capsules.filter((c) => !seen.has(c.id));
+      if (fresh.length === 0) return {};
+      return {
+        capturedCapsules: [...s.capturedCapsules, ...fresh].sort((a, b) =>
+          b.createdAt.localeCompare(a.createdAt),
+        ),
+      };
+    }),
   pushChat: (message) => set((s) => ({ chat: [...s.chat, message] })),
   // Mutate the last message's content (the streaming assistant turn).
   appendChat: (chunk) =>
@@ -269,7 +288,16 @@ export const useStore = create<StoreState>()(
       return { chat };
     }),
   setChatBusy: (busy) => set({ chatBusy: busy }),
-  clearChat: () => set({ chat: [], chatBusy: false }),
+  // New chat: drop the thread AND its session id so the next message starts a
+  // fresh session (the previous one stays saved server-side under its old id).
+  clearChat: () => set({ chat: [], chatBusy: false, chatSessionId: null }),
+  ensureChatSession: () => {
+    const existing = get().chatSessionId;
+    if (existing) return existing;
+    const id = `chat-${Date.now().toString(36)}`;
+    set({ chatSessionId: id });
+    return id;
+  },
     }),
     {
       // Persist ONLY the visible thread to sessionStorage so a reload replays the
@@ -277,7 +305,7 @@ export const useStore = create<StoreState>()(
       // Backboard (written server-side at send time, so replay never re-writes).
       name: 'capsule-chat',
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (s) => ({ chat: s.chat }),
+      partialize: (s) => ({ chat: s.chat, chatSessionId: s.chatSessionId }),
     },
   ),
 );

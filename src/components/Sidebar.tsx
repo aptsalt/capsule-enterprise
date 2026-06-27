@@ -60,6 +60,22 @@ export function Sidebar() {
   const capturedCapsules = useStore((s) => s.capturedCapsules);
   const selectedCapturedId = useStore((s) => s.selectedCapturedId);
   const selectCaptured = useStore((s) => s.selectCaptured);
+  const hydrateCapsules = useStore((s) => s.hydrateCapsules);
+
+  // Hydrate "Capsules from today" from the durable local store on mount, so real
+  // captures survive a reload (addCapsule already dedups live captures by id).
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/capsules")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && Array.isArray(d.capsules)) hydrateCapsules(d.capsules);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrateCapsules]);
   const activeDocId = useStore((s) => s.activeDocId);
   const activeSectionId = useStore((s) => s.activeSectionId);
   const setActiveSection = useStore((s) => s.setActiveSection);
@@ -250,7 +266,7 @@ export function Sidebar() {
         className="mx-3 my-2 w-[calc(100%-1.5rem)] py-[9px] text-[13px]"
       >
         <SparkIcon size={15} />
-        Capture this session
+        Capsule this session
         <span aria-hidden className="text-[15px] leading-none">
           ⟶
         </span>

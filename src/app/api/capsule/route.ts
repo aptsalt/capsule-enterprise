@@ -1,32 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { captureSession, listSessions } from "@/lib/capture";
+import { captureSession, listSessions, sessionFromMessages } from "@/lib/capture";
 import { distill } from "@/lib/cerebras";
 import { scoreCapsule } from "@/lib/scorer";
 import { storeCapsule } from "@/lib/backboard";
+import type { RawSession } from "@/lib/capture";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 // POST /api/capsule
-// Body (all optional): { path?: string, index?: number }
-//   • path  — capture this exact ~/.claude session jsonl
-//   • index — pick the Nth most-recent real session (0 = latest)
-//   • neither — default to the most recent real session
+// Body (all optional):
+//   • messages — capture the in-app localhost CHAT thread ({role,content}[])
+//   • path     — capture this exact ~/.claude session jsonl
+//   • index    — pick the Nth most-recent real session (0 = latest)
+//   • none of the above — default to the most recent real session
 // Returns { capsule, engine, ms, score, store } where `engine` reflects the LOCAL Ollama run.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    let path: string | undefined = body?.path;
-    if (!path) {
-      const sessions = listSessions(50);
-      if (sessions.length === 0) {
-        return NextResponse.json({ error: "no ~/.claude sessions found" }, { status: 404 });
+    let raw: RawSession;
+    if (Array.isArray(body?.messages) && body.messages.length > 0) {
+      // Capture the localhost chat conversation itself.
+      raw = sessionFromMessages(body.messages);
+    } else {
+      let path: string | undefined = body?.path;
+      if (!path) {
+        const sessions = listSessions(50);
+        if (sessions.length === 0) {
+          return NextResponse.json({ error: "no ~/.claude sessions found" }, { status: 404 });
+        }
+        const index = Number.isInteger(body?.index) ? Math.max(0, body.index) : 0;
+        const pick = sessions[Math.min(index, sessions.length - 1)];
+        path = pick.path;
       }
-      const index = Number.isInteger(body?.index) ? Math.max(0, body.index) : 0;
-      const pick = sessions[Math.min(index, sessions.length - 1)];
-      path = pick.path;
+      raw = captureSession(path);
     }
-    const raw = captureSession(path);
     const { capsule, engine, ms } = await distill(raw);
     const score = scoreCapsule(capsule);
     capsule.handoff_score = score;

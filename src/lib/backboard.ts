@@ -83,6 +83,15 @@ function appendFallbackLog(entry: Record<string, unknown>) {
   } catch { /* logging must never throw */ }
 }
 
+// ── Status helpers (for the chat Context inspector) ───────────────────────────────────────
+// Is a live Backboard key configured? When false, writes go to the local fallback log
+// and retrieval returns nothing — the inspector surfaces this so behaviour isn't a mystery.
+export const hasBackboardKey = (): boolean => !!apiKey();
+// The cached Backboard thread id for a projectKey (null until the first write creates it).
+export function cachedThreadId(projectKey: string): string | null {
+  return readCache().threads[projectKey] || null;
+}
+
 // ── Briefing helper ─────────────────────────────────────────────────────────────────────
 // Render a capsule into a compact, DISTILLED memory string (never the raw transcript).
 export function capsuleMemoryBriefing(c: HandoffCapsule): string {

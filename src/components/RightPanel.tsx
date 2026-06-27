@@ -70,6 +70,7 @@ export function RightPanel() {
   const appendChat = useStore((s) => s.appendChat);
   const setChatBusy = useStore((s) => s.setChatBusy);
   const clearChat = useStore((s) => s.clearChat);
+  const ensureChatSession = useStore((s) => s.ensureChatSession);
 
   const [capsuleCardOpen, setCapsuleCardOpen] = useState(true);
   const [skillCardOpen, setSkillCardOpen] = useState(true);
@@ -95,6 +96,51 @@ export function RightPanel() {
   };
   const removeChip = (name: string) =>
     setChips((prev) => prev.filter((c) => c.name !== name));
+
+  // "/" inline skill picker: a popover that opens on a "/token" at the caret and
+  // filters the skill catalog live (mirrors the "@" requirement mention).
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
+  // All skills: the 8090 category catalog PLUS the real skills registry, deduped by
+  // name (real skills not already in the catalog land under "General").
+  const skillItems = useMemo(() => {
+    const items = SKILL_CATEGORIES.flatMap((cat) =>
+      SKILL_CATALOG[cat].map((name) => ({ name, category: cat })),
+    );
+    const seen = new Set(items.map((s) => s.name.toLowerCase()));
+    for (const s of data.skills) {
+      if (!seen.has(s.name.toLowerCase())) {
+        items.push({ name: s.name, category: "General" });
+        seen.add(s.name.toLowerCase());
+      }
+    }
+    return items;
+  }, []);
+  const slashMatches = useMemo(() => {
+    const q = slashQuery.trim().toLowerCase();
+    return skillItems.filter(
+      (s) =>
+        !q ||
+        s.name.toLowerCase().includes(q) ||
+        s.category.toLowerCase().includes(q),
+    );
+  }, [slashQuery, skillItems]);
+
+  // Strip the active "/token" and attach the picked skill as a chip.
+  const pickSkill = (name: string, category: SkillCategory) => {
+    const el = inputRef.current;
+    const caret = el?.selectionStart ?? prompt.length;
+    const before = prompt.slice(0, caret).replace(/\/(\S*)$/, "");
+    const next = before + prompt.slice(caret);
+    setPrompt(next);
+    setSlashOpen(false);
+    setSlashQuery("");
+    addChip(name, category);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(before.length, before.length);
+    });
+  };
 
   // Keep the thread pinned to the newest message as it streams in.
   const threadEndRef = useRef<HTMLDivElement>(null);
@@ -124,18 +170,24 @@ export function RightPanel() {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const next = e.target.value;
     setPrompt(next);
-    if (next === "/") {
-      openPanelFor("skills");
-      return;
-    }
     const caret = e.target.selectionStart ?? next.length;
-    const token = /(?:^|\s)@(\S*)$/.exec(next.slice(0, caret));
-    if (token) {
+    const left = next.slice(0, caret);
+    // "@token" → requirement mention; "/token" → skill picker. Mutually exclusive.
+    const mention = /(?:^|\s)@(\S*)$/.exec(left);
+    const slash = /(?:^|\s)\/(\S*)$/.exec(left);
+    if (slash) {
+      setSlashOpen(true);
+      setSlashQuery(slash[1]);
+      setMentionOpen(false);
+    } else if (mention) {
       setMentionOpen(true);
-      setMentionQuery(token[1]);
+      setMentionQuery(mention[1]);
+      setSlashOpen(false);
     } else {
       setMentionOpen(false);
       setMentionQuery("");
+      setSlashOpen(false);
+      setSlashQuery("");
     }
   };
 
@@ -160,6 +212,7 @@ export function RightPanel() {
     if ((!text && chips.length === 0) || chatBusy) return;
     const skills = chips.map((c) => c.name);
     const content = text || `Use the ${skills.join(", ")} skill.`;
+    const sessionId = ensureChatSession(); // durable id for ~/.relay/chats
 
     // Snapshot the thread BEFORE mutating, so the request carries prior turns.
     const history = [...chat, { role: "user" as const, content }];
@@ -186,10 +239,25 @@ export function RightPanel() {
       }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
+      let reply = "";
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
-        appendChat(decoder.decode(value, { stream: true }));
+        const chunk = decoder.decode(value, { stream: true });
+        reply += chunk;
+        appendChat(chunk);
+      }
+      // Persist the completed turn as a durable chat session (fire-and-forget) so it
+      // shows up — meaningfully named — in Capture. Server generates the title once.
+      if (reply.trim()) {
+        void fetch("/api/chats/save", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            id: sessionId,
+            messages: [...history, { role: "assistant", content: reply }],
+          }),
+        }).catch(() => {});
       }
     } catch {
       appendChat("\n\n(Connection interrupted.)");
@@ -449,6 +517,52 @@ export function RightPanel() {
               </ul>
             </div>
           )}
+          {/* "/" skill picker — filters the catalog live; selecting attaches a chip. */}
+          {slashOpen && (
+            <div
+              role="listbox"
+              aria-label="Insert a skill"
+              className="absolute bottom-[calc(100%+6px)] left-0 z-20 w-[260px] max-w-full overflow-hidden rounded-[10px] border border-[var(--line)] bg-white shadow-[0_8px_28px_#00000022]"
+            >
+              <div className="mono border-b border-[var(--line)] px-[10px] py-[6px] text-[10px] font-bold uppercase tracking-[.06em] text-[var(--dim)]">
+                Skills{slashQuery ? ` · "${slashQuery}"` : ""}
+              </div>
+              {slashMatches.length === 0 && (
+                <div className="px-[10px] py-[9px] text-[11.5px] text-[var(--dim)]">
+                  No matching skills
+                </div>
+              )}
+              <ul className="max-h-[208px] overflow-y-auto py-1">
+                {slashMatches.map((s) => {
+                  const Icon = CATEGORY_ICON[s.category];
+                  return (
+                    <li key={s.name}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={false}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          pickSkill(s.name, s.category);
+                        }}
+                        className="flex w-full items-center gap-2 px-[10px] py-[7px] text-left hover:bg-[var(--hover)]"
+                      >
+                        <Icon size={14} className="flex-none text-[var(--dim)]" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12px] font-semibold text-[var(--ink)]">
+                            {s.name}
+                          </span>
+                          <span className="block text-[10px] uppercase tracking-[.03em] text-[var(--dim)]">
+                            {s.category}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
           {chips.length > 0 && (
             <div className="mb-[6px] flex flex-wrap gap-[5px]">
               {chips.map((c) => {
@@ -477,8 +591,23 @@ export function RightPanel() {
             ref={inputRef}
             value={prompt}
             onChange={handleChange}
-            onBlur={() => setMentionOpen(false)}
+            onBlur={() => {
+              setMentionOpen(false);
+              setSlashOpen(false);
+            }}
             onKeyDown={(e) => {
+              if (slashOpen && slashMatches.length > 0) {
+                if (e.key === "Enter" || e.key === "Tab") {
+                  e.preventDefault();
+                  pickSkill(slashMatches[0].name, slashMatches[0].category);
+                  return;
+                }
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setSlashOpen(false);
+                  return;
+                }
+              }
               if (mentionOpen && mentionMatches.length > 0) {
                 if (e.key === "Enter") {
                   e.preventDefault();
