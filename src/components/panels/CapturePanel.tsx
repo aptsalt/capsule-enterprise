@@ -62,6 +62,7 @@ type ApiCapsule = {
   project: string;
   session_id: string;
   generated_at: string;
+  title?: string;
   intent: string;
   decisions: ApiDecision[];
   gotchas: string[];
@@ -115,7 +116,8 @@ function toCaptured(r: CapsuleResponse): CapturedCapsule {
     engine: r.engine,
     local,
     createdAt: c.generated_at,
-    finding: c.intent || `Captured session ${idTail}`,
+    // The headline shown in the sidebar — the distilled title, not the raw path/intent.
+    finding: c.title?.trim() || c.intent || `Captured session ${idTail}`,
     summary: c.intent,
     transferScore: overall,
     intent: c.intent,
@@ -144,6 +146,16 @@ const DIM_LABEL: Record<string, string> = {
 // capsule carries a uniquely strong proposition even when its overall handoff is
 // middling. Mirrors the framing in the threshold label.
 const NOVELTY_BAR = 80;
+
+// A localhost chat session row from GET /api/chats (shape mirrors lib/chats.ts;
+// redeclared here to avoid importing the fs-backed server module into the client).
+type ChatSessionRow = {
+  id: string;
+  title: string;
+  messages: { role: string; content: string }[];
+  updatedAt: string;
+  messageCount: number;
+};
 
 // NOVELTY (honest stand-in). The /api/capsule response gives us an overall
 // transfer `score` + the six per-dimension scores, but no first-class "novelty".
@@ -178,7 +190,6 @@ export function CapturePanel() {
   const agenticMode = useStore((s) => s.agenticMode);
   const agenticThreshold = useStore((s) => s.agenticThreshold);
   const setAgenticThreshold = useStore((s) => s.setAgenticThreshold);
-
   const result = capturedCapsules.find((c) => c.id === selectedCapturedId) || null;
 
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
@@ -187,6 +198,9 @@ export function CapturePanel() {
   const [listError, setListError] = useState<string | null>(null);
   const [distillingPath, setDistillingPath] = useState<string | null>(null);
   const [captureError, setCaptureError] = useState<string | null>(null);
+  // Localhost chat sessions (the PRIMARY capture source) loaded from ~/.relay/chats.
+  const [chatSessions, setChatSessions] = useState<ChatSessionRow[]>([]);
+  const [loadingChats, setLoadingChats] = useState(false);
   // Agentic-mode outcome of the last auto-distill+gate. Held in local state (not
   // the store) because a SKIPPED capsule is intentionally never added to the
   // overlay — we still want to render its decision, so it lives here.
@@ -208,12 +222,61 @@ export function CapturePanel() {
     }
   }, []);
 
-  // Auto-load real sessions the first time the picker is shown.
+  const loadChats = useCallback(async () => {
+    setLoadingChats(true);
+    try {
+      const res = await fetch("/api/chats");
+      const j = (await res.json()) as { chats: ChatSessionRow[] };
+      setChatSessions(j.chats || []);
+    } catch {
+      setChatSessions([]);
+    } finally {
+      setLoadingChats(false);
+    }
+  }, []);
+
+  // Auto-load chat sessions (primary) + Claude Code sessions (secondary) on open.
   useEffect(() => {
     if (!result && sessions.length === 0 && !listing && !listError) {
       void loadSessions();
+      void loadChats();
     }
-  }, [result, sessions.length, listing, listError, loadSessions]);
+  }, [result, sessions.length, listing, listError, loadSessions, loadChats]);
+
+  // Shared outcome handling for any capsule response (Claude Code session OR the
+  // in-app chat thread): apply the agentic gate or just promote it to the overlay.
+  const processResponse = useCallback(
+    (j: CapsuleResponse) => {
+      const captured = toCaptured(j);
+      if (agenticMode) {
+        // AGENTIC: GATE the freshly-distilled capsule. Keep only when it clears the
+        // transfer bar OR carries a unique proposition (novelty ≥ NOVELTY_BAR). A
+        // kept capsule is promoted to the overlay (→ "Capsules from today"); a
+        // skipped one is dropped, never added.
+        const novelty = noveltyOf(captured);
+        const kept =
+          captured.transferScore >= agenticThreshold || novelty >= NOVELTY_BAR;
+        // Record the engine for BOTH outcomes — a skipped capsule is never added,
+        // so without this the TopBar pill would never reflect the engine.
+        setLastEngine(captured.engine);
+        if (kept) addCapsule(captured); // promote to enterprise repo
+        setDecision({ captured, novelty, kept });
+        showToast(
+          kept
+            ? `✓ Kept · promoted to enterprise repo (${captured.transferScore} ≥ ${agenticThreshold})`
+            : `Skipped · score ${captured.transferScore} < ${agenticThreshold} · no unique proposition`,
+        );
+        return;
+      }
+      addCapsule(captured); // prepends to overlay + selects it + records engine
+      showToast(
+        captured.local
+          ? `Distilled on-device · stored in ${captured.storedIn === "backboard" ? "Backboard" : "local store"}`
+          : `Capsule stored in ${captured.storedIn === "backboard" ? "Backboard" : "local store"}`,
+      );
+    },
+    [agenticMode, agenticThreshold, addCapsule, setLastEngine, showToast],
+  );
 
   const capture = useCallback(
     async (session: SessionMeta) => {
@@ -227,43 +290,42 @@ export function CapturePanel() {
         });
         const j = (await res.json()) as CapsuleResponse;
         if (!res.ok || j.error) throw new Error(j.error || `capsule ${res.status}`);
-        const captured = toCaptured(j);
-
-        if (agenticMode) {
-          // AGENTIC: auto-distil (already done above), then GATE. Keep only when
-          // the capsule clears the transfer bar OR carries a unique proposition
-          // (novelty ≥ NOVELTY_BAR). A kept capsule is promoted to the overlay
-          // (→ "Capsules from today"); a skipped one is dropped, never added.
-          const novelty = noveltyOf(captured);
-          const kept =
-            captured.transferScore >= agenticThreshold || novelty >= NOVELTY_BAR;
-          // Record the engine that actually ran for BOTH outcomes — a skipped
-          // capsule is never added to the overlay, so without this the TopBar
-          // pill would never reflect the engine behind a skip.
-          setLastEngine(captured.engine);
-          if (kept) addCapsule(captured); // promote to enterprise repo
-          setDecision({ captured, novelty, kept });
-          showToast(
-            kept
-              ? `✓ Kept · promoted to enterprise repo (${captured.transferScore} ≥ ${agenticThreshold})`
-              : `Skipped · score ${captured.transferScore} < ${agenticThreshold} · no unique proposition`,
-          );
-          return;
-        }
-
-        addCapsule(captured); // prepends to overlay + selects it + records engine
-        showToast(
-          captured.local
-            ? `Distilled on-device · stored in ${captured.storedIn === "backboard" ? "Backboard" : "local store"}`
-            : `Capsule stored in ${captured.storedIn === "backboard" ? "Backboard" : "local store"}`,
-        );
+        processResponse(j);
       } catch (e) {
         setCaptureError(String(e));
       } finally {
         setDistillingPath(null);
       }
     },
-    [agenticMode, agenticThreshold, addCapsule, setLastEngine, showToast],
+    [processResponse],
+  );
+
+  // Capture a localhost CHAT SESSION — distill its conversation through the same
+  // pipeline and store it (incl. Backboard). `key` drives the per-row distilling state.
+  const captureMessages = useCallback(
+    async (messages: { role: string; content: string }[], key: string) => {
+      if (messages.length === 0) {
+        setCaptureError("That session has no messages to capture.");
+        return;
+      }
+      setDistillingPath(key);
+      setCaptureError(null);
+      try {
+        const res = await fetch("/api/capsule", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ messages }),
+        });
+        const j = (await res.json()) as CapsuleResponse;
+        if (!res.ok || j.error) throw new Error(j.error || `capsule ${res.status}`);
+        processResponse(j);
+      } catch (e) {
+        setCaptureError(String(e));
+      } finally {
+        setDistillingPath(null);
+      }
+    },
+    [processResponse],
   );
 
   const distilling = distillingPath !== null;
@@ -284,7 +346,7 @@ export function CapturePanel() {
 
   return (
     <SidePanel
-      title="Capture session"
+      title="Capsule session"
       onClose={closePanel}
       icon={
         <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-[#eef4ff] text-[var(--blue)]">
@@ -298,7 +360,7 @@ export function CapturePanel() {
             onClick={captureAnother}
             className="px-[9px] py-[5px] text-[11.5px]"
           >
-            ＋ Capture another
+            ＋ Capsule another
           </ActionButton>
         ) : undefined
       }
@@ -326,6 +388,11 @@ export function CapturePanel() {
                 captureError={captureError}
                 onReload={loadSessions}
                 onPick={capture}
+                chatSessions={chatSessions}
+                loadingChats={loadingChats}
+                onReloadChats={loadChats}
+                onPickChat={(s) => captureMessages(s.messages, s.id)}
+                distillingKey={distillingPath}
               />
             </>
           )
@@ -342,6 +409,11 @@ export function CapturePanel() {
             captureError={captureError}
             onReload={loadSessions}
             onPick={capture}
+            chatSessions={chatSessions}
+            loadingChats={loadingChats}
+            onReloadChats={loadChats}
+            onPickChat={(s) => captureMessages(s.messages, s.id)}
+            distillingKey={distillingPath}
           />
         )}
       </div>
@@ -384,6 +456,11 @@ function Picker({
   captureError,
   onReload,
   onPick,
+  chatSessions,
+  loadingChats,
+  onReloadChats,
+  onPickChat,
+  distillingKey,
 }: {
   sessions: SessionMeta[];
   engine: EngineInfo | null;
@@ -392,20 +469,25 @@ function Picker({
   captureError: string | null;
   onReload: () => void;
   onPick: (s: SessionMeta) => void;
+  chatSessions: ChatSessionRow[];
+  loadingChats: boolean;
+  onReloadChats: () => void;
+  onPickChat: (s: ChatSessionRow) => void;
+  distillingKey: string | null;
 }) {
   const chip = engineChip(engine);
   return (
     <div className="flex flex-col gap-2">
+      {/* Unified product sessions — chat + prior sessions, distilled on-device. */}
       <div className="flex items-center gap-2 pb-1">
-        <span className="text-[12px] font-bold text-[var(--ink2)]">
-          Real Claude sessions
-        </span>
-        <Chip tone="default">
-          {chip.label} · {chip.local ? "local" : "cloud"}
-        </Chip>
+        <span className="text-[12px] font-bold text-[var(--ink2)]">Sessions</span>
+        <Chip tone="default">{chip.label} · {chip.local ? "local" : "cloud"}</Chip>
         <button
           type="button"
-          onClick={onReload}
+          onClick={() => {
+            onReloadChats();
+            onReload();
+          }}
           aria-label="Reload sessions"
           className="ml-auto grid h-[26px] w-[26px] place-items-center rounded-[7px] text-[var(--mut)] transition-colors hover:bg-[var(--hover)] hover:text-[var(--ink)]"
         >
@@ -414,66 +496,89 @@ function Picker({
       </div>
 
       <p className="pb-1 text-[11.5px] leading-[1.5] text-[var(--mut)]">
-        Pick a session to analyse on-device. CAPSULE reads{" "}
-        <span className="mono text-[10.5px]">~/.claude/projects/*.jsonl</span> and
-        distills it into a Handoff Capsule with the local model.
+        Pick a session to capsule — distilled into a Handoff Capsule on-device with
+        the local model.
       </p>
 
-      {listError && (
-        <ErrorCard
-          title="Couldn’t list your sessions"
-          hint="CAPSULE couldn’t read ~/.claude/projects. Make sure the app has access, then try again."
-          detail={listError}
-          onRetry={onReload}
-        />
-      )}
       {captureError && (
         <ErrorCard
-          title="Capture didn’t finish"
+          title="Capsule didn’t finish"
           hint="Couldn’t reach the local model. Make sure Ollama is running, then try again."
           detail={captureError}
-          onRetry={onReload}
+          onRetry={onReloadChats}
           retryLabel="Reload sessions"
         />
       )}
 
-      {listing && (
-        <div className="px-1 py-6 text-center text-[12px] text-[var(--mut)]">
-          Loading real sessions…
-        </div>
-      )}
+      {(loadingChats || listing) &&
+        chatSessions.length === 0 &&
+        sessions.length === 0 && (
+          <div className="px-1 py-6 text-center text-[12px] text-[var(--mut)]">
+            Loading sessions…
+          </div>
+        )}
 
-      {!listing &&
-        sessions.map((s) => (
-          <button
-            key={s.path}
-            type="button"
-            onClick={() => onPick(s)}
-            className={cn(
-              "flex w-full items-center gap-[10px] rounded-[10px] border border-[var(--line)] bg-white px-[11px] py-[9px] text-left transition-[border-color,box-shadow]",
-              "hover:border-[#d4d8de] hover:shadow-[0_4px_18px_#0000000a]",
-            )}
-          >
-            <span className="grid h-7 w-7 flex-none place-items-center rounded-[8px] bg-[var(--side2)] text-[var(--mut)]">
-              <DocIcon size={15} />
+      {chatSessions.map((s) => (
+        <button
+          key={s.id}
+          type="button"
+          onClick={() => onPickChat(s)}
+          disabled={distillingKey !== null}
+          className={cn(
+            "flex w-full items-center gap-[10px] rounded-[10px] border border-[var(--line)] bg-white px-[11px] py-[9px] text-left transition-[border-color,box-shadow]",
+            "hover:border-[#d4d8de] hover:shadow-[0_4px_18px_#0000000a]",
+          )}
+        >
+          <span className="grid h-7 w-7 flex-none place-items-center rounded-[8px] bg-[var(--side2)] text-[var(--mut)]">
+            <DocIcon size={15} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[12.6px] font-semibold text-[var(--ink)]">
+              {s.title}
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[12.6px] font-semibold text-[var(--ink)]">
-                {shortProject(s.project)}
-              </span>
-              <span className="mono block truncate text-[10px] text-[var(--dim)]">
-                {s.sessionId.slice(0, 8)} · {s.sizeKB} KB · {relativeTime(s.mtime)}
-              </span>
+            <span className="mono block truncate text-[10px] text-[var(--dim)]">
+              {s.messageCount} msgs · {relativeTime(Date.parse(s.updatedAt))}
             </span>
-            <span className="flex-none text-[15px] text-[var(--blue)]">→</span>
-          </button>
-        ))}
+          </span>
+          <span className="flex-none text-[15px] text-[var(--blue)]">→</span>
+        </button>
+      ))}
 
-      {!listing && !listError && sessions.length === 0 && (
-        <div className="px-1 py-6 text-center text-[12px] text-[var(--mut)]">
-          No sessions found in ~/.claude/projects.
-        </div>
-      )}
+      {sessions.map((s) => (
+        <button
+          key={s.path}
+          type="button"
+          onClick={() => onPick(s)}
+          disabled={distillingKey !== null}
+          className={cn(
+            "flex w-full items-center gap-[10px] rounded-[10px] border border-[var(--line)] bg-white px-[11px] py-[9px] text-left transition-[border-color,box-shadow]",
+            "hover:border-[#d4d8de] hover:shadow-[0_4px_18px_#0000000a]",
+          )}
+        >
+          <span className="grid h-7 w-7 flex-none place-items-center rounded-[8px] bg-[var(--side2)] text-[var(--mut)]">
+            <DocIcon size={15} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[12.6px] font-semibold text-[var(--ink)]">
+              {shortProject(s.project)}
+            </span>
+            <span className="mono block truncate text-[10px] text-[var(--dim)]">
+              {s.sessionId.slice(0, 8)} · {s.sizeKB} KB · {relativeTime(s.mtime)}
+            </span>
+          </span>
+          <span className="flex-none text-[15px] text-[var(--blue)]">→</span>
+        </button>
+      ))}
+
+      {!loadingChats &&
+        !listing &&
+        chatSessions.length === 0 &&
+        sessions.length === 0 && (
+          <div className="rounded-[10px] border border-dashed border-[var(--line)] px-3 py-5 text-center text-[11.5px] leading-[1.5] text-[var(--mut)]">
+            No sessions yet — talk to the agent in the composer, then capsule the
+            conversation here.
+          </div>
+        )}
     </div>
   );
 }
@@ -520,7 +625,7 @@ function ModeHeader({ agentic }: { agentic: boolean }) {
     <div className="flex flex-col gap-[9px] rounded-[11px] border border-[var(--line)] bg-[#fbfcfe] p-3">
       <div className="flex items-center gap-2">
         <span className="text-[11px] font-bold uppercase tracking-[.05em] text-[var(--mut)]">
-          Capture mode
+          Capsule mode
         </span>
         <Badge tone={agentic ? "blue" : "muted"} className="ml-auto inline-flex items-center gap-[4px]">
           {agentic ? (

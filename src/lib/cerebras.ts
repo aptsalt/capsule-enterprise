@@ -17,6 +17,7 @@ const SYS = `You are CAPSULE, a context-handoff distiller. Given a raw AI coding
 extract the knowledge the NEXT developer or agent needs so nothing is re-discovered.
 Return STRICT JSON only, matching this shape:
 {
+ "title": string,                               // a 3-6 word headline naming this session (e.g. "API rate limiting setup"). No trailing period.
  "intent": string,                              // the goal of the session, one sentence
  "decisions": [{"what":string,"why":string,"file":string}],   // choices made + the reason
  "tried_and_rejected": [{"approach":string,"why_rejected":string}],
@@ -29,10 +30,19 @@ Return STRICT JSON only, matching this shape:
 Be concrete and specific to THIS session. Capture the WHY, not just the what. No prose outside JSON.`;
 
 type Distilled = Pick<HandoffCapsule,
-  "intent" | "decisions" | "tried_and_rejected" | "current_state" | "next_steps" | "gotchas" | "mental_model" | "open_questions">;
+  "title" | "intent" | "decisions" | "tried_and_rejected" | "current_state" | "next_steps" | "gotchas" | "mental_model" | "open_questions">;
 
 function empty(): Distilled {
-  return { intent: "", decisions: [], tried_and_rejected: [], current_state: "", next_steps: [], gotchas: [], mental_model: {}, open_questions: [] };
+  return { title: "", intent: "", decisions: [], tried_and_rejected: [], current_state: "", next_steps: [], gotchas: [], mental_model: {}, open_questions: [] };
+}
+
+// Derive a short headline from a sentence when the model didn't supply a title —
+// strip trailing punctuation and clamp to the first ~7 words.
+function titleFrom(intent: string): string {
+  const s = (intent || "").replace(/<\/?[a-z-]+>/gi, "").replace(/\s+/g, " ").trim();
+  if (!s) return "Untitled session";
+  const words = s.split(" ").slice(0, 7).join(" ").replace(/[.,;:]+$/, "");
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 function parseJson(text: string): Distilled | null {
@@ -124,8 +134,10 @@ function heuristic(s: RawSession): Distilled {
   const users = lines.filter((l) => l.startsWith("USER:")).map((l) => l.slice(6).trim());
   const ais = lines.filter((l) => l.startsWith("AI:")).map((l) => l.slice(3).trim());
   const gotchas = ais.filter((l) => /error|fail|gotcha|careful|note:|winerror|don't|do not/i.test(l)).slice(0, 5);
+  const intent = users[0]?.slice(0, 200) || `Work on ${s.project}`;
   return {
-    intent: users[0]?.slice(0, 200) || `Work on ${s.project}`,
+    title: titleFrom(intent),
+    intent,
     decisions: ais.filter((l) => /because|instead of|chose|use .* over|decided/i.test(l)).slice(0, 4)
       .map((l) => ({ what: l.slice(0, 120), why: "(inferred from session)", file: "" })),
     tried_and_rejected: ais.filter((l) => /reject|didn't work|failed|abandon|paid/i.test(l)).slice(0, 3)
@@ -140,11 +152,14 @@ function heuristic(s: RawSession): Distilled {
 
 // Assemble the final capsule from a Distilled payload + the source session.
 function buildCapsule(session: RawSession, d: Distilled): HandoffCapsule {
+  // Always ensure a clean headline, even if the model omitted/garbled "title".
+  const title = d.title?.trim() ? titleFrom(d.title) : titleFrom(d.intent);
   return {
     project: session.project,
     session_id: session.sessionId,
     generated_at: new Date().toISOString(),
     source: "claude-jsonl",
+    title,
     intent: d.intent, decisions: d.decisions, tried_and_rejected: d.tried_and_rejected,
     current_state: d.current_state, next_steps: d.next_steps, gotchas: d.gotchas,
     mental_model: d.mental_model, open_questions: d.open_questions,

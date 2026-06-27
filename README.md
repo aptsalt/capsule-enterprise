@@ -122,5 +122,4 @@ in live Backboard. The bundled dataset's capsules, skills, semver, A/B token del
 scaffolding) is **derived**. See [`docs/DATA-REALITY.html`](docs/DATA-REALITY.html).
 
 ---
-
-Built for the **Build for Builders** hackathon · Deepak Singh Kandari · [github.com/aptsalt](https://github.com/aptsalt)
+Deepak Singh Kandari · [github.com/aptsalt](https://github.com/aptsalt)

@@ -448,7 +448,7 @@ async function main() {
     try {
       const hc = {
         project: cap._project, session_id: cap.session, generated_at: cap.createdAt,
-        source: "claude-jsonl" as const, intent: cap.intent,
+        source: "claude-jsonl" as const, title: cap.finding || cap.intent, intent: cap.intent,
         decisions: cap.decisions.map((d) => ({ what: d.what, why: d.why, file: d.file })),
         tried_and_rejected: [], current_state: cap.summary, next_steps: [],
         gotchas: cap.gotchas, mental_model: { model: cap.mentalModel }, open_questions: [],

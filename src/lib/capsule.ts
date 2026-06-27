@@ -35,6 +35,7 @@ export type HandoffCapsule = {
   session_id: string;
   generated_at: string;
   source: "claude-jsonl" | "bridge" | "manual";
+  title: string; // short 3-6 word headline naming the session (for display)
   intent: string;
   decisions: Decision[];
   tried_and_rejected: Rejected[];
