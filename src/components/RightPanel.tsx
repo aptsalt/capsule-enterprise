@@ -5,12 +5,36 @@
 // Composer with "Skills ▾ Recommended ▾" and the Capsule toggle.
 // Ported 1:1 from factory.html. All wiring goes through useStore.
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { data } from "@/lib/data";
 import { capsulesForSkill } from "@/lib/selectors";
 import { useStore, type PanelId } from "@/lib/store";
 import { ActionButton, Toggle, cn } from "@/components/ui";
-import { DocIcon, SendIcon } from "@/components/icons";
+import {
+  CommentIcon,
+  DocIcon,
+  GearIcon,
+  GraphIcon,
+  HistoryIcon,
+  SendIcon,
+  SparkIcon,
+} from "@/components/icons";
+import {
+  SKILL_CATALOG,
+  SKILL_CATEGORIES,
+  type SkillCategory,
+} from "@/lib/skillCatalog";
+
+// Reuse existing glyphs per category — drives both the menu rows and the chips.
+const CATEGORY_ICON: Record<SkillCategory, typeof DocIcon> = {
+  Requirements: DocIcon,
+  Blueprints: GraphIcon,
+  "Work Orders": GearIcon,
+  Feedback: CommentIcon,
+  General: SparkIcon,
+};
 
 const REVIEW_CAPSULE_ID = "CAP-1008";
 const ADOPT_SKILL_ID = "skill/sca-challenge";
@@ -40,6 +64,12 @@ export function RightPanel() {
   const capsuleOn = useStore((s) => s.capsuleOn);
   const toggleCapsule = useStore((s) => s.toggleCapsule);
   const showToast = useStore((s) => s.showToast);
+  const chat = useStore((s) => s.chat);
+  const chatBusy = useStore((s) => s.chatBusy);
+  const pushChat = useStore((s) => s.pushChat);
+  const appendChat = useStore((s) => s.appendChat);
+  const setChatBusy = useStore((s) => s.setChatBusy);
+  const clearChat = useStore((s) => s.clearChat);
 
   const [capsuleCardOpen, setCapsuleCardOpen] = useState(true);
   const [skillCardOpen, setSkillCardOpen] = useState(true);
@@ -50,6 +80,32 @@ export function RightPanel() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
+
+  // Skills dropdown: which category is expanded, and the attached-skill chips.
+  const [skillsMenuOpen, setSkillsMenuOpen] = useState(false);
+  const [openCategory, setOpenCategory] = useState<SkillCategory | null>(null);
+  const [chips, setChips] = useState<{ name: string; category: SkillCategory }[]>([]);
+
+  const addChip = (name: string, category: SkillCategory) => {
+    setChips((prev) =>
+      prev.some((c) => c.name === name) ? prev : [...prev, { name, category }],
+    );
+    setSkillsMenuOpen(false);
+    inputRef.current?.focus();
+  };
+  const removeChip = (name: string) =>
+    setChips((prev) => prev.filter((c) => c.name !== name));
+
+  // Keep the thread pinned to the newest message as it streams in.
+  const threadEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ block: "end" });
+  }, [chat]);
+
+  // Gate persisted-chat rendering until after mount so the first client render
+  // matches the (empty) server render — sessionStorage rehydration is client-only.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Requirements matching the active "@token" (by id or title). Empty token
   // shows the full list.
@@ -98,16 +154,48 @@ export function RightPanel() {
     });
   };
 
-  const sendPrompt = () => {
+  // Send to the local model and stream the reply into the last assistant turn.
+  const sendPrompt = async () => {
     const text = prompt.trim();
-    if (!text) return;
-    showToast(
-      capsuleOn
-        ? "Sent to agent with capsule context."
-        : "Sent to agent.",
-    );
+    if ((!text && chips.length === 0) || chatBusy) return;
+    const skills = chips.map((c) => c.name);
+    const content = text || `Use the ${skills.join(", ")} skill.`;
+
+    // Snapshot the thread BEFORE mutating, so the request carries prior turns.
+    const history = [...chat, { role: "user" as const, content }];
+    pushChat({ role: "user", content, skills: skills.length ? skills : undefined });
+    pushChat({ role: "assistant", content: "" });
     setPrompt("");
+    setChips([]);
     setMentionOpen(false);
+    setSkillsMenuOpen(false);
+    setChatBusy(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ messages: history, capsuleOn, skills }),
+      });
+      if (!res.ok || !res.body) {
+        appendChat(
+          (await res.text().catch(() => "")) ||
+            "Local model unavailable — start Ollama (ollama serve).",
+        );
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        appendChat(decoder.decode(value, { stream: true }));
+      }
+    } catch {
+      appendChat("\n\n(Connection interrupted.)");
+    } finally {
+      setChatBusy(false);
+    }
   };
 
   const reviewCapsule = () => {
@@ -133,11 +221,92 @@ export function RightPanel() {
 
   return (
     <aside className="flex min-h-0 flex-col border-l border-[var(--line)] bg-[#fcfcfd]">
-      <div className="flex-1 overflow-y-auto p-[14px]">
-        {/* Capsules — review CTA */}
-        <div className="mono mx-[2px] mb-2 mt-[6px] text-[10.5px] font-bold uppercase tracking-[.06em] text-[var(--dim)]">
-          Capsules
+      {mounted && chat.length > 0 ? (
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Header — 8090 style: project title + new-chat / history actions */}
+          <div className="flex items-center justify-between border-b border-[var(--line)] px-[14px] py-[10px]">
+            <span className="truncate text-[13.5px] font-bold text-[var(--ink)]">
+              {data.workspace.project}
+            </span>
+            <div className="flex items-center gap-[4px]">
+              {capsuleOn && (
+                <span className="rounded-full bg-[var(--blue-bg)] px-[7px] py-[2px] text-[10px] font-bold uppercase tracking-[.04em] text-[var(--blue)]">
+                  warm
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={clearChat}
+                title="New chat"
+                aria-label="New chat"
+                className="grid h-[26px] w-[26px] place-items-center rounded-[7px] text-[17px] leading-none text-[var(--ink2)] hover:bg-[var(--hover)]"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => showToast("No saved chats yet.")}
+                title="History"
+                aria-label="History"
+                className="grid h-[26px] w-[26px] place-items-center rounded-[7px] text-[var(--dim)] hover:bg-[var(--hover)]"
+              >
+                <HistoryIcon size={15} />
+              </button>
+            </div>
+          </div>
+
+          {/* Thread — flat document flow (user = card, agent = plain text) */}
+          <div className="flex-1 space-y-[12px] overflow-y-auto px-[14px] py-[14px]">
+            {chat.map((m, i) =>
+              m.role === "user" ? (
+                <div key={i} className="space-y-[6px]">
+                  <div className="rounded-[10px] border border-[var(--line)] bg-white px-[11px] py-[9px] text-[13px] leading-[1.5] text-[var(--ink)]">
+                    {m.skills?.length ? (
+                      <span className="mr-[6px] inline-flex flex-wrap gap-[5px] align-middle">
+                        {m.skills.map((s) => (
+                          <span
+                            key={s}
+                            className="inline-flex items-center gap-[4px] rounded-full bg-[var(--blue-bg)] px-[8px] py-[2px] text-[11.5px] font-semibold text-[var(--blue)]"
+                          >
+                            <SparkIcon size={12} className="text-[var(--blue)]" />
+                            {s}
+                          </span>
+                        ))}
+                      </span>
+                    ) : null}
+                    {m.content}
+                  </div>
+                  {m.skills?.map((s) => (
+                    <div
+                      key={s}
+                      className="flex items-center gap-[6px] px-[2px] text-[12px] text-[var(--dim)]"
+                    >
+                      <DocIcon size={13} className="text-[var(--dim)]" />
+                      {s} skill loaded
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div key={i} className="md px-[2px]">
+                  {m.content ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {m.content}
+                    </ReactMarkdown>
+                  ) : chatBusy ? (
+                    <span className="text-[var(--dim)]">Thinking…</span>
+                  ) : null}
+                </div>
+              ),
+            )}
+            <div ref={threadEndRef} />
+          </div>
         </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-[14px]">
+          {/* Capsules — review CTA */}
+          <div className="mono mx-[2px] mb-2 mt-[6px] text-[10.5px] font-bold uppercase tracking-[.06em] text-[var(--dim)]">
+            Capsules
+          </div>
         {capsuleCardOpen && (
           <div className="mb-[10px] rounded-[11px] border border-[var(--line)] bg-white p-3">
             <h4 className="mb-1 text-[12.8px] font-bold">
@@ -215,8 +384,9 @@ export function RightPanel() {
             <span className="h-[6px] w-[6px] rounded-full bg-[var(--blue)]" />
             Audit trail
           </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Composer */}
       <div className="border-t border-[var(--line)] bg-white px-3 py-[11px]">
@@ -279,6 +449,30 @@ export function RightPanel() {
               </ul>
             </div>
           )}
+          {chips.length > 0 && (
+            <div className="mb-[6px] flex flex-wrap gap-[5px]">
+              {chips.map((c) => {
+                const Icon = CATEGORY_ICON[c.category];
+                return (
+                  <span
+                    key={c.name}
+                    className="inline-flex items-center gap-[5px] rounded-full bg-[var(--blue-bg)] py-[3px] pl-[8px] pr-[5px] text-[11.5px] font-semibold text-[var(--blue)]"
+                  >
+                    <Icon size={13} className="text-[var(--blue)]" />
+                    {c.name}
+                    <button
+                      type="button"
+                      onClick={() => removeChip(c.name)}
+                      aria-label={`Remove ${c.name}`}
+                      className="grid h-[15px] w-[15px] place-items-center rounded-full text-[var(--blue)] hover:bg-[#ffffff80]"
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
           <textarea
             ref={inputRef}
             value={prompt}
@@ -308,13 +502,91 @@ export function RightPanel() {
             className="min-h-[30px] w-full resize-none border-0 bg-transparent text-[12.5px] leading-[1.5] text-[var(--ink)] outline-none placeholder:text-[var(--dim)]"
           />
           <div className="mt-2 flex flex-wrap items-center gap-[6px]">
-            <button
-              type="button"
-              onClick={() => openPanelFor("skills")}
-              className="flex shrink-0 items-center gap-[4px] rounded-[8px] border border-[var(--line)] px-2 py-1 text-[11px] font-semibold text-[var(--ink2)] hover:bg-[var(--hover)]"
-            >
-              Skills <span className="text-[10px] text-[var(--dim)]">▾</span>
-            </button>
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setSkillsMenuOpen((o) => !o)}
+                aria-haspopup="menu"
+                aria-expanded={skillsMenuOpen}
+                className="flex items-center gap-[4px] rounded-[8px] border border-[var(--line)] px-2 py-1 text-[11px] font-semibold text-[var(--ink2)] hover:bg-[var(--hover)]"
+              >
+                Skills{" "}
+                <span className="text-[10px] text-[var(--dim)]">
+                  {skillsMenuOpen ? "▴" : "▾"}
+                </span>
+              </button>
+              {skillsMenuOpen && (
+                <>
+                  {/* click-away */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setSkillsMenuOpen(false)}
+                  />
+                  <div
+                    role="menu"
+                    aria-label="Attach a skill"
+                    className="absolute bottom-[calc(100%+6px)] left-0 z-20 w-[260px] overflow-hidden rounded-[12px] border border-[var(--line)] bg-white py-[6px] shadow-[0_12px_36px_#00000026]"
+                  >
+                    {SKILL_CATEGORIES.map((cat) => {
+                      const Icon = CATEGORY_ICON[cat];
+                      const items = SKILL_CATALOG[cat];
+                      const expanded = openCategory === cat;
+                      return (
+                        <div key={cat}>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenCategory(expanded ? null : cat)
+                            }
+                            className="flex w-full items-center gap-[8px] px-[12px] py-[9px] text-left hover:bg-[var(--hover)]"
+                          >
+                            <span className="w-[10px] text-[10px] text-[var(--dim)]">
+                              {expanded ? "⌄" : "›"}
+                            </span>
+                            <Icon size={14} className="text-[var(--dim)]" />
+                            <span className="flex-1 text-[12.5px] font-semibold uppercase tracking-[.02em] text-[var(--ink2)]">
+                              {cat}
+                            </span>
+                            <span className="text-[11px] font-semibold text-[var(--dim)]">
+                              {items.length}
+                            </span>
+                          </button>
+                          {expanded && (
+                            <ul className="pb-[2px]">
+                              {items.map((name) => (
+                                <li key={name}>
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => addChip(name, cat)}
+                                    className="flex w-full items-center gap-[8px] py-[6px] pl-[40px] pr-[12px] text-left text-[12px] text-[var(--ink2)] hover:bg-[var(--hover)]"
+                                  >
+                                    {name}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <div className="mt-[4px] border-t border-[var(--line)] pt-[4px]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSkillsMenuOpen(false);
+                          openPanelFor("skills");
+                        }}
+                        className="flex w-full items-center gap-[8px] px-[12px] py-[9px] text-left text-[12.5px] font-semibold text-[var(--blue)] hover:bg-[var(--hover)]"
+                      >
+                        <span className="text-[14px] leading-none">+</span> Add
+                        Skill
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => openPanelFor("skills")}
@@ -332,11 +604,16 @@ export function RightPanel() {
             <button
               type="button"
               onClick={sendPrompt}
-              title="Send"
+              disabled={chatBusy}
+              title={chatBusy ? "Generating…" : "Send"}
               aria-label="Send"
-              className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-[var(--blue)] text-white hover:bg-[var(--blue-d)]"
+              className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-[var(--blue)] text-white hover:bg-[var(--blue-d)] disabled:opacity-60"
             >
-              <SendIcon size={16} />
+              {chatBusy ? (
+                <span className="h-[14px] w-[14px] animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              ) : (
+                <SendIcon size={16} />
+              )}
             </button>
           </div>
         </div>

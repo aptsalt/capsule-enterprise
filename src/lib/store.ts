@@ -6,6 +6,7 @@
 // overlay (skillId -> adopted version) rather than mutating the dataset.
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { data } from './data';
 import { latestVersion, type AdoptionMap } from './selectors';
 
@@ -60,6 +61,15 @@ export interface CapturedCapsule {
   stats: { messages: number; tools: number; durationMin: number };
 }
 
+// A single turn in the agent chat thread. Streamed assistant replies grow the
+// last message in place via appendChat.
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  // Enterprise skills the user attached to this turn (chips), kept for replay.
+  skills?: string[];
+}
+
 interface StoreState {
   // ---- state ----
   openPanel: PanelId;
@@ -89,6 +99,9 @@ interface StoreState {
   capturedCapsules: CapturedCapsule[]; // newest first; overlay on top of data.capsules
   selectedCapturedId: string | null; // a captured row is open in the Capture panel
   lastEngine: string | null; // engine label of the most recent real capture
+  // ---- agent chat ----
+  chat: ChatMessage[]; // the live conversation thread (empty = show demo cards)
+  chatBusy: boolean; // a generation is in flight (disables send, shows spinner)
 
   // ---- actions ----
   setActiveDoc: (docId: string) => void;
@@ -119,9 +132,17 @@ interface StoreState {
   setLastEngine: (engine: string) => void;
   // Open a captured capsule's detail in the Capture panel (null = picker view).
   selectCaptured: (id: string | null) => void;
+  // Append a whole message (user turn, or the empty assistant turn to stream into).
+  pushChat: (message: ChatMessage) => void;
+  // Grow the last assistant message in place as stream chunks arrive.
+  appendChat: (chunk: string) => void;
+  setChatBusy: (busy: boolean) => void;
+  clearChat: () => void;
 }
 
-export const useStore = create<StoreState>((set) => ({
+export const useStore = create<StoreState>()(
+  persist(
+    (set) => ({
   // ---- initial state ----
   openPanel: null,
   activeDocId: 'Technical Requirements',
@@ -144,6 +165,8 @@ export const useStore = create<StoreState>((set) => ({
   capturedCapsules: [],
   selectedCapturedId: null,
   lastEngine: null,
+  chat: [],
+  chatBusy: false,
 
   // ---- actions ----
   // Single source of truth for the open document — the sidebar tree row tint
@@ -235,4 +258,26 @@ export const useStore = create<StoreState>((set) => ({
     })),
   setLastEngine: (engine) => set({ lastEngine: engine }),
   selectCaptured: (id) => set({ selectedCapturedId: id }),
-}));
+  pushChat: (message) => set((s) => ({ chat: [...s.chat, message] })),
+  // Mutate the last message's content (the streaming assistant turn).
+  appendChat: (chunk) =>
+    set((s) => {
+      if (s.chat.length === 0) return {};
+      const chat = s.chat.slice();
+      const last = chat[chat.length - 1];
+      chat[chat.length - 1] = { ...last, content: last.content + chunk };
+      return { chat };
+    }),
+  setChatBusy: (busy) => set({ chatBusy: busy }),
+  clearChat: () => set({ chat: [], chatBusy: false }),
+    }),
+    {
+      // Persist ONLY the visible thread to sessionStorage so a reload replays the
+      // exact conversation. This is a UI cache — durable memory still lives in
+      // Backboard (written server-side at send time, so replay never re-writes).
+      name: 'capsule-chat',
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (s) => ({ chat: s.chat }),
+    },
+  ),
+);
