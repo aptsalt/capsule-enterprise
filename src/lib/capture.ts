@@ -114,3 +114,30 @@ export function captureSession(path: string, maxChars = 28000): RawSession {
     transcript,
   };
 }
+
+// Build a RawSession from the in-app localhost CHAT thread so it can run through the
+// SAME distill→score→store pipeline as a Claude Code session. The session id leads
+// with a volatile base36 timestamp so each capture gets a distinct CAP-LOCAL-xxxxxx id.
+export function sessionFromMessages(
+  messages: { role: string; content: string }[],
+  project = "Content Engine",
+  maxChars = 28000,
+): RawSession {
+  const clean = messages.filter((m) => m.content && m.content.trim());
+  const files = new Set<string>();
+  for (const m of clean) for (const x of m.content.matchAll(FILE_RE)) files.add(x[0]);
+  let transcript = clean
+    .map((m) => `${m.role === "user" ? "USER" : "AI"}: ${m.content.trim()}`)
+    .join("\n\n");
+  if (transcript.length > maxChars) transcript = transcript.slice(-maxChars);
+  return {
+    sessionId: `${Date.now().toString(36)}-chat`,
+    project,
+    path: "(in-app chat)",
+    messages: clean.length,
+    tools: 0,
+    durationMin: 0,
+    filesTouched: [...files].filter((f) => !f.includes("node_modules")).slice(0, 40),
+    transcript,
+  };
+}
