@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAPSULE — the enterprise RL loop for the 8090 Software Factory</title>
+<style>
+/* ===========================================================================
+   CAPSULE — judge-facing pitch. Self-contained. 8090-matched dark identity.
+   =========================================================================== */
+:root{
+  --bg:#0a0b0d; --bg-2:#0a0a0a; --surface:#111317; --surface-2:#14161b;
+  --surface-3:#181b21; --inset:#0d0f12;
+  --border:#1e2230; --border-soft:#171a24; --border-strong:#2a3042;
+  --text:#e9edf4; --muted:#9aa6b8; --dim:#5b6675; --faint:#3a4252;
+  --accent:#38bdf8; --accent-2:#4d9fff; --accent-ink:#04222e;
+  --accent-glow:rgba(56,189,248,.16); --accent-line:rgba(56,189,248,.40);
+  --c-capsule:#38bdf8; --c-skill:#a78bfa; --c-agent:#34d399; --c-workorder:#f59e0b;
+  --c-requirement:#fb7185; --c-model:#60a5fa; --c-mcp:#2dd4bf; --c-memory:#818cf8;
+  --ok:#34d399; --warn:#f59e0b; --err:#fb7185;
+  --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Consolas,Menlo,monospace;
+  --r-sm:8px; --r-md:12px; --r-lg:14px; --r-pill:999px;
+  --maxw:1080px;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box;}
+*{margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+body{
+  font-family:var(--font-sans); color:var(--text); background:var(--bg);
+  font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  font-feature-settings:"cv02","cv03","cv04","cv11","ss01";
+  background-image:
+    radial-gradient(1100px 640px at 8% -6%, rgba(56,189,248,.06), transparent 60%),
+    radial-gradient(900px 600px at 100% 2%, rgba(77,159,255,.045), transparent 55%),
+    radial-gradient(rgba(255,255,255,.012) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,.010) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.016) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.016) 1px, transparent 1px),
+    linear-gradient(180deg,#0b0c0f 0%, var(--bg) 40%, var(--bg-2) 100%);
+  background-size:100% 100%,100% 100%,3px 3px,7px 7px,34px 34px,34px 34px,100% 100%;
+  background-position:0 0,0 0,0 0,2px 3px,0 0,0 0,0 0;
+  background-attachment:fixed;
+}
+::selection{background:var(--accent-glow); color:#fff;}
+a{color:var(--accent); text-decoration:none;}
+h1,h2,h3,h4{line-height:1.15; letter-spacing:-.02em; font-weight:650; color:var(--text);}
+.mono{font-family:var(--font-mono); letter-spacing:-.01em;}
+.muted{color:var(--muted);} .dim{color:var(--dim);}
+
+/* layout */
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 28px;}
+section{padding:96px 0; border-top:1px solid var(--border-soft);}
+section:first-of-type{border-top:0;}
+.k{display:inline-block; font-size:11.5px; font-weight:650; text-transform:uppercase;
+   letter-spacing:.16em; color:var(--accent);}
+.eyebrow{display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+.eyebrow::before{content:""; width:22px; height:1px; background:var(--accent-line);}
+.lede{font-size:19px; color:var(--muted); max-width:62ch; line-height:1.65;}
+.big{font-size:clamp(30px,4.6vw,46px); letter-spacing:-.03em; line-height:1.08;}
+
+/* top nav */
+.nav{position:sticky; top:0; z-index:50; backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px); background:rgba(11,12,15,.66);
+  border-bottom:1px solid var(--border);}
+.nav .wrap{display:flex; align-items:center; gap:16px; height:56px;}
+.logo{display:flex; align-items:center; gap:10px; font-weight:750; letter-spacing:-.02em; font-size:15px;}
+.logo::before{content:""; width:15px; height:15px; border-radius:5px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 0 0 1px rgba(56,189,248,.35), 0 0 16px var(--accent-glow);}
+.nav .spacer{flex:1;}
+.nav a.navlink{color:var(--muted); font-size:13px; font-weight:550; padding:6px 2px;}
+.nav a.navlink:hover{color:var(--text);}
+@media(max-width:860px){ .nav a.navlink{display:none;} }
+.btn{display:inline-flex; align-items:center; gap:8px; padding:9px 16px; font-size:13.5px;
+  font-weight:650; line-height:1; color:var(--accent-ink); cursor:pointer; white-space:nowrap;
+  background:linear-gradient(180deg,#4ec5fb,var(--accent)); border:1px solid var(--accent-line);
+  border-radius:var(--r-sm); box-shadow:0 1px 0 rgba(255,255,255,.18) inset, 0 6px 18px var(--accent-glow);}
+.btn:hover{filter:brightness(1.06);}
+.btn.alt{color:var(--text); background:var(--surface-2); border-color:var(--border-strong);
+  box-shadow:none;}
+.btn.alt:hover{border-color:var(--accent-line);}
+
+/* tags / pills */
+.tag{display:inline-flex; align-items:center; gap:6px; padding:3px 10px; font-size:11.5px;
+  font-weight:650; border-radius:var(--r-sm); color:var(--c,var(--accent));
+  background:color-mix(in srgb, var(--c,var(--accent)) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--c,var(--accent)) 36%, transparent);}
+.tag::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--c,var(--accent));
+  box-shadow:0 0 8px color-mix(in srgb, var(--c,var(--accent)) 70%, transparent);}
+.tag.capsule{--c:var(--c-capsule);} .tag.skill{--c:var(--c-skill);}
+.tag.agent{--c:var(--c-agent);} .tag.workorder{--c:var(--c-workorder);}
+.tag.requirement{--c:var(--c-requirement);} .tag.model{--c:var(--c-model);}
+.tag.mcp{--c:var(--c-mcp);} .tag.memory{--c:var(--c-memory);}
+.pill{display:inline-flex; align-items:center; gap:7px; padding:4px 12px; font-size:12px;
+  font-weight:600; border-radius:var(--r-pill); color:var(--muted);
+  background:var(--surface-3); border:1px solid var(--border);}
+.pill.ok{color:var(--ok); border-color:color-mix(in srgb,var(--ok) 40%,transparent);
+  background:color-mix(in srgb,var(--ok) 12%,transparent);}
+
+/* cards */
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+  padding:24px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 1px 2px rgba(0,0,0,.45);}
+.panel{background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:18px;}
+.grid{display:grid; gap:18px;}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr));}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr));}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr));}
+@media(max-width:980px){ .g4{grid-template-columns:repeat(2,1fr);} .g3{grid-template-columns:repeat(1,1fr);} }
+@media(max-width:720px){ .g2,.g3,.g4{grid-template-columns:1fr;} }
+
+/* hero */
+.hero{padding:84px 0 72px;}
+.hero h1{font-size:clamp(38px,7.2vw,76px); letter-spacing:-.045em; line-height:.98;}
+.hero h1 .grad{background:linear-gradient(120deg,#fff 10%, var(--accent) 55%, var(--accent-2) 95%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;}
+.hero .sub{margin-top:22px; font-size:20px; color:var(--muted); max-width:60ch; line-height:1.55;}
+.hero .ctas{display:flex; gap:12px; margin-top:32px; flex-wrap:wrap;}
+.hero .chips{display:flex; gap:8px; margin-top:34px; flex-wrap:wrap;}
+.statbar{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; margin-top:48px;
+  background:var(--border); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden;}
+.statbar .s{background:var(--surface); padding:20px 18px;}
+.statbar .s .n{font-size:30px; font-weight:720; letter-spacing:-.03em; color:var(--text);
+  font-variant-numeric:tabular-nums;}
+.statbar .s .n b{color:var(--accent); font-weight:720;}
+.statbar .s .l{font-size:12px; color:var(--dim); margin-top:4px; text-transform:uppercase; letter-spacing:.08em;}
+@media(max-width:720px){ .statbar{grid-template-columns:repeat(2,1fr);} }
+
+/* problem cards */
+.theme{display:flex; flex-direction:column; gap:10px;}
+.theme .h{display:flex; align-items:center; gap:10px; font-weight:620; font-size:15px;}
+.theme .d{color:var(--muted); font-size:13.5px;}
+.rootcause{margin-top:26px; display:flex; align-items:center; gap:16px; padding:20px 22px;
+  border-radius:var(--r-lg); border:1px solid var(--accent-line);
+  background:linear-gradient(90deg, var(--accent-glow), rgba(56,189,248,.03));}
+.rootcause .ico{font-family:var(--font-mono); color:var(--accent); font-size:13px; white-space:nowrap;}
+
+/* insight split */
+.split{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+@media(max-width:760px){ .split{grid-template-columns:1fr;} }
+.before{border-color:var(--border);}
+.after{border-color:var(--accent-line);
+  background:linear-gradient(180deg, rgba(56,189,248,.05), var(--surface));}
+.vs{display:flex; align-items:center; justify-content:center; font-family:var(--font-mono);
+  color:var(--dim); font-size:12px; letter-spacing:.1em;}
+
+/* loop stages */
+.loop{display:grid; grid-template-columns:repeat(6,1fr); gap:10px; counter-reset:st;}
+@media(max-width:980px){ .loop{grid-template-columns:repeat(3,1fr);} }
+@media(max-width:620px){ .loop{grid-template-columns:1fr;} }
+.stage{position:relative; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:18px 16px; overflow:hidden;}
+.stage::after{counter-increment:st; content:"0" counter(st); position:absolute; top:10px; right:12px;
+  font-family:var(--font-mono); font-size:11px; color:var(--faint);}
+.stage .dot{width:9px; height:9px; border-radius:50%; margin-bottom:12px;
+  box-shadow:0 0 10px currentColor;}
+.stage h4{font-size:14.5px; margin-bottom:6px;}
+.stage p{font-size:12.5px; color:var(--muted); line-height:1.5;}
+.stage .meta{margin-top:10px; font-family:var(--font-mono); font-size:11px; color:var(--dim);}
+
+/* graph */
+.graphwrap{position:relative; border:1px solid var(--border); border-radius:var(--r-lg);
+  background:radial-gradient(700px 380px at 50% 12%, rgba(56,189,248,.06), transparent 70%), var(--surface);
+  overflow:hidden;}
+.graphwrap svg{width:100%; height:auto; display:block;}
+.legend{display:flex; flex-wrap:wrap; gap:8px 14px; padding:14px 18px; border-top:1px solid var(--border-soft);}
+.legend .li{display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--muted);}
+.legend .li .sw{width:9px; height:9px; border-radius:50%; box-shadow:0 0 8px currentColor;}
+.gnode-label{font:600 11px var(--font-sans); fill:var(--text);}
+.gnode-sub{font:500 9px var(--font-mono); fill:var(--dim);}
+.glink{stroke-width:1.4; fill:none; opacity:.55;}
+.glink-lbl{font:500 8.5px var(--font-mono); fill:var(--faint);}
+
+/* selection / token-value demo */
+.adopt{display:grid; grid-template-columns:1.05fr .95fr; gap:18px;}
+@media(max-width:820px){ .adopt{grid-template-columns:1fr;} }
+.verline{display:flex; align-items:center; gap:12px; padding:12px 0; border-top:1px solid var(--border-soft);}
+.verline:first-of-type{border-top:0;}
+.verline .v{font-family:var(--font-mono); font-size:13px; color:var(--text); min-width:74px;}
+.verline .bump{font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+  padding:2px 7px; border-radius:6px;}
+.bump.major{color:#fff; background:rgba(251,113,133,.18); border:1px solid rgba(251,113,133,.4);}
+.bump.minor{color:var(--accent); background:rgba(56,189,248,.14); border:1px solid var(--accent-line);}
+.bump.patch{color:var(--c-skill); background:rgba(167,139,250,.14); border:1px solid rgba(167,139,250,.4);}
+.verline .cl{font-size:12.5px; color:var(--muted); flex:1;}
+.ledger{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border);
+  border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; margin-top:6px;}
+.ledger .cell{background:var(--surface-2); padding:16px;}
+.ledger .cell .lab{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim);}
+.ledger .cell .val{font-size:24px; font-weight:720; letter-spacing:-.02em; margin-top:4px;
+  font-variant-numeric:tabular-nums;}
+.ledger .debit .val{color:var(--warn);} .ledger .credit .val{color:var(--ok);}
+.reward{margin-top:14px; padding:14px 16px; border-radius:var(--r-md);
+  border:1px solid var(--accent-line); background:linear-gradient(90deg,var(--accent-glow),transparent);
+  display:flex; align-items:center; justify-content:space-between; gap:12px;}
+.reward .r{font-family:var(--font-mono); font-size:13px; color:var(--muted);}
+.reward .r b{color:var(--ok);}
+.codeblk{font-family:var(--font-mono); font-size:12px; color:var(--muted); background:var(--inset);
+  border:1px solid var(--border-soft); border-radius:var(--r-md); padding:14px 16px; overflow-x:auto;
+  line-height:1.7;}
+.codeblk .cm{color:var(--dim);} .codeblk .kw{color:var(--accent);} .codeblk .st{color:#9ee6c0;}
+.codeblk .fa{color:var(--err);}
+
+/* compounding chart */
+.chartwrap{padding:8px 4px 0;}
+.chart{width:100%; height:200px; display:block;}
+.xax{display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px;
+  color:var(--dim); margin-top:8px;}
+
+/* sponsor */
+.sponsor{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+@media(max-width:820px){ .sponsor{grid-template-columns:1fr;} }
+.sponsor .card .role{font-size:12px; color:var(--dim); text-transform:uppercase; letter-spacing:.1em;}
+.sponsor .card h4{margin:10px 0 8px; font-size:18px;}
+.sponsor .card ul{list-style:none; margin-top:12px; display:flex; flex-direction:column; gap:8px;}
+.sponsor .card li{font-size:13px; color:var(--muted); padding-left:18px; position:relative;}
+.sponsor .card li::before{content:""; position:absolute; left:0; top:8px; width:6px; height:6px;
+  border-radius:2px; background:var(--accent);}
+
+/* why we win */
+.win{display:grid; grid-template-columns:repeat(2,1fr); gap:18px;}
+@media(max-width:760px){ .win{grid-template-columns:1fr;} }
+.win .card{display:flex; gap:14px; align-items:flex-start;}
+.win .num{font-family:var(--font-mono); font-size:13px; color:var(--accent); font-weight:700;
+  border:1px solid var(--accent-line); border-radius:8px; padding:4px 9px; flex:none;
+  background:var(--accent-glow);}
+.win h4{font-size:15px; margin-bottom:5px;}
+.win p{font-size:13px; color:var(--muted);}
+
+/* closing */
+.close{text-align:center; padding:104px 0 120px;}
+.close h2{font-size:clamp(28px,4.4vw,44px); letter-spacing:-.03em;}
+.close .token{display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono);
+  font-size:13px; color:var(--accent); border:1px solid var(--accent-line); border-radius:var(--r-pill);
+  padding:8px 16px; margin-top:8px; background:var(--accent-glow);}
+footer{border-top:1px solid var(--border); padding:28px 0; color:var(--dim); font-size:12.5px;}
+footer .wrap{display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:center;}
+
+/* reveal */
+.rv{opacity:0; transform:translateY(14px); transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);}
+.rv.in{opacity:1; transform:none;}
+@media(prefers-reduced-motion:reduce){ .rv{opacity:1; transform:none; transition:none;} html{scroll-behavior:auto;} }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="wrap">
+    <div class="logo">CAPSULE</div>
+    <span class="pill" style="font-size:11px;">on the 8090 Software Factory</span>
+    <div class="spacer"></div>
+    <a class="navlink" href="#problem">Problem</a>
+    <a class="navlink" href="#insight">Insight</a>
+    <a class="navlink" href="#loop">How it works</a>
+    <a class="navlink" href="#demo">Demo</a>
+    <a class="navlink" href="#win">Why we win</a>
+    <a class="btn alt" href="#demo">See the loop</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="k">Enterprise reinforcement learning, for software</span></div>
+    <h1 class="rv">CAPSULE — the enterprise<br><span class="grad">RL loop</span> for the 8090<br>Software Factory.</h1>
+    <p class="sub rv">8090 captures intent <em>before</em> you build. CAPSULE captures what your agents
+      <em>learn</em> while building — and compounds it. Every session mints a capsule; every capsule
+      mints a better skill; every token saved is the reward. It's a <em>real Next.js app</em> now, and
+      every capsule is distilled <em>on-device</em> — private, free, offline.</p>
+
+    <div class="ctas rv">
+      <a class="btn" href="#demo">The money demo</a>
+      <a class="btn alt" href="#loop">The 6-stage loop</a>
+    </div>
+
+    <div class="chips rv">
+      <span class="tag capsule">capsule</span>
+      <span class="tag skill">skill@semver</span>
+      <span class="tag agent">agent</span>
+      <span class="tag workorder">work order</span>
+      <span class="tag requirement">requirement</span>
+      <span class="tag memory">Backboard</span>
+      <span class="tag agent">local distill · Ollama</span>
+    </div>
+
+    <div class="statbar rv">
+      <div class="s"><div class="n"><b>75,000</b></div><div class="l">tokens saved · 8 wks</div></div>
+      <div class="s"><div class="n">34</div><div class="l">sessions captured</div></div>
+      <div class="s"><div class="n">5</div><div class="l">skills evolved</div></div>
+      <div class="s"><div class="n">72<span style="font-size:18px">%</span></div><div class="l">adoption rate</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="k">The problem</span></div>
+    <h2 class="big rv">Every hackathon theme is the same bug,<br>wearing a different costume.</h2>
+    <p class="lede rv" style="margin-top:18px;">Reliability, evaluation, cost, security, multi-agent
+      orchestration — chase any of them far enough and you hit one root cause. The agent that solved it
+      last time isn't here this time.</p>
+
+    <div class="grid g4 rv" style="margin-top:40px;">
+      <div class="card theme">
+        <div class="h"><span class="tag requirement" style="--c:var(--c-requirement)">Reliability</span></div>
+        <div class="d">The same gotcha gets re-discovered every session. The fix that shipped on Tuesday is gone by Thursday.</div>
+      </div>
+      <div class="card theme">
+        <div class="h"><span class="tag model">Cost</span></div>
+        <div class="d">You pay full token price to re-derive knowledge your team already paid to learn — over and over.</div>
+      </div>
+      <div class="card theme">
+        <div class="h"><span class="tag agent">Multi-agent</span></div>
+        <div class="d">Agent B can't stand on Agent A's shoulders. There are no shoulders — only a fresh context window.</div>
+      </div>
+      <div class="card theme">
+        <div class="h"><span class="tag workorder">Evaluation</span></div>
+        <div class="d">No way to tell if the system got <em>smarter</em>. Nothing measures whether a lesson actually transferred.</div>
+      </div>
+    </div>
+
+    <div class="rootcause rv">
+      <div class="ico">root&nbsp;cause&nbsp;→</div>
+      <div style="font-size:18px; font-weight:600; color:var(--text);">
+        Context dies at the session boundary. Enterprises run thousands of agent sessions a day and keep
+        <span style="color:var(--accent)">none of the learning.</span> The factory builds; it never remembers.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSIGHT -->
+<section id="insight">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="k">The insight</span></div>
+    <h2 class="big rv">8090 captures context <em>before</em> building.<br>CAPSULE captures what's learned <em>during</em> — and compounds it.</h2>
+    <p class="lede rv" style="margin-top:18px;">The 8090 Software Factory already turns Requirements →
+      Blueprints → Work Orders → Tests → Knowledge Graph. That's a brilliant <strong>forward</strong> pass.
+      CAPSULE adds the missing <strong>backward</strong> pass: the capture + feedback layer that turns each
+      session's output into the next session's intelligence.</p>
+
+    <div class="split rv" style="margin-top:40px;">
+      <div class="card before">
+        <div class="k" style="color:var(--dim)">Without CAPSULE — a forward pass</div>
+        <h3 style="margin:14px 0 12px; font-size:19px;">Build &rarr; ship &rarr; forget</h3>
+        <p class="muted" style="font-size:14px;">Requirements become code. The agent learns idempotency
+          must be amount-scoped, hits a Redis-failover gotcha, finds the fix — then the window closes and the
+          lesson evaporates. Tomorrow, a different agent re-learns it from zero, at full token cost.</p>
+        <div class="mono" style="margin-top:16px; font-size:12px; color:var(--dim);">learning retained: 0%</div>
+      </div>
+      <div class="card after">
+        <div class="k">With CAPSULE — a closed loop</div>
+        <h3 style="margin:14px 0 12px; font-size:19px;">Build &rarr; capture &rarr; compound</h3>
+        <p class="muted" style="font-size:14px;">The same session emits a <span class="tag capsule" style="vertical-align:middle">capsule</span>
+          — the <em>important &amp; novel</em> distilled. It's stored in Backboard, minted into
+          <span class="mono" style="color:var(--c-skill)">skill/payment-idempotency@2.1.0</span>, and injected
+          into every future session that touches payments. The next agent starts <em>knowing.</em></p>
+        <div class="mono" style="margin-top:16px; font-size:12px; color:var(--ok);">learning retained: compounding →
+          75,000 tokens reclaimed</div>
+      </div>
+    </div>
+
+    <p class="lede rv" style="margin-top:30px; font-size:17px;">
+      This is reinforcement learning at the <strong>enterprise</strong> scale: the action is a build, the
+      reward is the token delta, and the policy is your skill library — getting measurably better every night.
+    </p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS / LOOP -->
+<section id="loop">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="k">How it works</span></div>
+    <h2 class="big rv">One loop. Six stages. It never stops turning.</h2>
+    <p class="lede rv" style="margin-top:18px;">Capture is cheap enough to run on <em>every</em> session
+      twice over: the capsule is distilled on a <strong>local model</strong>
+      (<span class="mono">qwen2.5-coder:14b</span> via Ollama — free, private, no egress), and the write
+      is store-only — <span class="mono">send_to_llm=false</span>, no generation, no model tokens billed.
+      Memory follows the <strong>entity</strong>, not the model.</p>
+
+    <div class="loop rv" style="margin-top:40px;">
+      <div class="stage">
+        <div class="dot" style="background:var(--c-capsule); color:var(--c-capsule)"></div>
+        <h4>Capture</h4>
+        <p>Every Claude Code / agent session distills only what's <em>important &amp; novel</em>: intent,
+          decisions, gotchas, mental model.</p>
+        <div class="meta">→ capsule</div>
+      </div>
+      <div class="stage">
+        <div class="dot" style="background:var(--c-memory); color:var(--c-memory)"></div>
+        <h4>Store</h4>
+        <p>Written to Backboard keyed by <span class="mono">assistant_id</span> — one assistant per tenant,
+          structural isolation.</p>
+        <div class="meta">send_to_llm=false</div>
+      </div>
+      <div class="stage">
+        <div class="dot" style="background:var(--c-skill); color:var(--c-skill)"></div>
+        <h4>Mint</h4>
+        <p>Nightly, capsules are distilled into a new <strong>semver</strong> skill version:
+          patch · minor · major.</p>
+        <div class="meta">skill@x.y.z</div>
+      </div>
+      <div class="stage">
+        <div class="dot" style="background:var(--c-model); color:var(--c-model)"></div>
+        <h4>Retrieve</h4>
+        <p>Semantic + LLM-guided recall fires at session-open <em>and</em> at model / MCP selection.</p>
+        <div class="meta">Lite · Pro</div>
+      </div>
+      <div class="stage">
+        <div class="dot" style="background:var(--ok); color:var(--ok)"></div>
+        <h4>Reward</h4>
+        <p>Tokens saved downstream − tokens spent to create = the RL reward. No human labels.</p>
+        <div class="meta">Δtokens</div>
+      </div>
+      <div class="stage">
+        <div class="dot" style="background:var(--accent); color:var(--accent)"></div>
+        <h4>Compound</h4>
+        <p>High-reward capsules get promoted; low-reward ones decay. The skill repo gets smarter, enterprise-wide.</p>
+        <div class="meta">→ everyone</div>
+      </div>
+    </div>
+
+    <div class="grid g3 rv" style="margin-top:24px;">
+      <div class="panel">
+        <div class="tag memory" style="margin-bottom:10px;">Backboard memory</div>
+        <p class="muted" style="font-size:13.5px;">Capsules + skill learnings persist on the tenant's
+          assistant — not the model. Swap among 17,000+ BYOK models mid-project and lose zero facts.
+          <span class="dim">#1 on LoCoMo &amp; LongMemEval.</span></p>
+      </div>
+      <div class="panel">
+        <div class="tag skill" style="margin-bottom:10px;">Semver skills</div>
+        <p class="muted" style="font-size:13.5px;">A gotcha is a <strong>patch</strong>. A new pattern is a
+          <strong>minor</strong>. A change to how the skill is invoked is a <strong>major</strong>. Versions
+          are immutable; teammates pin or adopt latest.</p>
+      </div>
+      <div class="panel">
+        <div class="tag capsule" style="margin-bottom:10px;">Token reward</div>
+        <p class="muted" style="font-size:13.5px;">Token usage is shown everywhere — the debit to create a
+          capsule vs the credit it earns downstream. The delta is the reward signal that drives the whole loop.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="k">The money demo</span></div>
+    <h2 class="big rv">The Knowledge Graph, alive — and a one-line adoption that pays for itself.</h2>
+    <p class="lede rv" style="margin-top:18px;">CAPSULE renders as a Knowledge-Graph panel sitting on top of
+      8090's native Software Factory. Requirements → Work Orders → Agents → Skills, with capsules feeding
+      back into skills and everything anchored to the Backboard hub. This is the live tenant
+      <span class="mono">capsule-meridian</span> (Meridian Bank · Payments Copilot).</p>
+
+    <!-- GRAPH -->
+    <div class="graphwrap rv" style="margin-top:34px;">
+      <svg viewBox="0 0 1040 520" role="img" aria-label="CAPSULE knowledge graph: requirements, work orders, agents, skills, capsules, models all linked to the Backboard memory hub">
+        <defs>
+          <radialGradient id="hub" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#818cf8" stop-opacity=".9"/>
+            <stop offset="100%" stop-color="#818cf8" stop-opacity=".25"/>
+          </radialGradient>
+          <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3"/>
+          </filter>
+        </defs>
+
+        <!-- LINKS (drawn first, under nodes) -->
+        <g class="glink" stroke="#fb7185">
+          <path d="M150,80 C260,90 300,150 360,150"/>
+          <path d="M150,150 C250,150 300,210 360,210"/>
+          <path d="M150,220 C250,220 300,270 360,270"/>
+        </g>
+        <g class="glink" stroke="#f59e0b">
+          <path d="M470,150 C540,150 560,200 600,205"/>
+          <path d="M470,210 C540,210 560,210 600,212"/>
+          <path d="M470,270 C540,270 560,250 600,235"/>
+        </g>
+        <g class="glink" stroke="#34d399">
+          <path d="M700,205 C760,180 780,150 820,150"/>
+          <path d="M700,215 C760,215 780,215 820,215"/>
+          <path d="M700,225 C760,250 780,280 820,280"/>
+        </g>
+        <g class="glink" stroke="#38bdf8">
+          <path d="M905,360 C880,330 860,300 845,170"/>
+          <path d="M905,360 C870,340 850,300 845,235"/>
+          <path d="M845,420 C845,380 845,330 845,300"/>
+        </g>
+        <!-- capsules to backboard hub -->
+        <g class="glink" stroke="#818cf8" stroke-dasharray="3 4" opacity=".5">
+          <path d="M845,420 C700,470 560,470 540,400"/>
+          <path d="M520,300 C520,350 530,380 540,392"/>
+        </g>
+        <!-- models read hub -->
+        <g class="glink" stroke="#60a5fa" stroke-dasharray="2 4" opacity=".45">
+          <path d="M210,400 C330,430 470,420 510,405"/>
+          <path d="M210,460 C340,475 470,460 512,415"/>
+        </g>
+
+        <!-- NODE GROUPS -->
+        <!-- Requirements -->
+        <g>
+          <circle cx="120" cy="80" r="9" fill="#fb7185" filter="url(#soft)" opacity=".5"/>
+          <circle cx="120" cy="80" r="6" fill="#fb7185"/>
+          <text class="gnode-label" x="100" y="58" text-anchor="start">Idempotent payments</text>
+          <text class="gnode-sub" x="100" y="70">REQ-001</text>
+        </g>
+        <g>
+          <circle cx="120" cy="150" r="6" fill="#fb7185"/>
+          <text class="gnode-label" x="100" y="138">ISO 20022 interop</text>
+          <text class="gnode-sub" x="100" y="150" dy="0">REQ-002</text>
+        </g>
+        <g>
+          <circle cx="120" cy="220" r="6" fill="#fb7185"/>
+          <text class="gnode-label" x="100" y="240">PCI redaction</text>
+          <text class="gnode-sub" x="100" y="252">REQ-003</text>
+        </g>
+
+        <!-- Work orders -->
+        <g>
+          <rect x="372" y="138" width="98" height="26" rx="7" fill="#1a160c" stroke="#f59e0b" stroke-opacity=".5"/>
+          <text class="gnode-label" x="384" y="155" fill="#f5c878">WO-101</text>
+        </g>
+        <g>
+          <rect x="372" y="198" width="98" height="26" rx="7" fill="#1a160c" stroke="#f59e0b" stroke-opacity=".5"/>
+          <text class="gnode-label" x="384" y="215" fill="#f5c878">WO-102</text>
+        </g>
+        <g>
+          <rect x="372" y="258" width="98" height="26" rx="7" fill="#1a160c" stroke="#f59e0b" stroke-opacity=".5"/>
+          <text class="gnode-label" x="384" y="275" fill="#f5c878">WO-103</text>
+        </g>
+
+        <!-- Agents -->
+        <g>
+          <rect x="600" y="192" width="100" height="44" rx="9" fill="#0c1a14" stroke="#34d399" stroke-opacity=".55"/>
+          <text class="gnode-label" x="612" y="212" fill="#7fe6c0">Payments</text>
+          <text class="gnode-sub" x="612" y="226" fill="#34d399">agent · v2.3.0</text>
+        </g>
+
+        <!-- Skills -->
+        <g>
+          <rect x="820" y="134" width="170" height="34" rx="9" fill="#14102a" stroke="#a78bfa" stroke-opacity=".55"/>
+          <text class="gnode-label" x="834" y="150" fill="#c4b5fd">Payment Idempotency</text>
+          <text class="gnode-sub" x="834" y="162" fill="#a78bfa">skill @2.1.0</text>
+        </g>
+        <g>
+          <rect x="820" y="200" width="170" height="34" rx="9" fill="#14102a" stroke="#a78bfa" stroke-opacity=".55"/>
+          <text class="gnode-label" x="834" y="216" fill="#c4b5fd">ISO 20022 Mapper</text>
+          <text class="gnode-sub" x="834" y="228" fill="#a78bfa">skill @1.3.0</text>
+        </g>
+        <g>
+          <rect x="820" y="266" width="170" height="34" rx="9" fill="#14102a" stroke="#a78bfa" stroke-opacity=".55"/>
+          <text class="gnode-label" x="834" y="282" fill="#c4b5fd">PCI Redaction</text>
+          <text class="gnode-sub" x="834" y="294" fill="#a78bfa">skill @1.2.0</text>
+        </g>
+
+        <!-- Capsule node feeding skills -->
+        <g>
+          <circle cx="905" cy="360" r="9" fill="#38bdf8" filter="url(#soft)" opacity=".55"/>
+          <circle cx="905" cy="360" r="6.5" fill="#38bdf8"/>
+          <text class="gnode-label" x="922" y="358" fill="#9fe0ff">CAP-1001</text>
+          <text class="gnode-sub" x="922" y="370">transfer 88 · ×12 reuse</text>
+        </g>
+
+        <!-- Models -->
+        <g>
+          <rect x="120" y="388" width="120" height="26" rx="7" fill="#0c1424" stroke="#60a5fa" stroke-opacity=".5"/>
+          <text class="gnode-label" x="132" y="405" fill="#9cc4fb">Claude Opus 4.8</text>
+        </g>
+        <g>
+          <rect x="120" y="448" width="120" height="26" rx="7" fill="#0c1424" stroke="#60a5fa" stroke-opacity=".5"/>
+          <text class="gnode-label" x="132" y="465" fill="#9cc4fb">Claude Sonnet 4.6</text>
+        </g>
+
+        <!-- BACKBOARD HUB (center-bottom) -->
+        <g>
+          <circle cx="540" cy="400" r="46" fill="url(#hub)"/>
+          <circle cx="540" cy="400" r="30" fill="#0e0f1c" stroke="#818cf8" stroke-opacity=".7"/>
+          <circle cx="540" cy="400" r="30" fill="none" stroke="#818cf8" stroke-opacity=".25">
+            <animate attributeName="r" values="30;44;30" dur="3.6s" repeatCount="indefinite"/>
+            <animate attributeName="stroke-opacity" values=".5;0;.5" dur="3.6s" repeatCount="indefinite"/>
+          </circle>
+          <text class="gnode-label" x="540" y="398" text-anchor="middle" fill="#c7caff" style="font-size:12px">Backboard</text>
+          <text class="gnode-sub" x="540" y="412" text-anchor="middle">Memory Pro hub</text>
+        </g>
+      </svg>
+      <div class="legend">
+        <span class="li" style="color:var(--c-requirement)"><span class="sw" style="background:currentColor"></span>requirement</span>
+        <span class="li" style="color:var(--c-workorder)"><span class="sw" style="background:currentColor"></span>work order</span>
+        <span class="li" style="color:var(--c-agent)"><span class="sw" style="background:currentColor"></span>agent</span>
+        <span class="li" style="color:var(--c-skill)"><span class="sw" style="background:currentColor"></span>skill@semver</span>
+        <span class="li" style="color:var(--c-capsule)"><span class="sw" style="background:currentColor"></span>capsule</span>
+        <span class="li" style="color:var(--c-model)"><span class="sw" style="background:currentColor"></span>model</span>
+        <span class="li" style="color:var(--c-memory)"><span class="sw" style="background:currentColor"></span>Backboard memory</span>
+      </div>
+    </div>
+
+    <!-- ADOPTION + TOKEN VALUE -->
+    <h3 class="rv" style="margin:48px 0 8px; font-size:22px;">"Use latest capsule" — priced in tokens, so the user self-justifies.</h3>
+    <p class="lede rv" style="margin-bottom:24px;">At model / MCP selection time, CAPSULE shows the pinned
+      version vs the latest minted one, and exactly what adopting buys you. No faith required — the value is
+      on the button.</p>
+
+    <div class="adopt">
+      <div class="card rv">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px;">
+          <div class="tag skill">skill/payment-idempotency</div>
+          <span class="pill ok">latest available</span>
+        </div>
+        <div class="verline">
+          <span class="v">@2.0.0</span><span class="bump major">major</span>
+          <span class="cl">Replaced request-hash dedup with a dedicated idempotency table.</span>
+        </div>
+        <div class="verline">
+          <span class="v" style="color:var(--accent)">@2.1.0</span><span class="bump minor">minor</span>
+          <span class="cl">Scope keys to (debtor, amount, currency); persist inside the ledger txn; 24h TTL.</span>
+        </div>
+        <div class="codeblk" style="margin-top:16px;">
+<span class="cm"># at model/MCP selection</span><br>
+&gt; <span class="kw">use latest capsule</span> <span class="st">skill/payment-idempotency</span><br>
+<span class="cm">  pinned  @2.0.0   →   latest @2.1.0  (minor)</span><br>
+<span class="cm">  adopt?</span> <span class="st">[y]</span> <span class="cm">— projected:</span> <span style="color:var(--ok)">−1,800 tok/use</span>, <span style="color:var(--accent)">+16 transfer</span>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <a class="btn" href="#">Adopt @2.1.0</a>
+          <a class="btn alt" href="#">Keep pinned @2.0.0</a>
+        </div>
+      </div>
+
+      <div class="card rv">
+        <div class="k" style="color:var(--dim)">RL reward ledger · CAP-1001</div>
+        <div class="ledger">
+          <div class="cell debit">
+            <div class="lab">Debit · create capsule</div>
+            <div class="val">−41,200</div>
+            <div class="mono dim" style="font-size:11px; margin-top:4px;">one-time, at write</div>
+          </div>
+          <div class="cell credit">
+            <div class="lab">Credit · 12 reuses</div>
+            <div class="val">+21,600</div>
+            <div class="mono dim" style="font-size:11px; margin-top:4px;">1,800 × 12 downstream</div>
+          </div>
+        </div>
+        <div class="reward">
+          <span class="r">reward = saved − spent</span>
+          <span class="r">net <b>+21,600</b> &amp; climbing each reuse</span>
+        </div>
+        <p class="muted" style="font-size:12.5px; margin-top:14px;">One capsule, eight weeks, one tenant:
+          <strong style="color:var(--ok)">75,000 tokens reclaimed</strong> across the skill library — and the
+          curve is super-linear, because every adopted version raises the floor for the next session.</p>
+
+        <!-- compounding chart -->
+        <div class="chartwrap">
+          <svg class="chart" viewBox="0 0 520 200" preserveAspectRatio="none" aria-label="Cumulative tokens saved compounding from 4,200 to 75,000 over eight weeks">
+            <defs>
+              <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity=".35"/>
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- gridlines -->
+            <g stroke="#1e2230" stroke-width="1">
+              <line x1="0" y1="40" x2="520" y2="40"/>
+              <line x1="0" y1="90" x2="520" y2="90"/>
+              <line x1="0" y1="140" x2="520" y2="140"/>
+              <line x1="0" y1="190" x2="520" y2="190"/>
+            </g>
+            <!-- data: W18..W25 → 4200,9600,16500,24800,36000,48000,61000,75000 (max 75000) -->
+            <path id="cArea" d="M0,190 L0,179.9 L74,166.9 L149,150.2 L223,130.2 L297,103.3 L371,74.4 L446,43.0 L520,9.3 L520,190 Z" fill="url(#area)"/>
+            <path id="cLine" d="M0,179.9 L74,166.9 L149,150.2 L223,130.2 L297,103.3 L371,74.4 L446,43.0 L520,9.3"
+              fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              style="filter:drop-shadow(0 0 6px rgba(56,189,248,.5))"/>
+            <circle cx="520" cy="9.3" r="4.5" fill="#38bdf8" style="filter:drop-shadow(0 0 6px #38bdf8)"/>
+          </svg>
+          <div class="xax"><span>W18</span><span>W20</span><span>W22</span><span>W24</span><span>W25</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPONSOR ALIGNMENT -->
+<section id="sponsors">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="k">Sponsor alignment</span></div>
+    <h2 class="big rv">Built to make every sponsor's product worth more.</h2>
+    <p class="lede rv" style="margin-top:18px;">CAPSULE isn't a standalone app — it's connective tissue. It
+      deepens the 8090 Factory, gives Backboard its highest-value workload, and turns model choice into a
+      compounding, model-agnostic asset.</p>
+
+    <div class="sponsor rv" style="margin-top:40px;">
+      <div class="card">
+        <div class="role">Platform</div>
+        <h4>8090 Software Factory</h4>
+        <p class="muted" style="font-size:13.5px;">CAPSULE is the missing CAPTURE + FEEDBACK layer on the
+          native pipeline.</p>
+        <ul>
+          <li>Lives on top of Requirements → Blueprints → Work Orders → Tests → Knowledge Graph</li>
+          <li>Adds the reinforcement edge the factory lacked: build → learn → mint → reuse</li>
+          <li>Renders inside the existing Knowledge-Graph surface — zero new mental model</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="role">Memory</div>
+        <h4>Backboard</h4>
+        <p class="muted" style="font-size:13.5px;">The durable substrate. Capsules + skill memory persist
+          per entity, not per model.</p>
+        <ul>
+          <li>Assistant-per-tenant isolation via <span class="mono">assistant_id</span></li>
+          <li>Store-only writes (<span class="mono">send_to_llm=false</span>) — capture on every session</li>
+          <li>#1 on LoCoMo &amp; LongMemEval — the basis for LLM-guided recall over plain vector NN</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="role">Distill · local-first</div>
+        <h4>Ollama · qwen2.5-coder:14b</h4>
+        <p class="muted" style="font-size:13.5px;">Capsules are distilled <strong>on-device</strong> by
+          default — private, free, offline. Cerebras is an optional cloud boost for the nightly job.</p>
+        <ul>
+          <li>Local model is the default engine — no per-token bill, no data egress</li>
+          <li>Cerebras (opt-in via API key) accelerates the cross-tenant nightly mint</li>
+          <li>Memory follows the entity across 17,000+ BYOK models — switch and lose zero facts</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY WE WIN -->
+<section id="win">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="k">Why we win</span></div>
+    <h2 class="big rv">Five reasons the judges remember CAPSULE.</h2>
+
+    <div class="win rv" style="margin-top:40px;">
+      <div class="card">
+        <div class="num">01</div>
+        <div><h4>It names the root cause</h4>
+          <p>Not another point tool — a single, defensible thesis: context dies at the session boundary,
+            and that's the bug under every theme.</p></div>
+      </div>
+      <div class="card">
+        <div class="num">02</div>
+        <div><h4>It's a real RL loop, not a metaphor</h4>
+          <p>Action = a build. Reward = the measured token delta. Policy = the versioned skill library. The
+            reward is computed, never hand-labeled.</p></div>
+      </div>
+      <div class="card">
+        <div class="num">03</div>
+        <div><h4>The value is on the button</h4>
+          <p>"Use latest capsule" shows −1,800 tok/use and +16 transfer before you click. Self-justifying
+            adoption — the demo that closes itself.</p></div>
+      </div>
+      <div class="card">
+        <div class="num">04</div>
+        <div><h4>It's real, and it's private</h4>
+          <p>A shipping Next.js app, not a mock — and every capsule is distilled on a local model, so an
+            enterprise can run the whole loop on its own hardware: free, offline, zero data egress.</p></div>
+      </div>
+      <div class="card" style="grid-column:1 / -1;">
+        <div class="num">05</div>
+        <div><h4>It compounds — and we can show the curve</h4>
+          <p>34 sessions → 8 capsules → 5 evolved skills → 75,000 tokens reclaimed in eight weeks, 72%
+            adoption, 68 avg transfer score. Enterprises don't buy features; they buy systems that get
+            smarter while they sleep. CAPSULE is that system.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSE -->
+<section class="close">
+  <div class="wrap">
+    <div class="logo rv" style="justify-content:center; font-size:18px; margin-bottom:20px;">CAPSULE</div>
+    <h2 class="rv">Stop re-deriving what your<br>factory already learned.</h2>
+    <div class="rv"><span class="token">$ use latest capsule</span></div>
+    <p class="lede rv" style="margin:22px auto 0; text-align:left; display:inline-block;">
+      The enterprise RL loop for the 8090 Software Factory. Capture during, compound forever.</p>
+    <div class="ctas rv" style="justify-content:center; margin-top:28px;">
+      <a class="btn" href="#demo">Replay the demo</a>
+      <a class="btn alt" href="#loop">See the loop</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>CAPSULE — capture + feedback layer · on the 8090 Software Factory · memory by Backboard</span>
+    <span class="mono">tenant capsule-meridian · 75,000 tok reclaimed · 8 wks</span>
+  </div>
+</footer>
+
+<script>
+// scroll reveal
+(function(){
+  var els = document.querySelectorAll('.rv');
+  if (!('IntersectionObserver' in window)) { els.forEach(function(e){e.classList.add('in');}); return; }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { threshold:.12, rootMargin:'0px 0px -8% 0px' });
+  els.forEach(function(e){ io.observe(e); });
+})();
+</script>
+</body>
+</html>

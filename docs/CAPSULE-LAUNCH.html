@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAPSULE — Every coding session teaches your whole company.</title>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#fbfcfd; --side:#f7f8f9;
+    --hair:#e6e8eb; --hair2:#eceef0;
+    --ink:#1f2329; --ink2:#3c4149; --mut:#6b7280; --dim:#9aa0a6;
+    --blue:#2b6cf0; --blue-d:#1f5bd6; --blue-bg:#eef3fe; --blue-line:#d9e4fd;
+    --energy:#b6ff00; --energy-ink:#3d5400; --energy-soft:rgba(182,255,0,.13);
+    --good:#15803d; --good-bg:#f0fbf3; --warn:#b45309;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --r:16px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.62 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    letter-spacing:-0.005em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{color:var(--blue-d)}
+  code,.m{font-family:var(--mono);font-size:.85em}
+  .m{background:var(--side);border:1px solid var(--hair);border-radius:5px;padding:1px 6px;color:var(--ink);white-space:nowrap}
+  strong{font-weight:650}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+  @media(max-width:640px){.wrap{padding:0 20px}}
+
+  /* ===== top nav ===== */
+  .nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);
+    backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--hair)}
+  .nav .row{display:flex;align-items:center;gap:14px;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
+  .mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#11141a,#2b313c);
+    color:#fff;font:800 10px/26px var(--mono);text-align:center;letter-spacing:-.5px}
+  .brand .s{font:600 10px var(--mono);color:var(--dim);letter-spacing:.04em}
+  .nav .links{margin-left:auto;display:flex;gap:4px;align-items:center}
+  .nav .links a{color:var(--ink2);font-size:13.5px;padding:7px 11px;border-radius:8px}
+  .nav .links a:hover{background:var(--side)}
+  .nav .cta{background:var(--ink);color:#fff !important;font-weight:600;padding:8px 14px !important;border-radius:9px}
+  .nav .cta:hover{background:#000}
+  @media(max-width:820px){.nav .links a.hidem{display:none}}
+
+  /* ===== hero ===== */
+  .hero{padding:74px 0 26px;position:relative}
+  .hero::before{content:"";position:absolute;inset:0;z-index:-1;
+    background:radial-gradient(900px 380px at 14% -8%,var(--blue-bg),transparent 60%),
+               radial-gradient(700px 320px at 100% 0%,var(--energy-soft),transparent 62%)}
+  .kicker{font:700 12px var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--blue);margin:0 0 18px;
+    display:inline-flex;align-items:center;gap:9px}
+  .kicker .pulse{width:8px;height:8px;border-radius:50%;background:var(--energy);box-shadow:0 0 0 4px rgba(182,255,0,.25)}
+  h1.big{font-size:clamp(38px,6vw,66px);line-height:1.04;font-weight:760;letter-spacing:-0.03em;margin:0 0 22px;max-width:960px}
+  h1.big .hl{position:relative;white-space:nowrap}
+  h1.big .hl::after{content:"";position:absolute;left:-3px;right:-3px;bottom:6px;height:16px;background:var(--energy);z-index:-1;border-radius:3px}
+  .lede{font-size:clamp(17px,2.1vw,20px);color:var(--ink2);max-width:760px;margin:0 0 30px}
+  .lede b{color:var(--ink);font-weight:650}
+  .herobtns{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;padding:12px 20px;border-radius:11px;
+    border:1px solid transparent;transition:transform .12s ease,box-shadow .12s ease}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--ink);color:#fff;box-shadow:0 6px 22px -8px rgba(31,35,41,.5)}
+  .btn.primary:hover{background:#000;color:#fff}
+  .btn.ghost{background:#fff;border-color:var(--hair);color:var(--ink)}
+  .btn.ghost:hover{border-color:#d2d6db;background:var(--bg2)}
+  .btn .arr{transition:transform .15s ease}
+  .btn:hover .arr{transform:translateX(3px)}
+  .runline{margin-top:18px;font:13px var(--mono);color:var(--mut)}
+
+  .stats{margin-top:34px;display:flex;flex-wrap:wrap;gap:8px}
+  .pill{font:650 12px var(--mono);padding:6px 12px;border-radius:999px;background:var(--side);color:var(--ink2);border:1px solid var(--hair)}
+  .pill.b{background:var(--blue-bg);color:var(--blue-d);border-color:var(--blue-line)}
+  .pill.g{background:var(--good-bg);color:var(--good);border-color:#cdeccf}
+  .pill.e{background:var(--energy-soft);color:var(--energy-ink);border-color:#d6f59a}
+
+  /* ===== root-cause band ===== */
+  .band{margin:64px 0;border:1px solid var(--hair);border-radius:22px;overflow:hidden;background:#fff;
+    box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .band .top{background:linear-gradient(90deg,var(--energy-soft),rgba(182,255,0,0) 70%);padding:26px 30px;border-bottom:1px solid var(--hair);
+    position:relative}
+  .band .top::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--energy)}
+  .band .top .t{font:650 11px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--energy-ink);margin:0 0 8px}
+  .band .top .big{font-size:clamp(20px,3vw,27px);font-weight:680;letter-spacing:-0.015em;margin:0;max-width:840px}
+  .band .top .big em{font-style:normal;background:var(--energy);padding:0 7px;border-radius:4px}
+  .syms{display:grid;grid-template-columns:repeat(4,1fr)}
+  .sym{padding:24px 26px;border-right:1px solid var(--hair)}
+  .sym:last-child{border-right:0}
+  .sym .th{display:flex;align-items:center;gap:8px;font:650 12px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--blue);margin:0 0 9px}
+  .sym .th .dot{width:7px;height:7px;border-radius:50%;background:var(--blue)}
+  .sym p{margin:0;font-size:14px;color:var(--ink2);line-height:1.55}
+  .sym .br{display:block;margin-top:12px;font:600 11px var(--mono);color:var(--dim)}
+  @media(max-width:760px){.syms{grid-template-columns:1fr 1fr}.sym:nth-child(2){border-right:0}}
+  @media(max-width:460px){.syms{grid-template-columns:1fr}.sym{border-right:0;border-bottom:1px solid var(--hair)}.sym:last-child{border-bottom:0}}
+
+  /* ===== section heading ===== */
+  .sec{padding:30px 0}
+  .eyebrow{font:700 12px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--blue);margin:0 0 10px}
+  .sec h2{font-size:clamp(26px,4vw,38px);line-height:1.1;font-weight:720;letter-spacing:-0.02em;margin:0 0 12px;max-width:760px}
+  .sec h2 em{font-style:normal;background:var(--energy);color:var(--energy-ink);padding:0 7px;border-radius:4px}
+  .sec .sub{font-size:17px;color:var(--mut);max-width:680px;margin:0}
+  .sec .sub em{font-style:normal;color:var(--ink2);font-weight:600}
+
+  /* ===== money / hero feature ===== */
+  .money{margin:30px 0 8px;border:1px solid var(--blue-line);border-radius:22px;overflow:hidden;
+    background:linear-gradient(180deg,#f6f9ff,#fff);box-shadow:0 24px 60px -34px rgba(43,108,240,.35)}
+  .money .head{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:22px 26px 0}
+  .tag{font:650 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:7px}
+  .tag.money-t{background:var(--energy);color:var(--energy-ink)}
+  .tag.blue-t{background:var(--blue-bg);color:var(--blue-d);border:1px solid var(--blue-line)}
+  .money h3{width:100%;font-size:clamp(22px,3.4vw,30px);font-weight:700;letter-spacing:-0.02em;margin:14px 0 0}
+  .money .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:28px;padding:22px 26px 26px;align-items:center}
+  @media(max-width:880px){.money .grid{grid-template-columns:1fr;gap:20px}}
+  .money p{font-size:15.5px;color:var(--ink2);margin:0 0 14px;line-height:1.6}
+  .money em{font-style:normal;font-weight:650;color:var(--ink)}
+  .abx{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:center;margin:14px 0 4px}
+  @media(max-width:520px){.abx{grid-template-columns:1fr 1fr}}
+  .abc{border:1px solid var(--hair);border-radius:13px;padding:15px 17px}
+  .abc.win{border-color:#d6f59a;background:var(--energy-soft)}
+  .abc.cold{background:#fbfbfc}
+  .abc .hh{font:650 9.5px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--dim);margin-bottom:7px}
+  .abc .num{font:700 32px/1 var(--mono)}
+  .abc.win .num{color:var(--energy-ink)} .abc.cold .num{color:var(--mut)}
+  .abc .sm{font-size:11.5px;color:var(--mut);margin-top:7px;line-height:1.4}
+  .delta{text-align:center;font:700 26px var(--mono);color:var(--good)}
+  .delta small{display:block;font-size:11px;color:var(--mut);font-weight:600;margin-top:4px}
+
+  /* ===== media frame ===== */
+  .frame{border:1px solid var(--hair);border-radius:14px;overflow:hidden;background:#fff;
+    box-shadow:0 18px 44px -28px rgba(31,35,41,.4);position:relative}
+  .frame .bar{display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--side);border-bottom:1px solid var(--hair)}
+  .frame .bar i{width:9px;height:9px;border-radius:50%;background:#d6dadf;display:inline-block}
+  .frame .bar i:nth-child(1){background:#ff5f57}.frame .bar i:nth-child(2){background:#febc2e}.frame .bar i:nth-child(3){background:#28c840}
+  .frame .bar .cap{margin-left:8px;font:600 11px var(--mono);color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .frame img,.frame video{display:block;width:100%;height:auto}
+  .frame .live{position:absolute;top:46px;right:12px;z-index:2;display:flex;align-items:center;gap:6px;
+    font:700 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--energy-ink);
+    background:var(--energy);padding:4px 9px;border-radius:999px;box-shadow:0 4px 12px -4px rgba(0,0,0,.3)}
+  .frame .live .b{width:6px;height:6px;border-radius:50%;background:var(--energy-ink);animation:blink 1.4s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+  .mcap{margin:10px 2px 0;font-size:12.5px;color:var(--mut);line-height:1.45}
+
+  /* ===== feature rows ===== */
+  .feat{display:grid;grid-template-columns:1fr 1.05fr;gap:46px;align-items:center;
+    padding:42px 0;border-top:1px solid var(--hair2)}
+  .feat.flip .txt{order:2}
+  @media(max-width:880px){.feat{grid-template-columns:1fr;gap:24px;padding:34px 0}.feat.flip .txt{order:0}}
+  .feat .num{font:700 12px var(--mono);color:var(--dim);letter-spacing:.05em}
+  .feat h3{font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-0.02em;margin:8px 0 6px}
+  .feat .one{font-size:14.5px;color:var(--blue-d);font-weight:600;margin:0 0 16px}
+  .feat .what{font-size:15.5px;color:var(--ink2);margin:0 0 14px;line-height:1.62}
+  .feat .what em{font-style:italic;color:var(--ink)}
+  .feat .why{font-size:14.5px;color:var(--mut);margin:0;line-height:1.6;padding-left:15px;border-left:2px solid var(--hair)}
+  .feat .why b{color:var(--ink2)}
+  .feat .why em{font-style:italic;color:var(--ink2)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin:16px 0 0}
+  .chip{font:600 11.5px var(--mono);background:var(--side);border:1px solid var(--hair);color:var(--ink2);padding:4px 10px;border-radius:999px}
+  .chip.g{background:var(--good-bg);color:var(--good);border-color:#cdeccf}
+  .chip.e{background:var(--energy-soft);color:var(--energy-ink);border-color:#d6f59a}
+
+  .gal{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  /* ===== honest strip ===== */
+  .honest{margin:40px 0;border:1px solid var(--hair);border-radius:18px;padding:26px 28px;background:var(--bg2);
+    display:flex;flex-wrap:wrap;align-items:center;gap:18px;justify-content:space-between}
+  .honest .l{max-width:680px}
+  .honest .t{font:650 11px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--warn);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+  .honest .t .mk{width:18px;height:18px;border-radius:50%;background:#fff8ee;color:var(--warn);display:grid;place-items:center;font-size:11px;border:1px solid #f3e2c4}
+  .honest p{margin:0;font-size:14.5px;color:var(--ink2);line-height:1.6}
+
+  /* ===== compounding strip ===== */
+  .compound{margin:30px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:720px){.compound{grid-template-columns:1fr 1fr}}
+  .mstat{border:1px solid var(--hair);border-radius:14px;padding:18px 20px;background:#fff}
+  .mstat .v{font:800 28px/1 var(--mono);color:var(--ink)}
+  .mstat .v.g{color:var(--good)}.mstat .v.b{color:var(--blue)}.mstat .v.e{color:var(--energy-ink)}
+  .mstat .k{font-size:12.5px;color:var(--mut);margin-top:8px}
+
+  /* ===== CTA ===== */
+  .cta-final{margin:60px 0 30px;border-radius:26px;overflow:hidden;position:relative;
+    background:linear-gradient(135deg,#15181d,#22272f);color:#fff;padding:64px 40px;text-align:center}
+  .cta-final::before{content:"";position:absolute;inset:0;z-index:0;opacity:.5;
+    background:radial-gradient(600px 240px at 22% 0%,rgba(43,108,240,.45),transparent 60%),
+               radial-gradient(520px 240px at 84% 110%,rgba(182,255,0,.22),transparent 60%)}
+  .cta-final > *{position:relative;z-index:1}
+  .cta-final .k{font:700 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--energy);margin:0 0 18px}
+  .cta-final h2{font-size:clamp(30px,5vw,50px);font-weight:760;letter-spacing:-0.03em;line-height:1.05;margin:0 0 16px}
+  .cta-final h2 em{font-style:normal;background:var(--energy);color:var(--energy-ink);padding:0 10px;border-radius:6px}
+  .cta-final p{font-size:17px;color:#c4cad2;max-width:620px;margin:0 auto 30px}
+  .cta-final .btn.primary{background:#fff;color:var(--ink)}
+  .cta-final .btn.primary:hover{background:#f0f1f3;color:var(--ink)}
+  .cta-final .btn.ghost{background:transparent;border-color:rgba(255,255,255,.22);color:#fff}
+  .cta-final .btn.ghost:hover{border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.06)}
+  .cta-final .runline{color:#9aa3ad;margin-top:24px}
+
+  .foot{padding:34px 0 60px;border-top:1px solid var(--hair);margin-top:30px;
+    display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px;font:13px var(--mono);color:var(--mut)}
+  .foot a{color:var(--mut)}.foot a:hover{color:var(--ink)}
+  .foot .docs{display:flex;flex-wrap:wrap;gap:14px}
+
+  /* reveal */
+  .rv{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .rv.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="wrap row">
+    <a class="brand" href="#top">
+      <span class="mark">80</span>
+      <span>CAPSULE<span class="s">&nbsp;· 8090 Software Factory</span></span>
+    </a>
+    <nav class="links">
+      <a class="hidem" href="#handoff">Handoff</a>
+      <a class="hidem" href="#features">Features</a>
+      <a class="hidem" href="MULTI-DEV.html">Multi-dev</a>
+      <a class="hidem" href="DATA-REALITY.html">What's real</a>
+      <a class="cta" href="#start">Run it</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <p class="kicker rv"><span class="pulse"></span> CAPSULE — introduced to the world</p>
+    <h1 class="big rv">Every coding session teaches <span class="hl">your whole company.</span></h1>
+    <p class="lede rv">One agent solves a problem once; everyone else gets the answer for free, forever. CAPSULE is the
+      <b>local-model RL loop</b> for the 8090 Software Factory: it watches a real coding session, distills the lesson
+      on your own machine, folds it back into a shared skill, and the next task starts smarter and cheaper. The reward
+      it optimizes is simple and <b>measured</b> — tokens saved.</p>
+    <div class="herobtns rv">
+      <a class="btn primary" href="#handoff">See the money moment <span class="arr">→</span></a>
+      <a class="btn ghost" href="#features">Walk every feature</a>
+    </div>
+    <p class="runline rv">Run it locally &nbsp;<span class="m">cd relay &amp;&amp; npm run dev</span> &nbsp;→&nbsp; <span class="m">localhost:3010</span></p>
+    <div class="stats rv">
+      <span class="pill b">8 real capsules</span>
+      <span class="pill">7 skills · real semver</span>
+      <span class="pill g">43,032 tokens saved</span>
+      <span class="pill">63% adoption</span>
+      <span class="pill e">Ollama qwen2.5-coder:14b</span>
+      <span class="pill">live Backboard</span>
+      <span class="pill">real git · master + dee/ven/saim</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROOT CAUSE BAND ============ -->
+<section class="wrap">
+  <div class="band rv">
+    <div class="top">
+      <p class="t">One root cause → four themes</p>
+      <p class="big">Context <em>dies at the session boundary.</em> Everything we set out to fix is a symptom of it.</p>
+    </div>
+    <div class="syms">
+      <div class="sym">
+        <p class="th"><span class="dot"></span>Handoff</p>
+        <p>The next dev or agent inherits nothing and restarts cold.</p>
+        <span class="br">→ symptom</span>
+      </div>
+      <div class="sym">
+        <p class="th"><span class="dot"></span>Flow</p>
+        <p>Work stalls re-deriving what someone already knew.</p>
+        <span class="br">→ symptom</span>
+      </div>
+      <div class="sym">
+        <p class="th"><span class="dot"></span>Quality &amp; Confidence</p>
+        <p>Nothing is verified or traceable, so trust drops.</p>
+        <span class="br">→ symptom</span>
+      </div>
+      <div class="sym">
+        <p class="th"><span class="dot"></span>Junior</p>
+        <p>Juniors re-learn what the team already paid to learn.</p>
+        <span class="br">→ symptom</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HANDOFF — MONEY MOMENT ============ -->
+<section class="wrap sec" id="handoff">
+  <p class="eyebrow rv">★ The money moment</p>
+  <h2 class="rv">Handoff: the next worker <em>inherits</em> the lesson instead of restarting cold.</h2>
+  <p class="sub rv">Same task, run twice — once with the capsule recalled, once cold. The gap between them <em>is</em> the
+    session boundary, made visible and measured on the local model.</p>
+
+  <div class="money rv">
+    <div class="head">
+      <span class="tag money-t">Hero feature</span>
+      <span class="tag blue-t">A/B · AB-03 · measured Ollama tokens</span>
+      <h3>Cold vs warm — the whole thesis in one card.</h3>
+    </div>
+    <div class="grid">
+      <div>
+        <p>Watch the <em>"You inherit"</em> briefing assemble, then both agents actually run. The cold run re-derives what
+          we already knew; the warm run <em>inherits</em> it from the capsule and applies the finding directly.</p>
+        <div class="abx">
+          <div class="abc win">
+            <div class="hh">With capsule · inherited</div>
+            <div class="num">247</div>
+            <div class="sm">tokens · passed · transfer 37 — applied the finding directly</div>
+          </div>
+          <div class="abc cold">
+            <div class="hh">Cold · no capsule</div>
+            <div class="num">404</div>
+            <div class="sm">tokens · passed · transfer 7 — re-derived from scratch</div>
+          </div>
+          <div class="delta">−39%<small>157 tokens · measured</small></div>
+        </div>
+        <p style="margin-top:14px">That 39% gap is the broken handoff, fixed. And it's honest: <span class="m">AB-02</span>
+          measured <em>0</em> on a single-shot task — we kept the zero instead of faking a win.</p>
+      </div>
+      <div>
+        <div class="frame">
+          <div class="bar"><i></i><i></i><i></i><span class="cap">Handoff · warm start — running both agents</span></div>
+          <span class="live"><span class="b"></span>Playing</span>
+          <video autoplay muted loop playsinline poster="assets/shots/15-handoff-result.png">
+            <source src="assets/video/vid-handoff.webm" type="video/webm">
+          </video>
+        </div>
+        <p class="mcap">Hero — Handoff warm start: the "You inherit" briefing, then the measured cold-vs-warm result of running both agents.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="wrap sec" id="features">
+  <p class="eyebrow rv">The build, feature by feature</p>
+  <h2 class="rv">Every part of the loop — in plain English, with the real UI playing.</h2>
+  <p class="sub rv">Each capsule below is distilled from the user's own <span class="m">~/.claude</span> sessions by a local model. No mockups.</p>
+
+  <!-- 01 Capsules -->
+  <div class="feat rv">
+    <div class="txt">
+      <span class="num">FEATURE 01</span>
+      <h3>Capsules — real, from your sessions</h3>
+      <p class="one">A compressed lesson from one session, with two outputs</p>
+      <p class="what">A long, messy chat transcript goes in; one clear, reusable insight comes out — plus the decisions made,
+        the gotchas hit, and a transfer score. Each capsule produces a proposed <strong>skill update</strong> ("how to do this better
+        next time") and a <strong>technique to learn</strong> (the mental model, like <em>"idempotency is an identity problem, not a caching problem"</em>).</p>
+      <p class="why">Think of it as <b>lab notes</b>: the experiment took all afternoon, but the entry is three lines that save the
+        next person the whole afternoon. Here <span class="m">CAP-R004</span> has been reused 5 times and minted <span class="m">skill/angular-upgrade@1.0.0</span>.</p>
+      <div class="chips">
+        <span class="chip">8 capsules · CAP-R001…R008</span>
+        <span class="chip">2 outputs each</span>
+        <span class="chip e">super-saiyan Capture button</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Workspace — Capsules from your sessions</span></div>
+        <img src="assets/shots/01-workspace-home.png" alt="CAPSULE workspace with scrollable Capsules CAP-R001..R008 and the Capture button">
+      </div>
+      <p class="mcap">CAPSULE workspace — split sidebar with scrollable Capsules (CAP-R001..R008) and the super-saiyan Capture button.</p>
+    </div>
+  </div>
+
+  <!-- 02 Local distillation -->
+  <div class="feat flip rv">
+    <div class="txt">
+      <span class="num">FEATURE 02</span>
+      <h3>Local-model distillation</h3>
+      <p class="one">Your own machine writes the capsule — private and free</p>
+      <p class="what">Reading the session and writing the capsule runs on <span class="m">qwen2.5-coder:14b</span> via Ollama,
+        on your own GPU. The pipeline is <strong>local-first</strong>, with an optional Cerebras <span class="m">llama-3.3-70b</span> boost
+        (only if a key is set) and a heuristic last resort — so a capsule always renders, even fully offline.</p>
+      <p class="why">Two wins: <b>privacy</b> — a bank's payment code never leaves the machine just to be summarized; and
+        <b>cost</b> — the remembering is free, so capturing a lesson never costs more than it saves. Expensive cloud models
+        do the building; the cheap local model does the remembering.</p>
+      <div class="chips">
+        <span class="chip e">on-device</span>
+        <span class="chip">No data leaves this machine</span>
+        <span class="chip">local-first → Cerebras → heuristic</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Capture — MANUAL: distill a real session on-device</span></div>
+        <img src="assets/shots/09-capture-manual.png" alt="Capture panel manual mode picking a real ~/.claude session to distill locally">
+      </div>
+      <p class="mcap">Capture — MANUAL mode: pick a real ~/.claude session to distill on-device into a Handoff Capsule.</p>
+    </div>
+  </div>
+
+  <!-- 03 Agentic gate (video) -->
+  <div class="feat rv">
+    <div class="txt">
+      <span class="num">FEATURE 03</span>
+      <h3>Agentic capture gate</h3>
+      <p class="one">Keep the good lessons automatically — drop the noise</p>
+      <p class="what">An agentic mode decides automatically: <strong>keep the capsule (and let its skill update adopt) when its
+        transfer score is at or above the threshold, OR when novelty is ≥ 80.</strong> The threshold defaults to 50 and runs
+        0–100. A high-transfer lesson or a genuinely new discovery is kept and routed on its own; a thin, low-novelty session is dropped.</p>
+      <p class="why">Like a <b>smart spam filter for lessons</b>. Without gating, the registry would drown in noise and humans
+        would rubber-stamp everything — and a clearing capsule is only <em>proposed</em> on a <span class="m">promotion/&lt;skill&gt;</span> ref,
+        published by agentic CI only if the measured reward improves.</p>
+      <div class="chips">
+        <span class="chip e">transfer ≥ threshold OR novelty ≥ 80</span>
+        <span class="chip">threshold default 50</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Agentic capture gate — keep / skip verdict</span></div>
+        <span class="live"><span class="b"></span>Playing</span>
+        <video autoplay muted loop playsinline poster="assets/shots/10-capture-agentic-gate.png">
+          <source src="assets/video/vid-agentic.webm" type="video/webm">
+        </video>
+      </div>
+      <p class="mcap">Agentic capture gate — auto-distill a real session on-device, then the keep/skip verdict against the threshold.</p>
+    </div>
+  </div>
+
+  <!-- 04 Knowledge graph (video + provenance shot) -->
+  <div class="feat flip rv">
+    <div class="txt">
+      <span class="num">FEATURE 04</span>
+      <h3>Knowledge Graph + provenance</h3>
+      <p class="one">A map of how everything connects — and why each version exists</p>
+      <p class="what">A live map links <strong>requirements → work orders → agents → skills → capsules → memory</strong>. Click any skill
+        node and it shows a <strong>provenance chain</strong> — the answer to "why does this version exist?" — tracing it back to the
+        exact capsule, session, finding, work order, and requirement that created it.</p>
+      <p class="why">In a regulated business, "the AI changed something" isn't enough — an auditor needs <em>why</em>. The graph
+        turns every change into a traceable chain, so the whole learning loop is accountable. Nothing is a mystery.</p>
+      <div class="chips">
+        <span class="chip">8 node types</span>
+        <span class="chip">full provenance trace</span>
+        <span class="chip e">audit-ready</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Knowledge Graph — the RL story assembling in order</span></div>
+        <span class="live"><span class="b"></span>Playing</span>
+        <video autoplay muted loop playsinline poster="assets/shots/02-knowledge-graph.png">
+          <source src="assets/video/vid-graph-play.webm" type="video/webm">
+        </video>
+      </div>
+      <p class="mcap">Knowledge Graph Play — requirements → work orders → agents → sessions → capsules → skills → memory.</p>
+      <div style="margin-top:12px" class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">A capsule node selected — its provenance trace</span></div>
+        <img src="assets/shots/03-graph-node-provenance.png" alt="A capsule node selected showing its provenance trace">
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 Skills registry -->
+  <div class="feat rv">
+    <div class="txt">
+      <span class="num">FEATURE 05</span>
+      <h3>Skills Registry</h3>
+      <p class="one">The company's library of reusable skills</p>
+      <p class="what">The shelf of packaged know-how an agent picks up and applies. Seven skills here, each forged from a real
+        session — Angular Upgrade, Command Verification, API Security, Memory Management, Creative Franchise Expansion,
+        Automation Maintenance, API Rate Limiting. A free-text recommender suggests the right one for whatever you're working on.</p>
+      <p class="why">Skills are where the learning <b>accumulates</b>: a capsule is a single lesson; a skill is the running total
+        of every lesson on a topic. The registry hands the agent proven know-how instead of a guess — that's how one agent's discovery lifts everyone.</p>
+      <div class="chips">
+        <span class="chip">7 skills</span>
+        <span class="chip g">tokens-saved per use</span>
+        <span class="chip">use-case recommender</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Skills panel — Enterprise OFF · project-pinned</span></div>
+        <img src="assets/shots/04-skills-enterprise-off.png" alt="Skills panel Enterprise OFF with project-pinned versions and action buttons">
+      </div>
+      <p class="mcap">Skills panel — Enterprise OFF: project-pinned versions, condensed cards with fluorescent action buttons.</p>
+    </div>
+  </div>
+
+  <!-- 06 Enterprise toggle (video) -->
+  <div class="feat flip rv">
+    <div class="txt">
+      <span class="num">FEATURE 06</span>
+      <h3>Enterprise toggle</h3>
+      <p class="one">Flip to the most-learned "capsule-maxxed" best version</p>
+      <p class="what">One switch that says "use the best, most-learned version of every skill." On, the panel serves the
+        <strong>capsule-maxxed</strong> build (most lessons absorbed, most tokens saved); off, you see the versions <strong>pinned in this project</strong>.
+        A banner makes the mode obvious: <span class="m">ENTERPRISE · BEST</span> vs <span class="m">PROJECT · PINNED</span>.</p>
+      <p class="why">Learning is worthless if people keep using the old version. The toggle makes adopting improved skills a
+        one-click decision — so the savings the loop generates actually reach every seat on the plan.</p>
+      <div class="chips">
+        <span class="chip e">ENTERPRISE · BEST</span>
+        <span class="chip">PROJECT · PINNED</span>
+        <span class="chip">4 seats</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Enterprise toggle — flipping to capsule-maxxed best</span></div>
+        <span class="live"><span class="b"></span>Playing</span>
+        <video autoplay muted loop playsinline poster="assets/shots/05-skills-enterprise-on.png">
+          <source src="assets/video/vid-enterprise.webm" type="video/webm">
+        </video>
+      </div>
+      <p class="mcap">Enterprise toggle — skill cards flip from project-pinned to the capsule-maxxed enterprise-best versions in blue.</p>
+    </div>
+  </div>
+
+  <!-- 07 Versions + compare -->
+  <div class="feat rv">
+    <div class="txt">
+      <span class="num">FEATURE 07</span>
+      <h3>Versions + compare</h3>
+      <p class="one">Every skill change is numbered and comparable</p>
+      <p class="what">Every skill is <strong>semver</strong>'d — major is a behavior rethink, minor a new capability, patch a small fix.
+        The newest published version wears a blue <b>Latest</b> badge; a pending one wears <b>Proposed</b>. Tick Compare on any
+        two versions to drop into a word-level diff of changelog + guidance — added words green, removed words struck red.</p>
+      <p class="why">You can see how a skill got smart over time. <span class="m">Command Verification</span> went 1.0.0 (CAP-R007:
+        inspect state, don't assume) → 2.0.0 (CAP-R005: verify the actual current state, −1,920 tokens/use). Track-changes for know-how.</p>
+      <div class="chips">
+        <span class="chip">semver · Latest / Proposed</span>
+        <span class="chip">word-level diff</span>
+      </div>
+    </div>
+    <div class="gal">
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Version History</span></div>
+        <img src="assets/shots/06-version-history.png" alt="Version History day-grouped semver versions of a skill">
+      </div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Versions Compare — diff</span></div>
+        <img src="assets/shots/07-versions-compare.png" alt="Versions Compare word-level diff of changelog and guidance">
+      </div>
+    </div>
+  </div>
+
+  <!-- 08 A/B measured -->
+  <div class="feat flip rv">
+    <div class="txt">
+      <span class="num">FEATURE 08</span>
+      <h3>A/B Trials — measured</h3>
+      <p class="one">Same task, with the capsule vs without — see the win</p>
+      <p class="what">A head-to-head test: the same task run once <strong>with</strong> the capsule recalled, once <strong>cold</strong>. You see
+        tokens spent, steps, duration, transfer score, and pass/fail — and these are <strong>measured Ollama token counts</strong>
+        (<span class="m">prompt_eval + eval</span>), not a story.</p>
+      <p class="why">This is the proof the loop works. <span class="m">AB-03</span>: 247 vs 404 tokens, −39%. <span class="m">AB-01</span>
+        cut 142; <span class="m">AB-02</span> honestly measured <b>0</b> on a single-shot task — we show the zero rather than fake it.
+        This same harness is what <b>agentic CI</b> uses to decide whether a new version may publish.</p>
+      <div class="chips">
+        <span class="chip g">measured token deltas</span>
+        <span class="chip">3 paired trials</span>
+        <span class="chip e">honest about the zero</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">A/B Trials — Capsule vs Cold</span></div>
+        <img src="assets/shots/08-ab-trials.png" alt="A/B Trials measured tokens steps and pass/fail per task">
+      </div>
+      <p class="mcap">A/B Trials — Capsule vs Cold: measured tokens, steps and pass/fail per task; capsuled runs win.</p>
+    </div>
+  </div>
+
+  <!-- 09 Warm start -->
+  <div class="feat rv">
+    <div class="txt">
+      <span class="num">FEATURE 09</span>
+      <h3>Warm start</h3>
+      <p class="one">The next agent opens with the briefing already in hand</p>
+      <p class="what">When a new session starts on a familiar topic, CAPSULE hands it the <strong>"You inherit"</strong> briefing —
+        the distilled finding, the gotchas, and the technique — so the agent begins warm instead of cold. The handoff result
+        shows the briefing alongside the measured cold-vs-warm run.</p>
+      <p class="why">This is the handoff theme made concrete: <b>memory follows the team, not the model</b>. The first agent's
+        afternoon becomes the next agent's opening line — no restart, no re-derivation.</p>
+      <div class="chips">
+        <span class="chip">"You inherit" briefing</span>
+        <span class="chip g">cold vs warm, measured</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Handoff &amp; warm start — the briefing + result</span></div>
+        <img src="assets/shots/15-handoff-result.png" alt="Handoff and warm start the You inherit briefing plus the measured cold vs warm result">
+      </div>
+      <p class="mcap">Handoff &amp; warm start — the 'You inherit' briefing plus the measured cold-vs-warm result from running both agents.</p>
+    </div>
+  </div>
+
+  <!-- 10 Super-saiyan capsule toggle (video) -->
+  <div class="feat flip rv">
+    <div class="txt">
+      <span class="num">FEATURE 10</span>
+      <h3>The super-saiyan Capsule toggle</h3>
+      <p class="one">Inject the latest capsule into the composer — the yellow aura blooms</p>
+      <p class="what">Flip the Capsule context toggle and the composer lights up with a <strong>yellow super-saiyan aura</strong> as the
+        latest capsule is injected into the prompt. The matching Agentic toggle shares the same energized ON state — a single,
+        unmistakable signal that the session is now running <em>with memory</em>.</p>
+      <p class="why">It makes the abstract concrete: you can <b>see</b> the moment the agent stops working from scratch and
+        starts working from everything the company has already learned. Capsule ON is the difference between cold and warm.</p>
+      <div class="chips">
+        <span class="chip e">yellow super-saiyan aura</span>
+        <span class="chip">Capsule + Agentic shared ON</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Capsule context toggle — the aura blooms</span></div>
+        <span class="live"><span class="b"></span>Playing</span>
+        <video autoplay muted loop playsinline poster="assets/shots/11-composer-capsule-aura.png">
+          <source src="assets/video/vid-capsule-glow.webm" type="video/webm">
+        </video>
+      </div>
+      <p class="mcap">Capsule context toggle — the composer's yellow super-saiyan aura blooms as the latest capsule is injected.</p>
+    </div>
+  </div>
+
+  <!-- 11 Backboard -->
+  <div class="feat rv">
+    <div class="txt">
+      <span class="num">FEATURE 11</span>
+      <h3>Backboard memory</h3>
+      <p class="one">The memory follows the team, not the model</p>
+      <p class="what">Backboard is the shared store where every capsule lives — and these are <strong>live writes</strong> (real
+        <span class="m">thread_id</span>s) to <span class="m">app.backboard.io/api</span>. Memory belongs to the <strong>tenant</strong>
+        (<span class="m">assistant_id: capsule</span>), one thread per project, skill memories tagged
+        <span class="m">&lt;skillId&gt;@&lt;semver&gt;</span>. Writes store only the distilled briefing (<span class="m">send_to_llm:false</span>) — storage, not inference.</p>
+      <p class="why">Models change fast. If your knowledge were trapped inside one model, every upgrade would reset you to zero.
+        Backboard makes it model-independent — swap Opus → Sonnet → Haiku and every capsule is still there — and its semantic
+        memory is what <b>dedups</b> near-identical capsules into one canonical lesson.</p>
+      <div class="chips">
+        <span class="chip e">live writes · real thread_ids</span>
+        <span class="chip">tenant-isolated</span>
+        <span class="chip">model-independent</span>
+      </div>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Knowledge Graph — the central Backboard memory hub</span></div>
+        <img src="assets/shots/02-knowledge-graph.png" alt="Knowledge Graph with the central Backboard memory node every capsule stores to">
+      </div>
+      <p class="mcap">Backboard is the indigo hub every capsule connects to with a "stores" line and every model with a "reads" line.</p>
+    </div>
+  </div>
+
+  <!-- 12 Multi-dev enterprise vs personal -->
+  <div class="feat flip rv">
+    <div class="txt">
+      <span class="num">FEATURE 12</span>
+      <h3>Enterprise vs personal — the multi-dev flow</h3>
+      <p class="one">Shared best vs pinned, and how a local lesson graduates to enterprise</p>
+      <p class="what">Skills live in a real git repo: <strong>one enterprise master, three dev personal branches</strong>
+        (<span class="m">dee</span>, <span class="m">ven</span>, <span class="m">saim</span>) that pin enterprise skills and contribute
+        capsules back. A lesson graduates by <strong>PR, never a push</strong> — proposed on a <span class="m">promotion/&lt;skill&gt;</span> ref,
+        merged only if <strong>agentic CI</strong> measures the reward improving; near-identical capsules <b>dedup</b>, contradictions <b>escalate</b>.</p>
+      <p class="why">It's the company's master cookbook with a tasting panel: anyone can submit a recipe, but it only enters the
+        book after a blind taste-test proves it's better — and two cooks submitting the same dish get merged into one credited entry.</p>
+      <div class="chips">
+        <span class="chip">master + dee/ven/saim</span>
+        <span class="chip e">promotion = PR, not push</span>
+        <span class="chip">dedup · conflict ledger</span>
+      </div>
+      <p style="margin-top:16px"><a class="btn ghost" href="MULTI-DEV.html">Read the full multi-dev flow <span class="arr">→</span></a></p>
+    </div>
+    <div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">MULTI-DEV — enterprise master + personal branches</span></div>
+        <img src="assets/shots/16-multidev-enterprise-vs-personal.png" alt="Four branches one enterprise master three dev personal branches that pin enterprise skills and contribute capsules back">
+      </div>
+      <p class="mcap">Four branches: one enterprise master, three dev personal branches that pin enterprise skills and contribute capsules back.</p>
+    </div>
+  </div>
+
+  <!-- 13 Workspace UX gallery -->
+  <div class="feat rv">
+    <div class="txt">
+      <span class="num">FEATURE 13</span>
+      <h3>Workspace UX</h3>
+      <p class="one">Read-only review · @-mentions · resizable panels</p>
+      <p class="what">The everyday document-editor chrome that makes CAPSULE feel like a real workspace, not a dashboard:
+        a document can be set <strong>read-only</strong> (the toolbar dims, the surface goes inert for review); the composer takes
+        <strong>@-mentions</strong> to tie the conversation to real requirements; and the side panel <strong>drags wide</strong> (up to 680px) so the
+        graph and cards fill the extra space.</p>
+      <p class="why">CAPSULE's value is the loop, but people only adopt tools that feel natural. These are the familiar
+        affordances that make the deep features reachable.</p>
+    </div>
+    <div class="gal">
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Read-only doc</span></div>
+        <img src="assets/shots/12-doc-read-only.png" alt="Document set to read only with the formatting toolbar dimmed">
+      </div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">@-mention popover</span></div>
+        <img src="assets/shots/13-at-mention.png" alt="@-mention in the composer filtering the requirement list live">
+      </div>
+      <div class="frame" style="grid-column:1 / -1">
+        <div class="bar"><i></i><i></i><i></i><span class="cap">Side panel dragged wide</span></div>
+        <img src="assets/shots/14-panel-wide.png" alt="Side panel dragged wide with the graph and cards filling the extra width">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPOUNDING ============ -->
+<section class="wrap sec">
+  <p class="eyebrow rv">The reward signal</p>
+  <h2 class="rv">The loop compounds — and that's the whole point.</h2>
+  <p class="sub rv">More sessions → better skills → cheaper sessions → which produce more lessons. The savings curve bends from
+    16,680 tokens in week one to 43,032 the next.</p>
+  <div class="compound rv">
+    <div class="mstat"><div class="v g">43,032</div><div class="k">tokens saved total</div></div>
+    <div class="mstat"><div class="v b">10</div><div class="k">sessions captured</div></div>
+    <div class="mstat"><div class="v">8</div><div class="k">capsules minted</div></div>
+    <div class="mstat"><div class="v e">63%</div><div class="k">adoption rate</div></div>
+  </div>
+</section>
+
+<!-- ============ HONEST STRIP ============ -->
+<section class="wrap">
+  <div class="honest rv">
+    <div class="l">
+      <p class="t"><span class="mk">~</span>Honest about what's real</p>
+      <p>Real &amp; measured: session reading, local distillation, the 8 capsules, the 7 skills + semver, the 3 A/B token deltas,
+        the live Backboard writes, and the git repo. Derived (clearly labeled): novelty scores, non-A/B per-capsule
+        <span class="m">tokensSaved</span> estimates, and the requirements/work-orders scaffolding. We tell you exactly where the real line is.</p>
+    </div>
+    <a class="btn ghost" href="DATA-REALITY.html">See the full breakdown <span class="arr">→</span></a>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="wrap" id="start">
+  <div class="cta-final rv">
+    <p class="k">CAPSULE — introduced to the world</p>
+    <h2>Context dies at the session boundary.<br>We make it <em>survive.</em></h2>
+    <p>Locally, auditably, for the whole company. That's the handoff, the flow, the confidence, and the junior — all from one root cause.</p>
+    <div class="herobtns" style="justify-content:center">
+      <a class="btn primary" href="#handoff">Replay the money moment</a>
+      <a class="btn ghost" href="FEATURES.html">Read every feature in depth</a>
+    </div>
+    <p class="runline"><span class="m">cd relay &amp;&amp; npm run dev</span> &nbsp;→&nbsp; <span class="m">localhost:3010</span></p>
+  </div>
+</section>
+</main>
+
+<footer class="wrap foot">
+  <span>CAPSULE · Content Engine · 8090 Software Factory · 4 seats</span>
+  <span class="docs">
+    <a href="FEATURES.html">Features</a>
+    <a href="DEMO-SCRIPT.html">Demo script</a>
+    <a href="MULTI-DEV.html">Multi-dev</a>
+    <a href="DATA-REALITY.html">What's real</a>
+  </span>
+</footer>
+
+<script>
+  // reveal-on-scroll
+  (function(){
+    var els = document.querySelectorAll('.rv');
+    if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}
+      });
+    },{rootMargin:'0px 0px -8% 0px',threshold:0.08});
+    els.forEach(function(e){io.observe(e);});
+  })();
+
+  // play videos only while visible (saves cycles)
+  (function(){
+    var vids = document.querySelectorAll('video');
+    if(!('IntersectionObserver' in window)) return;
+    var vo = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        var v = en.target;
+        if(en.isIntersecting){ var p = v.play(); if(p&&p.catch) p.catch(function(){}); }
+        else { v.pause(); }
+      });
+    },{threshold:0.25});
+    vids.forEach(function(v){vo.observe(v);});
+  })();
+</script>
+</body>
+</html>

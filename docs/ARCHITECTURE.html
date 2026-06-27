@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAPSULE — Architecture</title>
+<meta name="description" content="CAPSULE — the capture + feedback (reinforcement) layer for 8090's Software Factory. Engineering architecture reference." />
+<style>
+/* ============================================================================
+   CAPSULE — ARCHITECTURE.html  (self-contained, 8090-matched dark identity)
+   ============================================================================ */
+:root{
+  --bg:#0a0b0d; --bg-2:#0a0a0a; --surface:#111317; --surface-2:#14161b;
+  --surface-3:#181b21; --inset:#0d0f12;
+  --border:#1e2230; --border-soft:#171a24; --border-strong:#2a3042;
+  --text:#e9edf4; --muted:#9aa6b8; --dim:#5b6675; --faint:#3a4252;
+  --accent:#38bdf8; --accent-2:#4d9fff; --accent-ink:#04222e;
+  --accent-glow:rgba(56,189,248,.16); --accent-line:rgba(56,189,248,.40);
+  --c-capsule:#38bdf8; --c-skill:#a78bfa; --c-agent:#34d399; --c-workorder:#f59e0b;
+  --c-requirement:#fb7185; --c-model:#60a5fa; --c-mcp:#2dd4bf; --c-memory:#818cf8;
+  --ok:#34d399; --warn:#f59e0b; --err:#fb7185; --info:#60a5fa;
+  --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;
+  --r-sm:8px; --r-md:12px; --r-lg:14px; --r-pill:999px;
+  --ease:cubic-bezier(.2,.7,.2,1); --dur:.16s;
+  --shadow-1:0 1px 0 rgba(255,255,255,.02) inset,0 1px 2px rgba(0,0,0,.45);
+  --shadow-2:0 8px 30px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.03) inset;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box;}
+*{margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:80px;}
+body{
+  font-family:var(--font-sans); font-size:13.5px; line-height:1.6; color:var(--text);
+  background-color:var(--bg); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  font-feature-settings:"cv02","cv03","cv04","cv11","ss01"; text-rendering:optimizeLegibility;
+  background-image:
+    radial-gradient(900px 540px at 12% -8%, rgba(56,189,248,.05), transparent 60%),
+    radial-gradient(760px 520px at 100% 0%, rgba(77,159,255,.04), transparent 55%),
+    radial-gradient(rgba(255,255,255,.012) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,.010) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.016) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.016) 1px, transparent 1px),
+    linear-gradient(180deg,#0b0c0f 0%,var(--bg) 38%,var(--bg-2) 100%);
+  background-size:100% 100%,100% 100%,3px 3px,7px 7px,32px 32px,32px 32px,100% 100%;
+  background-position:0 0,0 0,0 0,2px 3px,0 0,0 0,0 0;
+  background-attachment:fixed;
+}
+svg{display:block;max-width:100%;}
+::selection{background:var(--accent-glow);color:var(--text);}
+*{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
+*::-webkit-scrollbar{width:10px;height:10px;}
+*::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:var(--r-pill);border:2px solid transparent;background-clip:padding-box;}
+*::-webkit-scrollbar-thumb:hover{background:#364056;background-clip:padding-box;}
+a{color:var(--accent);text-decoration:none;transition:color var(--dur) var(--ease);}
+a:hover{color:#7fd3fb;}
+code,pre,kbd{font-family:var(--font-mono);}
+
+/* ---- layout shell ---- */
+.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh;}
+@media(max-width:980px){.shell{grid-template-columns:1fr;}}
+
+/* ---- topbar ---- */
+.topbar{
+  position:sticky;top:0;z-index:30;grid-column:1 / -1;
+  display:flex;align-items:center;gap:14px;height:56px;padding:0 24px;
+  background:rgba(11,12,15,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;font-size:15px;color:var(--text);}
+.brand .glyph{width:15px;height:15px;border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 0 0 1px rgba(56,189,248,.35),0 0 14px var(--accent-glow);flex:none;}
+.brand .sub{color:var(--dim);font-weight:500;font-size:12px;letter-spacing:0;padding-left:10px;margin-left:4px;border-left:1px solid var(--border);}
+@media(max-width:620px){.brand .sub{display:none;}}
+.topbar .spacer{flex:1;}
+.doc-tag{font-family:var(--font-mono);font-size:11px;color:var(--dim);border:1px solid var(--border);
+  padding:4px 10px;border-radius:var(--r-pill);background:var(--surface);}
+
+/* ---- side TOC ---- */
+.toc{position:sticky;top:56px;align-self:start;height:calc(100vh - 56px);overflow-y:auto;
+  padding:24px 14px 48px;border-right:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(17,19,23,.45),rgba(10,11,13,.45));}
+@media(max-width:980px){.toc{display:none;}}
+.toc .lab{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--dim);
+  margin:20px 12px 8px;}
+.toc .lab:first-child{margin-top:0;}
+.toc a{display:flex;align-items:center;gap:9px;padding:7px 12px;border-radius:var(--r-sm);
+  color:var(--muted);font-size:13px;font-weight:500;border:1px solid transparent;
+  transition:background var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease);}
+.toc a:hover{background:var(--surface-3);color:var(--text);}
+.toc a.active{background:linear-gradient(90deg,var(--accent-glow),rgba(56,189,248,.03));
+  color:var(--text);border-color:var(--accent-line);box-shadow:inset 2px 0 0 var(--accent);}
+.toc a .n{font-family:var(--font-mono);font-size:11px;color:var(--dim);min-width:18px;}
+.toc a.active .n{color:var(--accent);}
+
+/* ---- main ---- */
+.main{min-width:0;padding:0 0 96px;}
+.wrap{max-width:960px;margin:0 auto;padding:0 36px;}
+@media(max-width:620px){.wrap{padding:0 18px;}}
+
+/* ---- hero ---- */
+.hero{padding:64px 0 40px;border-bottom:1px solid var(--border);margin-bottom:40px;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.16em;color:var(--accent);margin-bottom:18px;}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);}
+h1{font-size:44px;font-weight:700;line-height:1.05;letter-spacing:-.03em;color:var(--text);margin-bottom:18px;}
+@media(max-width:620px){h1{font-size:32px;}}
+.hero .lede{font-size:17px;line-height:1.6;color:var(--muted);max-width:760px;}
+.hero .lede b{color:var(--text);font-weight:600;}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;}
+
+/* ---- section ---- */
+section{padding:44px 0;border-bottom:1px solid var(--border-soft);scroll-margin-top:72px;}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px;}
+.sec-num{font-family:var(--font-mono);font-size:13px;color:var(--accent);font-weight:600;}
+h2{font-size:27px;font-weight:650;letter-spacing:-.02em;color:var(--text);}
+.sec-sub{color:var(--dim);font-size:14px;margin-bottom:26px;max-width:740px;}
+h3{font-size:17px;font-weight:600;letter-spacing:-.01em;color:var(--text);margin:30px 0 12px;}
+h4{font-size:14px;font-weight:600;color:var(--text);margin:22px 0 8px;}
+p{color:var(--muted);margin-bottom:14px;line-height:1.68;}
+p b,li b{color:var(--text);font-weight:600;}
+ul,ol{color:var(--muted);margin:0 0 14px;padding-left:20px;line-height:1.7;}
+li{margin-bottom:7px;}
+li::marker{color:var(--dim);}
+
+/* ---- cards / panels ---- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:22px;box-shadow:var(--shadow-1);}
+.panel{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:16px 18px;}
+.grid{display:grid;gap:16px;}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr));}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr));}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr));}
+@media(max-width:880px){.g4{grid-template-columns:repeat(2,minmax(0,1fr));}.g3{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:620px){.g2,.g3,.g4{grid-template-columns:minmax(0,1fr);}}
+
+/* ---- chips ---- */
+.tag{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;font-size:11px;font-weight:600;
+  letter-spacing:.02em;border-radius:var(--r-sm);color:var(--c,var(--accent));
+  background:color-mix(in srgb,var(--c,var(--accent)) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--c,var(--accent)) 36%,transparent);}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c,var(--accent));
+  box-shadow:0 0 8px color-mix(in srgb,var(--c,var(--accent)) 70%,transparent);}
+.tag.capsule{--c:var(--c-capsule);} .tag.skill{--c:var(--c-skill);} .tag.agent{--c:var(--c-agent);}
+.tag.workorder{--c:var(--c-workorder);} .tag.requirement{--c:var(--c-requirement);}
+.tag.model{--c:var(--c-model);} .tag.mcp{--c:var(--c-mcp);} .tag.memory{--c:var(--c-memory);}
+.tag.test{--c:#22d3ee;} .tag.blueprint{--c:#4d9fff;}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 11px;font-size:11px;font-weight:600;
+  border-radius:var(--r-pill);color:var(--muted);background:var(--surface-3);border:1px solid var(--border);}
+.pill.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:color-mix(in srgb,var(--ok) 12%,transparent);}
+.pill.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 12%,transparent);}
+.pill.mem{color:var(--c-memory);border-color:color-mix(in srgb,var(--c-memory) 40%,transparent);background:color-mix(in srgb,var(--c-memory) 12%,transparent);}
+.mono{font-family:var(--font-mono);font-size:.92em;color:var(--muted);letter-spacing:-.01em;}
+code.inl{font-family:var(--font-mono);font-size:.88em;color:#bfe6fb;background:rgba(56,189,248,.08);
+  border:1px solid rgba(56,189,248,.18);border-radius:6px;padding:1px 6px;}
+
+/* ---- stat ---- */
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:18px;}
+.stat .v{font-family:var(--font-mono);font-size:26px;font-weight:600;color:var(--text);letter-spacing:-.02em;line-height:1;}
+.stat .v.cy{color:var(--accent);} .stat .v.gr{color:var(--ok);} .stat .v.in{color:var(--c-memory);}
+.stat .l{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-top:8px;}
+
+/* ---- code block ---- */
+.code{background:var(--inset);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin:16px 0;}
+.code .bar{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border);
+  background:var(--surface-2);font-family:var(--font-mono);font-size:11px;color:var(--dim);letter-spacing:.02em;}
+.code .bar .dot{width:9px;height:9px;border-radius:50%;background:var(--border-strong);}
+.code .bar .nm{margin-left:6px;color:var(--muted);}
+.code .bar .tail{margin-left:auto;}
+.code pre{padding:16px 18px;overflow-x:auto;font-size:12.5px;line-height:1.65;color:#cdd6e4;}
+.code pre .c{color:var(--dim);font-style:italic;}     /* comment */
+.code pre .k{color:#7dd3fc;}                            /* key / keyword */
+.code pre .s{color:#a7f3d0;}                            /* string */
+.code pre .n{color:#fbbf24;}                            /* number */
+.code pre .p{color:#a78bfa;}                            /* punct accent / type */
+.code pre .m{color:var(--c-memory);}                    /* memory */
+.code pre .v{color:#f9a8d4;}                            /* version */
+
+/* ---- table ---- */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 4px;
+  border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;}
+.tbl thead th{text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--dim);padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--border-soft);color:var(--muted);vertical-align:top;}
+.tbl tbody tr:last-child td{border-bottom:0;}
+.tbl tbody tr:hover{background:var(--surface-2);}
+.tbl td b{color:var(--text);}
+.tbl .vcol{font-family:var(--font-mono);white-space:nowrap;}
+.semv .M{color:var(--err);font-weight:700;} .semv .m{color:var(--warn);font-weight:700;} .semv .P{color:var(--ok);font-weight:700;}
+
+/* ---- callout ---- */
+.note{display:flex;gap:13px;background:var(--surface-2);border:1px solid var(--border);
+  border-left:2px solid var(--accent);border-radius:var(--r-md);padding:15px 18px;margin:18px 0;}
+.note .ic{color:var(--accent);font-family:var(--font-mono);font-weight:700;flex:none;}
+.note p{margin:0;color:var(--muted);font-size:13px;}
+.note.mem{border-left-color:var(--c-memory);} .note.mem .ic{color:var(--c-memory);}
+.note.warn{border-left-color:var(--warn);} .note.warn .ic{color:var(--warn);}
+
+/* ---- bullets w/ marker ---- */
+.feat{list-style:none;padding:0;margin:10px 0;}
+.feat li{display:flex;gap:11px;padding:7px 0;border-bottom:1px solid var(--border-soft);}
+.feat li:last-child{border-bottom:0;}
+.feat li::before{content:"";flex:none;width:7px;height:7px;margin-top:7px;border-radius:2px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 0 8px var(--accent-glow);}
+
+/* ---- footer ---- */
+.foot{padding:40px 0 0;color:var(--dim);font-size:12px;}
+.foot .row{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;}
+.foot a{color:var(--muted);}
+
+/* ---- RL diagram (SVG) ---- */
+.diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:8px;box-shadow:var(--shadow-1);margin:8px 0 6px;overflow:hidden;}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:14px;}
+.legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+/* ---- flow row (KG schema / integration) ---- */
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;}
+.flow .node{flex:1;min-width:120px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:14px;text-align:center;}
+.flow .node .nm{font-weight:600;color:var(--text);font-size:13px;}
+.flow .node .ds{font-size:11px;color:var(--dim);margin-top:4px;}
+.flow .arr{display:flex;align-items:center;color:var(--dim);font-size:18px;padding:0 6px;}
+@media(max-width:620px){.flow .arr{transform:rotate(90deg);padding:6px 0;}.flow{flex-direction:column;}}
+.flow .node.cap{border-color:color-mix(in srgb,var(--c-capsule) 45%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--c-capsule) 18%,transparent),0 0 22px color-mix(in srgb,var(--c-capsule) 14%,transparent);}
+.flow .node.cap .nm{color:var(--c-capsule);}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <a class="brand" href="#top"><span class="glyph"></span>CAPSULE<span class="sub">Architecture reference</span></a>
+    <div class="spacer"></div>
+    <span class="pill mem"><span style="width:6px;height:6px;border-radius:50%;background:var(--c-memory);box-shadow:0 0 8px var(--c-memory)"></span>memory · Backboard</span>
+    <span class="pill ok"><span style="width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)"></span>distill · local Ollama</span>
+    <span class="doc-tag">Next.js app · :3010</span>
+  </header>
+
+  <!-- SIDE TOC -->
+  <nav class="toc" aria-label="Contents">
+    <div class="lab">Architecture</div>
+    <a href="#overview" class="active"><span class="n">00</span>Overview</a>
+    <a href="#rl-loop"><span class="n">01</span>The RL Loop</a>
+    <a href="#capsule-schema"><span class="n">02</span>Capsule Schema</a>
+    <a href="#semver"><span class="n">03</span>Semver Rules</a>
+    <a href="#backboard"><span class="n">04</span>Backboard Memory</a>
+    <a href="#token-reward"><span class="n">05</span>Token Reward</a>
+    <a href="#kg-schema"><span class="n">06</span>Knowledge Graph</a>
+    <a href="#integration"><span class="n">07</span>8090 Integration</a>
+    <a href="#governance"><span class="n">08</span>Governance</a>
+    <div class="lab">Implementation</div>
+    <a href="#app"><span class="n">09</span>The App &amp; Local Pipeline</a>
+    <div class="lab">Context</div>
+    <a href="#sponsor"><span class="n">10</span>Sponsor Alignment</a>
+    <a href="#invariants"><span class="n">11</span>Invariants</a>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main" id="top">
+    <div class="wrap">
+
+      <!-- HERO -->
+      <div class="hero" id="overview">
+        <span class="eyebrow">Capture &amp; Feedback Layer · 8090 Software Factory</span>
+        <h1>CAPSULE</h1>
+        <p class="lede">
+          Every Claude Code / agent session emits a <b>capsule</b> — a compressed summary of what was
+          <b>important and novel</b>: intent, decisions, gotchas, the mental model, learnings. Capsules surface as a
+          <b>Knowledge-Graph layer on top of 8090's Software Factory</b> and compound — daily — into
+          <b>versioned skills</b>. The result is a <b>reinforcement-learning loop for the enterprise</b>:
+          every session feeds back, and the reward signal is <b>tokens saved downstream</b>.
+        </p>
+        <div class="hero-meta">
+          <span class="tag capsule">capsule</span>
+          <span class="tag skill">skill</span>
+          <span class="tag agent">agent</span>
+          <span class="tag workorder">work order</span>
+          <span class="tag requirement">requirement</span>
+          <span class="tag model">model</span>
+          <span class="tag mcp">mcp</span>
+          <span class="tag memory">Backboard memory</span>
+        </div>
+      </div>
+
+      <!-- OVERVIEW STATS -->
+      <section style="border-bottom:1px solid var(--border-soft);padding-top:0;">
+        <div class="grid g4">
+          <div class="stat"><div class="v cy">CAPTURE</div><div class="l">the missing layer</div></div>
+          <div class="stat"><div class="v gr">+ FEEDBACK</div><div class="l">reinforcement</div></div>
+          <div class="stat"><div class="v in">ENTITY</div><div class="l">memory key, not model</div></div>
+          <div class="stat"><div class="v">Δ tokens</div><div class="l">the reward signal</div></div>
+        </div>
+        <div class="note" style="margin-top:22px;">
+          <span class="ic">i</span>
+          <p>8090's Software Factory natively runs <b>Requirements → Blueprints → Work Orders → Tests → Knowledge Graph</b>.
+          That pipeline <i>produces</i> software but does not <i>learn</i> from how it was produced. CAPSULE is the
+          capture + feedback layer that closes the loop — turning each session's tacit knowledge into a durable,
+          versioned, reusable enterprise asset.</p>
+        </div>
+      </section>
+
+      <!-- 01 RL LOOP -->
+      <section id="rl-loop">
+        <div class="sec-head"><span class="sec-num">01</span><h2>The Reinforcement Loop</h2></div>
+        <p class="sec-sub">A closed enterprise RL loop. Sessions emit capsules (capture); capsules inject context on the next session (feedback); the token delta is the measured reward that decides which capsules get promoted into skill versions.</p>
+
+        <div class="diagram">
+          <svg viewBox="0 0 920 430" width="100%" role="img" aria-label="CAPSULE reinforcement learning loop diagram">
+            <defs>
+              <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="#5b6675"/>
+              </marker>
+              <marker id="ahc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="#38bdf8"/>
+              </marker>
+              <linearGradient id="gcap" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#0e1d27"/><stop offset="1" stop-color="#0d1217"/>
+              </linearGradient>
+              <linearGradient id="gmem" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#15172a"/><stop offset="1" stop-color="#0d1117"/>
+              </linearGradient>
+              <filter id="gl" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+
+            <!-- curved loop track -->
+            <ellipse cx="460" cy="215" rx="392" ry="168" fill="none" stroke="#1e2230" stroke-width="1" stroke-dasharray="4 6"/>
+
+            <!-- NODE: session -->
+            <g>
+              <rect x="40" y="168" width="172" height="94" rx="13" fill="url(#gcap)" stroke="#2a3042"/>
+              <circle cx="62" cy="190" r="4" fill="#34d399"/>
+              <text x="76" y="194" fill="#e9edf4" font-family="Inter,sans-serif" font-size="14" font-weight="600">Agent session</text>
+              <text x="60" y="216" fill="#9aa6b8" font-family="Inter,sans-serif" font-size="11.5">Claude Code / agent</text>
+              <text x="60" y="234" fill="#5b6675" font-family="Inter,sans-serif" font-size="11">does the work order</text>
+              <text x="60" y="251" fill="#5b6675" font-family="Inter,sans-serif" font-size="11">on a repo / project</text>
+            </g>
+
+            <!-- NODE: capture (capsule) -->
+            <g filter="url(#gl)">
+              <rect x="368" y="22" width="184" height="96" rx="13" fill="url(#gcap)" stroke="#38bdf8" stroke-opacity=".55"/>
+            </g>
+            <g>
+              <circle cx="392" cy="46" r="4" fill="#38bdf8"/>
+              <text x="406" y="50" fill="#38bdf8" font-family="Inter,sans-serif" font-size="14" font-weight="600">Capture · capsule</text>
+              <text x="388" y="72" fill="#9aa6b8" font-family="Inter,sans-serif" font-size="11.5">distil IMPORTANT + NOVEL</text>
+              <text x="388" y="90" fill="#5b6675" font-family="Inter,sans-serif" font-size="11">intent · decisions · gotchas</text>
+              <text x="388" y="107" fill="#5b6675" font-family="Inter,sans-serif" font-size="11">mental model · learnings</text>
+            </g>
+
+            <!-- NODE: store (Backboard) -->
+            <g>
+              <rect x="708" y="168" width="172" height="94" rx="13" fill="url(#gmem)" stroke="#818cf8" stroke-opacity=".5"/>
+              <circle cx="730" cy="190" r="4" fill="#818cf8"/>
+              <text x="744" y="194" fill="#a5b4fc" font-family="Inter,sans-serif" font-size="14" font-weight="600">Store · Backboard</text>
+              <text x="728" y="216" fill="#9aa6b8" font-family="Inter,sans-serif" font-size="11.5">send_to_llm=false</text>
+              <text x="728" y="234" fill="#5b6675" font-family="Inter,sans-serif" font-size="11">durable, keyed by</text>
+              <text x="728" y="251" fill="#5b6675" font-family="Inter,sans-serif" font-size="11">assistant_id (entity)</text>
+            </g>
+
+            <!-- NODE: mint version -->
+            <g>
+              <rect x="368" y="312" width="184" height="96" rx="13" fill="#0f1014" stroke="#a78bfa" stroke-opacity=".45"/>
+              <circle cx="392" cy="336" r="4" fill="#a78bfa"/>
+              <text x="406" y="340" fill="#c4b5fd" font-family="Inter,sans-serif" font-size="14" font-weight="600">Mint skill version</text>
+              <text x="388" y="362" fill="#9aa6b8" font-family="Inter,sans-serif" font-size="11.5">nightly distillation</text>
+              <text x="388" y="380" fill="#5b6675" font-family="Inter,sans-serif" font-size="11">semver: patch / minor / major</text>
+              <text x="388" y="397" fill="#5b6675" font-family="Inter,sans-serif" font-size="11">immutable &amp; additive</text>
+            </g>
+
+            <!-- NODE: reward (center) -->
+            <g>
+              <rect x="356" y="172" width="208" height="86" rx="13" fill="#0c0e12" stroke="#2a3042"/>
+              <text x="460" y="200" text-anchor="middle" fill="#5b6675" font-family="Inter,sans-serif" font-size="11" font-weight="600" letter-spacing="1.5">RL REWARD</text>
+              <text x="460" y="226" text-anchor="middle" fill="#e9edf4" font-family="ui-monospace,Consolas,monospace" font-size="13">tokens_saved</text>
+              <text x="460" y="246" text-anchor="middle" fill="#34d399" font-family="ui-monospace,Consolas,monospace" font-size="13">− tokens_spent</text>
+            </g>
+
+            <!-- edges -->
+            <!-- session -> capture -->
+            <path d="M150 168 C 150 90, 260 50, 366 52" fill="none" stroke="#38bdf8" stroke-width="1.6" marker-end="url(#ahc)"/>
+            <text x="214" y="92" fill="#7fd3fb" font-family="Inter,sans-serif" font-size="11">1 · emit</text>
+            <!-- capture -> store -->
+            <path d="M554 60 C 680 60, 768 110, 786 166" fill="none" stroke="#5b6675" stroke-width="1.4" marker-end="url(#ah)"/>
+            <text x="690" y="98" fill="#9aa6b8" font-family="Inter,sans-serif" font-size="11">2 · write (no gen)</text>
+            <!-- store -> mint -->
+            <path d="M786 262 C 770 322, 660 372, 554 374" fill="none" stroke="#5b6675" stroke-width="1.4" marker-end="url(#ah)"/>
+            <text x="640" y="356" fill="#9aa6b8" font-family="Inter,sans-serif" font-size="11">3 · promote</text>
+            <!-- mint -> session (inject) -->
+            <path d="M366 372 C 250 372, 150 320, 132 262" fill="none" stroke="#38bdf8" stroke-width="1.6" marker-end="url(#ahc)"/>
+            <text x="186" y="356" fill="#7fd3fb" font-family="Inter,sans-serif" font-size="11">4 · inject context</text>
+            <!-- reward feeds promote (dashed) -->
+            <path d="M460 258 L 460 308" fill="none" stroke="#34d399" stroke-width="1.3" stroke-dasharray="3 4" marker-end="url(#ah)"/>
+          </svg>
+        </div>
+        <div class="legend">
+          <span><i style="background:#38bdf8"></i>capture / inject (cyan path)</span>
+          <span><i style="background:#818cf8"></i>Backboard store</span>
+          <span><i style="background:#a78bfa"></i>skill versioning</span>
+          <span><i style="background:#34d399"></i>reward → promotion</span>
+        </div>
+
+        <div class="grid g2" style="margin-top:24px;">
+          <div class="card">
+            <h4 style="margin-top:0;">Capture (the write half)</h4>
+            <ul class="feat">
+              <li>Session ends or checkpoints → CAPSULE distils only what is <b>important and novel</b>.</li>
+              <li>Token cost of producing the capsule is recorded as the <b>debit</b>.</li>
+              <li>Stored with <code class="inl">send_to_llm=false</code> — no generation, no model tokens billed for the write.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;">Feedback (the read half)</h4>
+            <ul class="feat">
+              <li>Next session opens → relevant capsules + skill memories are retrieved and injected.</li>
+              <li>Tokens <b>not</b> re-derived = the <b>credit</b>.</li>
+              <li>High-reward capsules get <b>minted into a skill version</b>; low-reward ones decay and stop surfacing.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 CAPSULE SCHEMA -->
+      <section id="capsule-schema">
+        <div class="sec-head"><span class="sec-num">02</span><h2>Capsule Schema</h2></div>
+        <p class="sec-sub">A capsule is the unit of learning. It is small, typed, and self-describing — carrying the compressed knowledge plus the provenance and the token ledger that drives the reward.</p>
+
+        <div class="code">
+          <div class="bar"><span class="dot"></span><span class="nm">capsule.schema.json</span><span class="tail tag capsule">capsule</span></div>
+<pre><span class="c">// A REAL capsule (CAP-R004) distilled from a ~/.claude session by the local model.</span>
+{
+  <span class="k">"id"</span>:           <span class="s">"CAP-R004"</span>,                  <span class="c">// stable, immutable</span>
+  <span class="k">"session"</span>:      <span class="s">"85941354"</span>,                  <span class="c">// real ~/.claude session (dedup key)</span>
+  <span class="k">"assistant_id"</span>:  <span class="m">"capsule"</span>,                   <span class="c">// the single TENANT assistant (Backboard)</span>
+  <span class="k">"threadId"</span>:     <span class="s">"fd2a6898-9581-424f-88eb-87be27633f3a"</span>, <span class="c">// MEASURED — real Backboard uuid</span>
+  <span class="k">"model"</span>:        <span class="s">"claude-opus-4-8"</span>,           <span class="c">// MEASURED — parsed from the jsonl</span>
+
+  <span class="k">"intent"</span>:        <span class="s">"Update the Angular interview app for the new v22 release"</span>,
+  <span class="k">"finding"</span>:       <span class="s">"When upgrading Angular versions, ensure local bridges and WebSocket servers are correctly configured to avoid connection issues."</span>,
+  <span class="k">"gotchas"</span>: [
+    <span class="s">"&#123;&#123; HTML entities decode back into {{ }} and get parsed as real interpolation"</span>,
+    <span class="s">"raw @case inside &lt;pre&gt; text is parsed as a control-flow block"</span>
+  ],
+  <span class="k">"mentalModel"</span>:   <span class="s">"Challenges need a local bridge (bridge/index.mjs) running a WebSocket server"</span>,
+
+  <span class="k">"routedTo"</span>: [                                <span class="c">// the skills/agents the finding teaches</span>
+    { <span class="k">"entity"</span>: <span class="s">"skill/angular-upgrade"</span>,     <span class="k">"proposes"</span>: <span class="s">"major"</span>, <span class="k">"proposedVersion"</span>: <span class="v">"1.0.0"</span>, <span class="k">"status"</span>: <span class="s">"adopted"</span> },
+    { <span class="k">"entity"</span>: <span class="s">"agent/factory-implementer"</span>, <span class="k">"proposes"</span>: <span class="s">"minor"</span>, <span class="k">"proposedVersion"</span>: <span class="v">"2.0.0"</span>, <span class="k">"status"</span>: <span class="s">"adopted"</span> }
+  ],
+
+  <span class="k">"transferScore"</span>: <span class="n">57</span>,     <span class="c">// MEASURED by scorer.ts (6-dim)</span>
+  <span class="k">"novelty"</span>:       <span class="n">97</span>,     <span class="c">// DERIVED — gates promotion</span>
+  <span class="k">"tokensSavedPerReuse"</span>: <span class="n">1968</span>, <span class="k">"reuses"</span>: <span class="n">5</span>,   <span class="c">// CREDIT side of the ledger (derived)</span>
+
+  <span class="k">"tags"</span>: [<span class="s">"skill/angular-upgrade@1.0.0"</span>, <span class="s">"kind:gotcha"</span>, <span class="s">"kind:finding"</span>],
+  <span class="k">"storedIn"</span>:   <span class="s">"Backboard"</span>,
+  <span class="k">"send_to_llm"</span>: <span class="s">"false"</span>                     <span class="c">// store-only write — only the DISTILLED briefing</span>
+}</pre>
+        </div>
+
+        <div class="grid g3" style="margin-top:18px;">
+          <div class="panel"><span class="tag capsule">identity</span><p style="margin:10px 0 0;font-size:12.5px;"><code class="inl">capsule_id</code> immutable · <code class="inl">session_id</code> dedups so re-runs update, not duplicate.</p></div>
+          <div class="panel"><span class="tag memory">scoping</span><p style="margin:10px 0 0;font-size:12.5px;"><code class="inl">assistant_id</code> = tenant wall · <code class="inl">thread_id</code> = project recency bias.</p></div>
+          <div class="panel"><span class="tag skill">versioning</span><p style="margin:10px 0 0;font-size:12.5px;"><code class="inl">skill.bump</code> drives the nightly semver mint; <code class="inl">tags</code> pin the exact version.</p></div>
+        </div>
+      </section>
+
+      <!-- 03 SEMVER -->
+      <section id="semver">
+        <div class="sec-head"><span class="sec-num">03</span><h2>Semantic Versioning Rules</h2></div>
+        <p class="sec-sub">Daily, learned capsules are distilled and used to mint a new skill version under <code class="inl">major.minor.patch</code>. The bump rule is deterministic — it depends on how the new knowledge changes the contract of the skill.</p>
+
+        <table class="tbl semv">
+          <thead><tr><th>Bump</th><th>Pattern</th><th>Trigger</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="pill ok">patch</span></td>
+              <td class="vcol">x.y.<span class="P">Z</span></td>
+              <td><b>A gotcha or refinement.</b> Behavior is unchanged; the skill just gets more robust.</td>
+              <td class="mono">"add retry on 429 from the migrations API"</td>
+            </tr>
+            <tr>
+              <td><span class="pill warn">minor</span></td>
+              <td class="vcol">x.<span class="m">Y</span>.0</td>
+              <td><b>A new backward-compatible capability or pattern.</b> Old callers keep working.</td>
+              <td class="mono">"skill now also generates rollback scripts"</td>
+            </tr>
+            <tr>
+              <td><span class="pill err">major</span></td>
+              <td class="vcol"><span class="M">X</span>.0.0</td>
+              <td><b>Changes how the skill is invoked, or supersedes prior guidance.</b> Breaking.</td>
+              <td class="mono">"takes a migration-plan object, not a raw SQL arg"</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="grid g2" style="margin-top:22px;">
+          <div class="card">
+            <h4 style="margin-top:0;">Immutability &amp; pinning</h4>
+            <ul class="feat">
+              <li>Each minted version is an <b>immutable record</b> — a teammate may have pinned it into their repo.</li>
+              <li>Within a major, versions are <b>additive</b>: adopting <span class="mono">@2.3.1</span> injects the <i>superset</i> of <span class="mono">@2.3.0</span>'s learnings.</li>
+              <li>A <b>major</b> may <i>supersede</i>: prior guidance is tagged <code class="inl">superseded_by:&lt;id&gt;</code> and excluded once the new major is adopted.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;">Adopt-at-selection</h4>
+            <p style="font-size:13px;">At model- and MCP-selection time the user is shown, per applicable skill:</p>
+            <ul class="feat">
+              <li><b>Pinned vs latest</b> version side by side.</li>
+              <li><b>Token savings</b> projected from adopting the latest.</li>
+              <li><b>Transfer-score lift</b> — how well its learnings carried to other projects.</li>
+            </ul>
+            <p style="margin:10px 0 0;font-size:12.5px;color:var(--dim);">The value is shown so the user can <b style="color:var(--muted)">self-justify</b> the upgrade.</p>
+          </div>
+        </div>
+
+        <div class="code" style="margin-top:18px;">
+          <div class="bar"><span class="dot"></span><span class="nm">skill-history · real skills</span><span class="tail tag skill">skill</span></div>
+<pre><span class="m">skill/command-verification</span>      <span class="c">// a REAL skill with two forged versions</span>
+  <span class="v">2.0.0</span>  <span class="k">major</span>   <span class="c">from CAP-R005 — verify state from authoritative docs   published · adopted by 3</span>
+  <span class="v">1.0.0</span>  <span class="k">major</span>   <span class="c">from CAP-R007 — inspect system state, don't assume     published · adopted by 2</span>
+
+<span class="m">skill/angular-upgrade</span>
+  <span class="v">1.0.0</span>  <span class="k">major</span>   <span class="c">from CAP-R004 — configure local bridges + WebSocket    published · −1968 tok/use</span>
+
+<span class="m">skill/creative-franchise-expansion</span>
+  <span class="v">1.0.0</span>  <span class="k">major</span>   <span class="c">from CAP-R001 — keep continuity across all parts        proposed (awaiting CI)</span></pre>
+        </div>
+      </section>
+
+      <!-- 04 BACKBOARD -->
+      <section id="backboard">
+        <div class="sec-head"><span class="sec-num">04</span><h2>Backboard — the Memory Layer</h2></div>
+        <p class="sec-sub">Capsules and skill memory persist in <b>Backboard</b>. The defining property: memory follows the <b>entity</b> (assistant / tenant), not the model — switching models keeps the capsule. Backboard ranks #1 on LoCoMo and LongMemEval.</p>
+
+        <div class="grid g2">
+          <div class="card">
+            <h4 style="margin-top:0;">Entity model · assistant-per-tenant</h4>
+            <table class="tbl" style="margin-top:6px;">
+              <thead><tr><th>CAPSULE concept</th><th>Backboard primitive</th><th>Identifier</th></tr></thead>
+              <tbody>
+                <tr><td><b>Enterprise / tenant</b></td><td>Assistant</td><td class="vcol mono">capsule-&lt;ent&gt;</td></tr>
+                <tr><td><b>Project / repo</b></td><td>Thread</td><td class="vcol mono">thread_id</td></tr>
+                <tr><td><b>Session capsule</b></td><td>Message (write)</td><td class="vcol mono">capsule_id</td></tr>
+                <tr><td><b>Skill learnings</b></td><td>Durable memory</td><td class="vcol mono">skill:&lt;id&gt;@&lt;semver&gt;</td></tr>
+              </tbody>
+            </table>
+            <p style="margin:14px 0 0;font-size:12.5px;color:var(--dim);">One assistant per enterprise = a <b style="color:var(--c-memory)">structural</b> tenant wall. There is no cross-assistant read path; isolation is not a post-hoc filter.</p>
+          </div>
+
+          <div class="card">
+            <h4 style="margin-top:0;">Memory follows the entity, not the model</h4>
+            <div class="diagram" style="padding:6px;margin:6px 0 0;">
+              <svg viewBox="0 0 420 220" width="100%" role="img" aria-label="Memory follows the entity diagram">
+                <rect x="120" y="14" width="180" height="56" rx="11" fill="#15172a" stroke="#818cf8" stroke-opacity=".5"/>
+                <text x="210" y="38" text-anchor="middle" fill="#a5b4fc" font-family="Inter,sans-serif" font-size="12.5" font-weight="600">ENTITY · assistant_id</text>
+                <text x="210" y="56" text-anchor="middle" fill="#9aa6b8" font-family="ui-monospace,Consolas,monospace" font-size="11">capsule</text>
+                <text x="210" y="92" text-anchor="middle" fill="#5b6675" font-family="Inter,sans-serif" font-size="11">capsules + skill memories — the durable truth</text>
+                <g stroke="#2a3042" stroke-width="1.2" fill="none" marker-end="url(#ah)">
+                  <path d="M150 104 L 60 150"/><path d="M190 104 L 160 150"/>
+                  <path d="M230 104 L 262 150"/><path d="M272 104 L 366 150"/>
+                </g>
+                <g font-family="ui-monospace,Consolas,monospace" font-size="10.5" text-anchor="middle">
+                  <rect x="20" y="156" width="84" height="44" rx="9" fill="#0f1217" stroke="#1e2230"/>
+                  <text x="62" y="174" fill="#60a5fa">Claude</text><text x="62" y="190" fill="#5b6675">window A</text>
+                  <rect x="120" y="156" width="84" height="44" rx="9" fill="#0f1217" stroke="#1e2230"/>
+                  <text x="162" y="174" fill="#60a5fa">GPT-x</text><text x="162" y="190" fill="#5b6675">window B</text>
+                  <rect x="220" y="156" width="84" height="44" rx="9" fill="#0f1217" stroke="#1e2230"/>
+                  <text x="262" y="174" fill="#60a5fa">Gemini</text><text x="262" y="190" fill="#5b6675">window C</text>
+                  <rect x="320" y="156" width="80" height="44" rx="9" fill="#0f1217" stroke="#1e2230"/>
+                  <text x="360" y="174" fill="#60a5fa">BYOK…</text><text x="360" y="190" fill="#5b6675">window N</text>
+                </g>
+              </svg>
+            </div>
+            <p style="margin:12px 0 0;font-size:12.5px;">Swap among <b>17,000+ LLMs (BYOK)</b> mid-project and lose <b>zero facts</b>. Model choice only changes <i>how much</i> memory is injected, never <i>what exists</i>.</p>
+          </div>
+        </div>
+
+        <div class="grid g3" style="margin-top:18px;">
+          <div class="card">
+            <h4 style="margin-top:0;">Retrieval · semantic + LLM-guided</h4>
+            <p style="font-size:12.5px;">Not plain vector NN. A model reasons over candidates for relevance to the current intent — multi-hop, disambiguation, recency-vs-importance.</p>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <span class="pill">Memory Lite · fast recall</span>
+            </div>
+            <div style="margin-top:6px;"><span class="pill">Memory Pro · multi-hop</span></div>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;">Two fire points</h4>
+            <ul class="feat" style="margin:6px 0 0;">
+              <li><b>A · session-open</b> — inject what the tenant knows that applies here.</li>
+              <li><b>B · model/MCP select</b> — surface the applicable skill version + adoption value.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;">Adaptive Context Mgmt</h4>
+            <p style="font-size:12.5px;">After retrieval, memories are trimmed / summarized to fit the <b>chosen model's window</b>. Same facts, re-fit per model — 200k gets verbatim, 8k gets a tighter summary.</p>
+          </div>
+        </div>
+
+        <div class="code" style="margin-top:18px;">
+          <div class="bar"><span class="dot"></span><span class="nm">relay/src/lib/backboard.ts · store-only write (verified-live API)</span><span class="tail tag memory">Backboard</span></div>
+<pre><span class="k">POST</span> https://app.backboard.io/api/threads/messages
+<span class="k">X-API-Key</span>: &lt;backboard-key&gt;             <span class="c">// binds the single "capsule" assistant = tenant</span>
+<span class="k">Content-Type</span>: application/json
+
+{
+  <span class="k">"content"</span>:     <span class="s">"&lt;distilled briefing&gt;"</span>,    <span class="c">// only the DISTILLED capsule, never the transcript</span>
+  <span class="k">"assistant_id"</span>: <span class="m">"capsule"</span>,                 <span class="c">// the cached tenant assistant</span>
+  <span class="k">"memory"</span>:      <span class="s">"Auto"</span>,                      <span class="c">// Backboard auto-extracts + dedups durable facts</span>
+  <span class="k">"send_to_llm"</span>: <span class="s">"false"</span>                       <span class="c">// STORE-ONLY — no generation, no model tokens</span>
+  <span class="c">// thread_id OMITTED on first write → Backboard auto-creates + returns a real uuid (cached)</span>
+}</pre>
+        </div>
+        <div class="note mem">
+          <span class="ic">◆</span>
+          <p>Memories <b>persist across threads</b> for the same assistant: a gotcha learned in <span class="mono">repo/web-app</span> is retrievable in <span class="mono">repo/data-pipeline</span> because both resolve to <span class="mono">capsule</span>. Thread scoping is a retrieval <i>hint</i>; the assistant is the <i>wall</i>.</p>
+        </div>
+      </section>
+
+      <!-- 05 TOKEN REWARD -->
+      <section id="token-reward">
+        <div class="sec-head"><span class="sec-num">05</span><h2>Token Reward — the RL Signal</h2></div>
+        <p class="sec-sub">Token usage is shown everywhere so users derive self-value. The delta between tokens spent to create a capsule and tokens saved downstream by reusing it <b>is</b> the reinforcement reward — measurable, no human labels.</p>
+
+        <div class="card" style="text-align:center;padding:30px 22px;">
+          <div style="font-family:var(--font-mono);font-size:clamp(18px,3.4vw,30px);letter-spacing:-.02em;line-height:1.3;">
+            <span style="color:var(--ok)">tokens_saved_downstream</span>
+            <span style="color:var(--dim)"> − </span>
+            <span style="color:var(--warn)">tokens_spent_to_create</span>
+            <span style="color:var(--dim)"> = </span>
+            <span style="color:var(--accent)">RL&nbsp;reward</span>
+          </div>
+        </div>
+
+        <div class="grid g3" style="margin-top:20px;">
+          <div class="stat"><div class="v" style="color:var(--warn)">1,840</div><div class="l">debit · spent to create</div></div>
+          <div class="stat"><div class="v gr">12,600</div><div class="l">credit · saved downstream</div></div>
+          <div class="stat"><div class="v cy">+10,760</div><div class="l">reward · net token delta</div></div>
+        </div>
+
+        <div class="grid g2" style="margin-top:20px;">
+          <div class="card">
+            <h4 style="margin-top:0;">The ledger</h4>
+            <ul class="feat">
+              <li><b>Debit</b> — tokens spent producing the compression summary at write time.</li>
+              <li><b>Credit</b> — tokens saved when that capsule / skill memory is injected instead of re-derived.</li>
+              <li>Recorded per capsule <i>and</i> per reuse, so a capsule's reward grows as it's reused.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;">What the reward drives</h4>
+            <ul class="feat">
+              <li><b>High positive reward</b> → promoted / minted into a skill version.</li>
+              <li><b>Low / negative reward</b> → decays, stops being surfaced.</li>
+              <li>Adoption UI shows projected savings so upgrades are <b>self-justifying</b>.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 KG SCHEMA -->
+      <section id="kg-schema">
+        <div class="sec-head"><span class="sec-num">06</span><h2>Knowledge-Graph Schema</h2></div>
+        <p class="sec-sub">Capsules surface as a Knowledge-Graph panel layered on top of the Software Factory. Capsules become nodes that edge into the factory's native entities, and into the skills they mint.</p>
+
+        <div class="diagram" style="padding:22px;">
+          <svg viewBox="0 0 900 360" width="100%" role="img" aria-label="Knowledge graph schema">
+            <defs>
+              <marker id="kgah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="#3a4252"/>
+              </marker>
+            </defs>
+            <!-- factory chain (top) -->
+            <g font-family="Inter,sans-serif" font-size="12" font-weight="600" text-anchor="middle">
+              <rect x="20"  y="28" width="138" height="50" rx="11" fill="#16121a" stroke="#fb7185" stroke-opacity=".45"/>
+              <text x="89" y="50" fill="#fb7185">Requirement</text><text x="89" y="67" fill="#5b6675" font-size="10.5" font-weight="400">REQ-001</text>
+              <rect x="196" y="28" width="138" height="50" rx="11" fill="#0f1626" stroke="#4d9fff" stroke-opacity=".45"/>
+              <text x="265" y="50" fill="#60a5fa">Blueprint</text><text x="265" y="67" fill="#5b6675" font-size="10.5" font-weight="400">BP-refund-v3</text>
+              <rect x="372" y="28" width="138" height="50" rx="11" fill="#1a1407" stroke="#f59e0b" stroke-opacity=".45"/>
+              <text x="441" y="50" fill="#f59e0b">Work Order</text><text x="441" y="67" fill="#5b6675" font-size="10.5" font-weight="400">WO-101</text>
+              <rect x="548" y="28" width="138" height="50" rx="11" fill="#08191c" stroke="#22d3ee" stroke-opacity=".45"/>
+              <text x="617" y="50" fill="#22d3ee">Tests</text><text x="617" y="67" fill="#5b6675" font-size="10.5" font-weight="400">T-refund-replay</text>
+              <rect x="724" y="28" width="156" height="50" rx="11" fill="#0d1217" stroke="#2a3042"/>
+              <text x="802" y="50" fill="#9aa6b8">Knowledge Graph</text><text x="802" y="67" fill="#5b6675" font-size="10.5" font-weight="400">native panel</text>
+            </g>
+            <g stroke="#3a4252" stroke-width="1.3" fill="none" marker-end="url(#kgah)">
+              <path d="M158 53 L 194 53"/><path d="M334 53 L 370 53"/><path d="M510 53 L 546 53"/><path d="M686 53 L 722 53"/>
+            </g>
+
+            <!-- capsule node (center, glowing) -->
+            <g filter="url(#gl)">
+              <rect x="330" y="160" width="240" height="74" rx="13" fill="url(#gcap)" stroke="#38bdf8" stroke-opacity=".6"/>
+            </g>
+            <text x="450" y="190" text-anchor="middle" fill="#38bdf8" font-family="Inter,sans-serif" font-size="14" font-weight="600">Capsule · cap_8f21c4a0</text>
+            <text x="450" y="210" text-anchor="middle" fill="#9aa6b8" font-family="Inter,sans-serif" font-size="11">intent · decisions · gotchas · model · learnings</text>
+            <text x="450" y="226" text-anchor="middle" fill="#5b6675" font-family="ui-monospace,Consolas,monospace" font-size="10.5">reward +10,760 tok</text>
+
+            <!-- edges capsule -> factory entities (DERIVED_FROM) -->
+            <g stroke="#38bdf8" stroke-opacity=".5" stroke-width="1.3" fill="none" stroke-dasharray="4 4" marker-end="url(#kgah)">
+              <path d="M380 160 C 300 120, 150 105, 95 80"/>
+              <path d="M410 160 C 360 125, 290 110, 262 80"/>
+              <path d="M470 160 C 470 130, 450 105, 441 80"/>
+              <path d="M510 160 C 560 128, 600 108, 617 80"/>
+            </g>
+            <text x="250" y="138" fill="#7fd3fb" font-family="Inter,sans-serif" font-size="10.5">DERIVED_FROM</text>
+
+            <!-- capsule -> skill (MINTS) -->
+            <g font-family="Inter,sans-serif" font-size="12" font-weight="600" text-anchor="middle">
+              <rect x="300" y="290" width="300" height="52" rx="12" fill="#13101a" stroke="#a78bfa" stroke-opacity=".5"/>
+              <text x="450" y="312" fill="#c4b5fd">Skill · command-verification</text>
+              <text x="450" y="330" fill="#9aa6b8" font-size="10.5" font-weight="400">durable memory · tagged command-verification@2.0.0</text>
+            </g>
+            <path d="M450 234 L 450 288" stroke="#a78bfa" stroke-opacity=".6" stroke-width="1.4" fill="none" marker-end="url(#kgah)"/>
+            <text x="468" y="266" fill="#c4b5fd" font-family="Inter,sans-serif" font-size="10.5">MINTS @semver</text>
+
+            <!-- memory store link -->
+            <g>
+              <rect x="660" y="166" width="200" height="62" rx="12" fill="url(#gmem)" stroke="#818cf8" stroke-opacity=".5"/>
+              <text x="760" y="192" text-anchor="middle" fill="#a5b4fc" font-family="Inter,sans-serif" font-size="12.5" font-weight="600">Backboard memory</text>
+              <text x="760" y="210" text-anchor="middle" fill="#5b6675" font-family="ui-monospace,Consolas,monospace" font-size="10.5">assistant: capsule</text>
+            </g>
+            <path d="M570 197 L 658 197" stroke="#818cf8" stroke-opacity=".55" stroke-width="1.4" fill="none" marker-end="url(#kgah)"/>
+            <text x="612" y="188" text-anchor="middle" fill="#a5b4fc" font-family="Inter,sans-serif" font-size="10.5">STORED_IN</text>
+          </svg>
+        </div>
+
+        <div class="grid g2" style="margin-top:6px;">
+          <table class="tbl">
+            <thead><tr><th>Node type</th><th>Color</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tag capsule">capsule</span></td><td class="mono">#38bdf8</td><td>CAPSULE (new)</td></tr>
+              <tr><td><span class="tag skill">skill</span></td><td class="mono">#a78bfa</td><td>minted by capsules</td></tr>
+              <tr><td><span class="tag requirement">requirement</span></td><td class="mono">#fb7185</td><td>8090 native</td></tr>
+              <tr><td><span class="tag blueprint">blueprint</span></td><td class="mono">#4d9fff</td><td>8090 native</td></tr>
+              <tr><td><span class="tag workorder">work order</span></td><td class="mono">#f59e0b</td><td>8090 native</td></tr>
+              <tr><td><span class="tag test">test</span></td><td class="mono">#22d3ee</td><td>8090 native</td></tr>
+            </tbody>
+          </table>
+          <table class="tbl">
+            <thead><tr><th>Edge</th><th>From → To</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">DERIVED_FROM</td><td>capsule → req/wo/bp/test</td><td>session that produced the learning</td></tr>
+              <tr><td class="mono">MINTS</td><td>capsule → skill@semver</td><td>contributes to a version bump</td></tr>
+              <tr><td class="mono">STORED_IN</td><td>capsule → assistant</td><td>tenant-scoped durable memory</td></tr>
+              <tr><td class="mono">SUPERSEDES</td><td>skill@X → skill@&lt;X</td><td>major replaces prior guidance</td></tr>
+              <tr><td class="mono">PINS</td><td>repo → skill@semver</td><td>teammate adopted a fixed version</td></tr>
+              <tr><td class="mono">REWARDS</td><td>reuse → capsule</td><td>token delta accrues to the node</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 07 INTEGRATION -->
+      <section id="integration">
+        <div class="sec-head"><span class="sec-num">07</span><h2>8090 Software Factory Integration</h2></div>
+        <p class="sec-sub">CAPSULE is the missing CAPTURE + FEEDBACK layer. It does not replace any native component — it observes the pipeline, captures learning, and feeds it back at the moments that matter.</p>
+
+        <div class="flow" style="margin-bottom:8px;">
+          <div class="node"><div class="nm" style="color:var(--c-requirement)">Requirements</div><div class="ds">native</div></div>
+          <div class="arr">→</div>
+          <div class="node"><div class="nm" style="color:var(--c-model)">Blueprints</div><div class="ds">native</div></div>
+          <div class="arr">→</div>
+          <div class="node"><div class="nm" style="color:var(--c-workorder)">Work Orders</div><div class="ds">native</div></div>
+          <div class="arr">→</div>
+          <div class="node"><div class="nm" style="color:#22d3ee">Tests</div><div class="ds">native</div></div>
+          <div class="arr">→</div>
+          <div class="node cap"><div class="nm">Knowledge Graph</div><div class="ds">+ CAPSULE layer</div></div>
+        </div>
+        <div class="note">
+          <span class="ic">+</span>
+          <p>The factory <b>produces</b> software. CAPSULE makes it <b>learn</b>: it watches each work-order session, captures the capsule, and lights up the Knowledge Graph with reusable, versioned skills. Native components are untouched — CAPSULE is purely additive.</p>
+        </div>
+
+        <div class="grid g2" style="margin-top:18px;">
+          <div class="card">
+            <h4 style="margin-top:0;">Where CAPSULE hooks in</h4>
+            <ul class="feat">
+              <li><b>Work-order session end</b> → emit capsule (capture).</li>
+              <li><b>Knowledge-Graph panel</b> → render capsules + skills as nodes (surface).</li>
+              <li><b>Session-open</b> → inject relevant prior capsules (feedback A).</li>
+              <li><b>Model / MCP selection</b> → show skill versions + adoption value (feedback B).</li>
+              <li><b>Nightly</b> → distil + mint skill versions (compound).</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;">Enterprise skill repository</h4>
+            <p style="font-size:13px;">Skills are an <b>enterprise-level repository</b> everyone can use. Any teammate can:</p>
+            <ul class="feat">
+              <li><b>Pull</b> a specific versioned skill into their own project / repo.</li>
+              <li><b>Pin</b> a version for stability.</li>
+              <li><b>Adopt latest</b> — justified by shown token savings + transfer-score lift.</li>
+            </ul>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+              <span class="pill mem">pin @2.3.1</span><span class="pill ok">adopt @2.4.0</span><span class="pill">pull into repo</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 08 GOVERNANCE -->
+      <section id="governance">
+        <div class="sec-head"><span class="sec-num">08</span><h2>Governance</h2></div>
+        <p class="sec-sub">Enterprise-grade controls: tenant isolation is structural, versions are immutable and auditable, writes never leak data into generation, and adoption is an explicit, logged user choice.</p>
+
+        <div class="grid g3">
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="tag memory" style="margin-bottom:8px;">isolation</span></h4>
+            <p style="font-size:12.5px;">One assistant per tenant (<code class="inl">capsule-&lt;ent&gt;</code>). No cross-assistant read path — tenant A can never retrieve tenant B's memory. The wall is structural, not a filter.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="tag skill" style="margin-bottom:8px;">immutability</span></h4>
+            <p style="font-size:12.5px;">Every minted version is immutable and queryable forever. A major <i>supersedes</i> (tags prior guidance), never mutates in place — so pinned versions stay reproducible.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="tag capsule" style="margin-bottom:8px;">provenance</span></h4>
+            <p style="font-size:12.5px;">Each durable memory carries <code class="inl">session_id</code>, <code class="inl">capsule_id</code>, and source factory entities — full lineage from learning back to the work order.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="pill ok" style="margin-bottom:8px;">no-leak writes</span></h4>
+            <p style="font-size:12.5px;"><code class="inl">send_to_llm=false</code> on every capture. The write persists and indexes but triggers <b>no generation</b> and bills <b>no model tokens</b>.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="pill warn" style="margin-bottom:8px;">explicit adoption</span></h4>
+            <p style="font-size:12.5px;">Adopting a new skill version is a <b>user choice</b> at selection time, shown with its projected value and logged — no silent guidance changes mid-flight.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="tag model" style="margin-bottom:8px;">measurable reward</span></h4>
+            <p style="font-size:12.5px;">Promotion is driven only by the <b>token delta</b> — no human labels, no opaque scoring. The reward is auditable arithmetic.</p>
+          </div>
+        </div>
+
+        <table class="tbl" style="margin-top:22px;">
+          <thead><tr><th>Invariant</th><th>Guarantee</th></tr></thead>
+          <tbody>
+            <tr><td><b>No memory keyed by model id</b></td><td>Every durable memory is keyed by <code class="inl">assistant_id</code> — survives any model swap.</td></tr>
+            <tr><td><b>One assistant per tenant</b></td><td>The only tenant boundary; retrieval never crosses it.</td></tr>
+            <tr><td><b>Every capture is store-only</b></td><td><code class="inl">send_to_llm=false</code> — no generation, no billed write tokens.</td></tr>
+            <tr><td><b>Skill memories tagged @semver</b></td><td>Untagged learnings are not minted; recall returns the version you adopted.</td></tr>
+            <tr><td><b>Token delta is the only reward</b></td><td><span class="mono">saved − spent</span>; nothing is promoted on anything else.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>The multi-developer enterprise model — promotion, agentic CI, dedup &amp; conflict</h3>
+        <p>The registry is shared across developers (branches <code class="inl">dee</code> · <code class="inl">ven</code> · <code class="inl">saim</code> on <code class="inl">master</code>; see <b>REPO-FLOW</b>). A capsule never edits the registry directly — it travels a governed pipeline.</p>
+        <div class="grid g4">
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="tag skill" style="margin-bottom:8px;">promotion</span></h4>
+            <p style="font-size:12.5px;">A capsule clearing the gate (<code class="inl">transferScore ≥ threshold</code> <b>OR</b> <code class="inl">novelty ≥ 80</code>) is promoted as a <b>proposed</b> version — a PR / commit on a <code class="inl">promotion/&lt;skill&gt;</code> staging ref of <code class="inl">master</code>, <b>not</b> a direct push. Human / agentic review merges it.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="pill ok" style="margin-bottom:8px;">agentic CI</span></h4>
+            <p style="font-size:12.5px;">Before publishing, the pipeline runs the <b>A/B harness (new vs current)</b> on representative tasks <i>and</i> regression-checks prior capsules. It merges the bump <b>only if the measured reward improves</b> (token savings / pass-rate / transfer lift); else it stays <code class="inl">proposed</code> or is rejected. <b>CI-for-skills.</b></p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="tag capsule" style="margin-bottom:8px;">dedup</span></h4>
+            <p style="font-size:12.5px;">Each capsule carries a <b>semantic signature</b>. Near-identical capsules from different devs <b>merge into one canonical capsule</b> with multiple contributors (provenance keeps every author). Backboard's semantic memory merges the underlying facts.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="tag requirement" style="margin-bottom:8px;">conflict</span></h4>
+            <p style="font-size:12.5px;">"do X" vs "undo X / do Y" on the same skill is a <b>do/undo conflict</b>, resolved by <b>measured reward + recency</b> (ties → human). Contradictory ⇒ <b>major</b>, additive ⇒ <b>minor</b>, refinement ⇒ <b>patch</b>. A <b>merge-ledger</b> records every resolution.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 09 THE APP & LOCAL PIPELINE -->
+      <section id="app">
+        <div class="sec-head"><span class="sec-num">09</span><h2>The App &amp; Local Pipeline</h2></div>
+        <p class="sec-sub">CAPSULE is a real Next.js App-Router app at <code class="inl">relay/</code> (<code class="inl">cd relay &amp;&amp; npm run dev</code> → <code class="inl">:3010</code>) — TypeScript strict, React 19, Zustand, Tailwind v4. <code class="inl">factory.html</code> is the design prototype it was ported from. Distillation runs on a <b>local</b> model first — private, free, offline-capable.</p>
+
+        <div class="grid g2">
+          <div class="card">
+            <h4 style="margin-top:0;">Workspace shell &amp; side-panel UX</h4>
+            <p style="font-size:12.5px;">An 8090-style document workspace: top bar + sidebar + requirements editor + right rail. The body is a four-column grid that animates the side-panel column from <code class="inl">0 → 360px</code> when a panel opens (ported from <code class="inl">factory.html</code>'s <code class="inl">.body.panel-open</code>). Exactly <b>one</b> top-level panel shows at a time, chosen by <code class="inl">store.openPanel</code>; <b>Esc</b> closes it.</p>
+            <table class="tbl" style="margin-top:8px;">
+              <thead><tr><th>Top-level icon</th><th>Panel</th></tr></thead>
+              <tbody>
+                <tr><td><span class="tag capsule">Knowledge Graph</span></td><td>connected graph + per-node provenance trace</td></tr>
+                <tr><td><span class="tag skill">Skills</span></td><td>registry · recommender · impact roll-up · sparkline</td></tr>
+                <tr><td><span class="tag skill">Versions</span></td><td>day-grouped semver history + word-level diff</td></tr>
+                <tr><td><span class="tag agent">A/B</span></td><td>task run <b>with capsule vs cold</b>, side by side</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;">API routes <code class="inl">relay/src/app/api</code></h4>
+            <table class="tbl" style="margin-top:6px;">
+              <thead><tr><th>Route</th><th>Does</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">GET /api/sessions</td><td>list real <code class="inl">~/.claude</code> sessions</td></tr>
+                <tr><td class="mono">POST /api/capsule</td><td>capture → <b>distil (local)</b> → score → store</td></tr>
+                <tr><td class="mono">GET /api/capsules</td><td>the tenant's captured capsules</td></tr>
+                <tr><td class="mono">GET·POST /api/skills</td><td>registry · adopt a version (metadata op)</td></tr>
+                <tr><td class="mono">GET /api/graph</td><td>connected KG (nodes + <code class="inl">learns</code> edges)</td></tr>
+                <tr><td class="mono">POST /api/inherit</td><td><b>money demo</b> — cold vs capsule-warmed agent</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3>Distillation engine order — local first</h3>
+        <p>The <code class="inl">distill()</code> pipeline (<code class="inl">relay/src/lib/cerebras.ts</code>) prefers the on-device model, falls back to optional cloud, and always backfills so a capsule is never blank:</p>
+        <div class="flow" style="margin-bottom:8px;">
+          <div class="node cap"><div class="nm">Ollama · qwen2.5-coder:14b</div><div class="ds">PRIMARY · local / on-device</div></div>
+          <div class="arr">→</div>
+          <div class="node"><div class="nm" style="color:var(--c-model)">Cerebras</div><div class="ds">optional · only if API key</div></div>
+          <div class="arr">→</div>
+          <div class="node"><div class="nm" style="color:var(--muted)">heuristic</div><div class="ds">last resort · always renders</div></div>
+        </div>
+        <div class="code" style="margin-top:14px;">
+          <div class="bar"><span class="dot"></span><span class="nm">relay/src/lib/cerebras.ts · distill()</span><span class="tail tag capsule">local-first</span></div>
+<pre><span class="c">// PRIMARY engine — local Ollama, on-device, no API key, no network egress.</span>
+<span class="k">POST</span> http://localhost:11434/api/chat
+{
+  <span class="k">"model"</span>: <span class="s">"qwen2.5-coder:14b"</span>,   <span class="c">// env: RELAY_OLLAMA_MODEL (default)</span>
+  <span class="k">"stream"</span>: <span class="p">false</span>, <span class="k">"format"</span>: <span class="s">"json"</span>,
+  <span class="k">"messages"</span>: [ {role:<span class="s">"system"</span>}, {role:<span class="s">"user"</span>} ],
+  <span class="k">"options"</span>: { <span class="k">"temperature"</span>: <span class="n">0.2</span> }
+}
+<span class="c">// → content read from j.message.content; engine label:</span>
+<span class="v">"ollama:qwen2.5-coder:14b (local)"</span>   <span class="c">// UI shows it ran on-device</span></pre>
+        </div>
+        <div class="note">
+          <span class="ic">i</span>
+          <p>A local model is slower than wafer-scale cloud, so the call is given up to ~120s via an <code class="inl">AbortController</code> rather than hard-failing. <b>Cerebras</b> (<code class="inl">viaCerebras</code>) returns immediately unless <code class="inl">CEREBRAS_API_KEY</code> is set — it is a pure <i>optional boost</i> for scale, never a requirement. The <b>Backboard write</b> (<code class="inl">relay/src/lib/backboard.ts</code>) is built by <code class="inl">capsuleToBackboardEnvelope()</code>: <code class="inl">assistant_id = capsule-&lt;enterprise&gt;</code>, <code class="inl">thread_id = capsule-&lt;ent&gt;__&lt;proj&gt;</code>, skill tags <code class="inl">&lt;id&gt;@&lt;semver&gt;</code>, <code class="inl">send_to_llm=false</code>.</p>
+        </div>
+      </section>
+
+      <!-- 10 SPONSOR -->
+      <section id="sponsor">
+        <div class="sec-head"><span class="sec-num">10</span><h2>Sponsor Alignment</h2></div>
+        <p class="sec-sub">CAPSULE sits at the intersection of three sponsor platforms — using each for exactly what it is best at, with no overlap.</p>
+
+        <div class="grid g3">
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+              <span style="width:11px;height:11px;border-radius:4px;background:var(--accent);box-shadow:0 0 10px var(--accent-glow)"></span>
+              <h4 style="margin:0;">8090 · Software Factory</h4>
+            </div>
+            <p style="font-size:12.5px;">The host surface. CAPSULE is the capture + feedback layer on top of Requirements → Blueprints → Work Orders → Tests → Knowledge Graph. It makes the factory <b>learn</b>.</p>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+              <span style="width:11px;height:11px;border-radius:4px;background:var(--c-memory);box-shadow:0 0 10px rgba(129,140,248,.4)"></span>
+              <h4 style="margin:0;">Backboard · Memory</h4>
+            </div>
+            <p style="font-size:12.5px;">The durable substrate. Assistant-per-tenant isolation, entity-keyed memory across 17,000+ BYOK models, semantic + LLM-guided recall. <b>#1 LoCoMo / LongMemEval.</b></p>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">
+              <span style="width:11px;height:11px;border-radius:4px;background:var(--ok);box-shadow:0 0 10px rgba(52,211,153,.4)"></span>
+              <h4 style="margin:0;">Local model · Ollama</h4>
+            </div>
+            <p style="font-size:12.5px;">The default distiller. Claude Code sessions are the source of learning; <code class="inl">qwen2.5-coder:14b</code> compresses them into capsules <b>on-device</b> — private, free, offline. <b>Cerebras</b> is an optional cloud boost for the nightly cross-tenant mint.</p>
+          </div>
+        </div>
+
+        <div class="note" style="margin-top:20px;">
+          <span class="ic">★</span>
+          <p>The throughline: <b>capture once, compound forever.</b> 8090 gives the pipeline, Claude Code generates the work, the <b>local model distils it on your own hardware</b>, Backboard remembers it across models and tenants — and CAPSULE turns the token savings into the reinforcement reward that makes the whole enterprise get smarter every day. Cerebras accelerates the nightly job when you scale past the laptop.</p>
+        </div>
+      </section>
+
+      <!-- 11 INVARIANTS / quick ref -->
+      <section id="invariants" style="border-bottom:0;">
+        <div class="sec-head"><span class="sec-num">11</span><h2>One-Screen Reference</h2></div>
+        <p class="sec-sub">The whole product in eight lines.</p>
+        <div class="card">
+          <ul class="feat">
+            <li>Every session emits a <b>capsule</b> — important + novel only.</li>
+            <li>Capsules surface as a <b>Knowledge-Graph layer</b> on 8090's Software Factory.</li>
+            <li>It is a <b>reinforcement loop for the enterprise</b>: every session compounds.</li>
+            <li>Capsules <b>mint skill versions</b> nightly under <b>semver</b> (patch / minor / major).</li>
+            <li>At <b>model / MCP selection</b> the user adopts or pins a version — value shown.</li>
+            <li><b>Token usage everywhere</b>: spent-to-create vs saved-downstream = the reward.</li>
+            <li>Skills are an <b>enterprise repository</b> — pull, pin, or adopt latest.</li>
+            <li>Memory is <b>Backboard</b>: entity-keyed, tenant-siloed, store-only, model-agnostic.</li>
+          </ul>
+        </div>
+
+        <div class="foot">
+          <hr style="border:0;height:1px;background:var(--border);margin:0 0 18px;">
+          <div class="row">
+            <span class="brand" style="font-size:13px;"><span class="glyph"></span>CAPSULE</span>
+            <span>Architecture reference · Next.js app (relay/) · :3010</span>
+            <span>·</span>
+            <span>2026-06</span>
+            <span>·</span>
+            <span>capture + feedback for 8090 Software Factory · local-first distill</span>
+            <span style="margin-left:auto;color:var(--faint)">memory follows the entity, not the model</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// active TOC highlight on scroll
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var map = {};
+  links.forEach(function(a){ var id=a.getAttribute('href').slice(1); var el=document.getElementById(id); if(el) map[id]=a; });
+  var ids = Object.keys(map);
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(l){l.classList.remove('active');});
+        var a = map[e.target.id]; if(a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+  ids.forEach(function(id){ obs.observe(document.getElementById(id)); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAPSULE — Backend Architecture</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --ink:#1f2329;
+    --muted:#5b6571;
+    --faint:#8a929c;
+    --line:#e6e8eb;
+    --line-2:#eef0f2;
+    --blue:#2b6cf0;
+    --blue-wash:#f1f5ff;
+    --code-bg:#f7f8fa;
+    --good:#0f9d58;
+    --warn:#b06f00;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;
+    src:local("Inter");}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:15px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:0 32px}
+  /* ---- header ---- */
+  header.top{border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:10}
+  .top-inner{max-width:980px;margin:0 auto;padding:18px 32px;display:flex;align-items:center;gap:14px}
+  .logo{width:26px;height:26px;border-radius:7px;background:var(--blue);position:relative;flex:none}
+  .logo::after{content:"";position:absolute;inset:7px;border-radius:3px;background:#fff;opacity:.92}
+  .brand{font-weight:650;letter-spacing:-.01em;font-size:15px}
+  .brand small{font-weight:450;color:var(--faint);margin-left:8px}
+  .top-spacer{flex:1}
+  .pill{font-family:var(--mono);font-size:11.5px;color:var(--muted);border:1px solid var(--line);
+    border-radius:999px;padding:4px 11px;background:#fff;white-space:nowrap}
+  /* ---- hero ---- */
+  .hero{padding:64px 0 40px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--blue);margin:0 0 16px}
+  h1{font-size:40px;line-height:1.1;letter-spacing:-.02em;font-weight:680;margin:0 0 18px}
+  .lede{font-size:18px;line-height:1.6;color:var(--muted);max-width:680px;margin:0}
+  .meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+  .chip{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--code-bg);
+    border:1px solid var(--line);border-radius:6px;padding:5px 10px}
+  .chip b{color:var(--ink);font-weight:600}
+  /* ---- sections ---- */
+  section{padding:52px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:0}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--faint);margin:0 0 10px}
+  h2{font-size:26px;letter-spacing:-.015em;font-weight:660;margin:0 0 14px}
+  h3{font-size:17px;font-weight:620;letter-spacing:-.01em;margin:34px 0 10px}
+  h4{font-size:14px;font-weight:640;margin:22px 0 8px;color:var(--ink)}
+  p{margin:0 0 14px;color:#33383f}
+  p.sub{color:var(--muted)}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.86em;background:var(--code-bg);border:1px solid var(--line-2);
+    border-radius:4px;padding:1px 5px;color:#384049}
+  .mono{font-family:var(--mono)}
+  ul,ol{margin:0 0 16px;padding-left:20px}
+  li{margin:6px 0;color:#33383f}
+  li::marker{color:var(--faint)}
+  strong{font-weight:620;color:var(--ink)}
+  /* ---- callouts ---- */
+  .note{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--blue-wash);
+    border-radius:8px;padding:16px 18px;margin:22px 0;font-size:14px}
+  .note .t{font-weight:620;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--blue);
+    margin-bottom:6px;font-family:var(--mono)}
+  .note p{margin:0;color:#3a4049}
+  /* ---- cards ---- */
+  .grid{display:grid;gap:14px}
+  .grid.two{grid-template-columns:1fr 1fr}
+  .grid.three{grid-template-columns:repeat(3,1fr)}
+  .card{border:1px solid var(--line);border-radius:10px;padding:18px 18px 16px;background:#fff}
+  .card h4{margin:0 0 6px}
+  .card .id{font-family:var(--mono);font-size:11.5px;color:var(--blue);margin:0 0 8px}
+  .card p{font-size:13.5px;margin:0;color:var(--muted);line-height:1.55}
+  /* ---- code block ---- */
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:18px 20px;
+    overflow:auto;margin:18px 0;font-family:var(--mono);font-size:12.5px;line-height:1.62;color:#384049}
+  pre .c{color:var(--faint)}
+  pre .k{color:var(--blue)}
+  pre .s{color:var(--good)}
+  /* ---- tables ---- */
+  .tbl{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px}
+  .tbl th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--faint);border-bottom:1px solid var(--line);padding:0 14px 9px}
+  .tbl td{border-bottom:1px solid var(--line-2);padding:12px 14px;vertical-align:top;color:#34393f}
+  .tbl tr:last-child td{border-bottom:0}
+  .tbl td .mono,.tbl td code{white-space:nowrap}
+  .method{font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;
+    border:1px solid var(--line);display:inline-block}
+  .method.get{color:var(--good);background:#f0faf4;border-color:#cdeeda}
+  .method.post{color:var(--blue);background:var(--blue-wash);border-color:#d4e1fb}
+  /* ---- diagram ---- */
+  .diagram{border:1px solid var(--line);border-radius:12px;padding:8px;background:#fff;margin:22px 0;overflow:auto}
+  .diagram svg{display:block;width:100%;height:auto;min-width:760px}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block;border:1px solid var(--line)}
+  /* ---- module list ---- */
+  .mod{border:1px solid var(--line);border-radius:10px;margin:12px 0;overflow:hidden}
+  .mod-head{display:flex;align-items:baseline;gap:12px;padding:14px 18px;background:#fcfcfd;border-bottom:1px solid var(--line-2)}
+  .mod-head .f{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink)}
+  .mod-head .r{font-size:12px;color:var(--faint);margin-left:auto}
+  .mod-body{padding:14px 18px}
+  .mod-body p{margin:0 0 8px;font-size:13.5px;color:#3a4049}
+  .mod-body p:last-child{margin:0}
+  .exports{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:8px}
+  .exports b{color:var(--blue);font-weight:500}
+  /* ---- stat row ---- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:20px 0}
+  .stat{padding:16px 18px;border-right:1px solid var(--line-2)}
+  .stat:last-child{border-right:0}
+  .stat .n{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+  .stat .l{font-size:12px;color:var(--faint);margin-top:3px}
+  /* ---- flow steps ---- */
+  .steps{counter-reset:s;margin:18px 0;padding:0;list-style:none}
+  .steps li{counter-increment:s;position:relative;padding:0 0 18px 40px;margin:0}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:-2px;width:26px;height:26px;
+    border-radius:50%;background:var(--blue-wash);border:1px solid #d4e1fb;color:var(--blue);
+    font-family:var(--mono);font-size:12px;font-weight:600;display:grid;place-items:center}
+  .steps li::after{content:"";position:absolute;left:13px;top:26px;bottom:0;width:1px;background:var(--line)}
+  .steps li:last-child{padding-bottom:0}
+  .steps li:last-child::after{display:none}
+  .steps b{font-weight:620}
+  footer{padding:40px 0 64px;color:var(--faint);font-size:13px}
+  footer .mono{font-size:12px}
+  .tag{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--code-bg);
+    border:1px solid var(--line-2);border-radius:5px;padding:2px 7px;margin-right:5px;white-space:nowrap}
+  hr.soft{border:0;border-top:1px solid var(--line-2);margin:30px 0}
+  @media(max-width:720px){
+    .wrap,.top-inner,.hero{padding-left:20px;padding-right:20px}
+    h1{font-size:30px}.grid.two,.grid.three{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr 1fr}.stat:nth-child(2){border-right:0}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="logo"></div>
+    <div class="brand">CAPSULE <small>backend architecture</small></div>
+    <div class="top-spacer"></div>
+    <span class="pill">Next 15 · React 19 · localhost:3010</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <p class="eyebrow">Software Factory · Context-Handoff Layer</p>
+    <h1>The CAPSULE backend, as it actually runs.</h1>
+    <p class="lede">
+      CAPSULE turns a raw AI coding session into a portable, scored, reusable unit of
+      memory. It reads Claude Code transcripts off disk, distills them on a
+      <strong>local model</strong>, scores how well the understanding transfers, and stores
+      the result as memory that <strong>follows the entity</strong> — so the next agent
+      starts warm instead of cold.
+    </p>
+    <div class="meta-row">
+      <span class="chip"><b>Runtime</b> · Next.js App Router</span>
+      <span class="chip"><b>Distiller</b> · ollama qwen2.5-coder:14b</span>
+      <span class="chip"><b>Memory</b> · Backboard (live · X-API-Key)</span>
+      <span class="chip"><b>Store</b> · Zustand overlay</span>
+      <span class="chip"><b>Tenant</b> · CAPSULE / Content Engine</span>
+    </div>
+  </div>
+
+  <!-- AT A GLANCE -->
+  <section>
+    <p class="kicker">At a glance</p>
+    <h2>What the backend is responsible for</h2>
+    <p>
+      The whole backend lives in two folders: <code>src/lib/*.ts</code> (the engine) and
+      <code>src/app/api/*</code> (six App Router route handlers that expose it). There is no
+      database server — capsules are written to <code>~/.relay/capsules</code> on disk and,
+      when a key is present, pushed to <strong>Backboard</strong> as durable memory. The
+      canonical dataset (the CAPSULE / Content Engine tenant, its 7 skills, 2 agents, A/B trials
+      and metrics) is a typed, immutable module, <code>src/lib/data.ts</code> — distilled from the
+      user's real <code>~/.claude</code> sessions, not hand-authored.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="n">6</div><div class="l">API routes</div></div>
+      <div class="stat"><div class="n">8</div><div class="l">lib modules</div></div>
+      <div class="stat"><div class="n">6-dim</div><div class="l">transfer score</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">distill engines (local→cloud→heuristic)</div></div>
+    </div>
+    <p class="sub">
+      The dataset itself is <strong>real</strong>: the eight <code>CAP-R001…R008</code> capsules and
+      the 7-skill registry that power the panels were distilled from the user&rsquo;s actual
+      <code>~/.claude</code> sessions by the local model. <strong>Measured</strong>: transferScore,
+      the A/B token deltas, thread_ids, createdAt, model. <strong>Derived</strong>: novelty/importance,
+      reuses, scoreDelta/adoptedBy, and the requirements scaffolding. New live captures
+      (<code>POST /api/capsule</code>) land in a Zustand <em>overlay</em>; the dataset stays immutable.
+    </p>
+  </section>
+
+  <!-- PIPELINE DIAGRAM -->
+  <section>
+    <p class="kicker">Request &amp; data flow</p>
+    <h2>The capsule pipeline</h2>
+    <p>
+      One request — <code>POST /api/capsule</code> — drives the entire distillation pipeline.
+      Each stage is a single named export in <code>src/lib</code>. The model call is the only
+      slow step, and it runs <strong>on-device</strong>.
+    </p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 880 470" role="img" aria-label="CAPSULE pipeline diagram">
+        <defs>
+          <marker id="arr" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 Z" fill="#9aa3ad"/>
+          </marker>
+          <marker id="arrb" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 Z" fill="#2b6cf0"/>
+          </marker>
+          <style>
+            .bx{fill:#fff;stroke:#e6e8eb;stroke-width:1.2;rx:10}
+            .bxa{fill:#f1f5ff;stroke:#2b6cf0;stroke-width:1.3}
+            .bxd{fill:#fcfcfd;stroke:#e6e8eb;stroke-width:1.2}
+            .t{font-family:Inter,sans-serif;font-size:13px;font-weight:600;fill:#1f2329}
+            .ts{font-family:'SFMono-Regular',monospace;font-size:10.5px;fill:#8a929c}
+            .tb{font-family:'SFMono-Regular',monospace;font-size:10.5px;fill:#2b6cf0}
+            .ln{stroke:#9aa3ad;stroke-width:1.4;fill:none}
+            .lnb{stroke:#2b6cf0;stroke-width:1.6;fill:none}
+            .lbl{font-family:'SFMono-Regular',monospace;font-size:9.5px;fill:#8a929c}
+          </style>
+        </defs>
+
+        <!-- row 1 -->
+        <rect class="bx bxd" x="20" y="28" width="170" height="64" rx="10"/>
+        <text class="t" x="34" y="54">Session .jsonl</text>
+        <text class="ts" x="34" y="72">~/.claude/projects</text>
+        <text class="ts" x="34" y="86">/&lt;proj&gt;/&lt;id&gt;.jsonl</text>
+
+        <rect class="bx" x="240" y="28" width="160" height="64" rx="10"/>
+        <text class="t" x="254" y="54">capture.ts</text>
+        <text class="ts" x="254" y="72">parse + compress</text>
+        <text class="ts" x="254" y="86">head+tail · 28k cap</text>
+
+        <rect class="bx bxa" x="450" y="20" width="190" height="80" rx="10"/>
+        <text class="t" x="466" y="46">LOCAL distill</text>
+        <text class="tb" x="466" y="64">ollama qwen2.5</text>
+        <text class="tb" x="466" y="78">-coder:14b</text>
+        <text class="ts" x="466" y="92">cerebras.ts · on-device</text>
+
+        <rect class="bx" x="690" y="28" width="170" height="64" rx="10"/>
+        <text class="t" x="704" y="54">scorer.ts</text>
+        <text class="ts" x="704" y="72">6-dim transfer</text>
+        <text class="ts" x="704" y="86">score 0–100</text>
+
+        <line class="ln" x1="190" y1="60" x2="238" y2="60" marker-end="url(#arr)"/>
+        <line class="lnb" x1="400" y1="60" x2="448" y2="60" marker-end="url(#arrb)"/>
+        <line class="ln" x1="640" y1="60" x2="688" y2="60" marker-end="url(#arr)"/>
+
+        <!-- down to backboard -->
+        <line class="ln" x1="775" y1="92" x2="775" y2="150" marker-end="url(#arr)"/>
+
+        <!-- row 2 -->
+        <rect class="bx bxa" x="640" y="158" width="220" height="74" rx="10"/>
+        <text class="t" x="656" y="184">backboard.ts — store</text>
+        <text class="ts" x="656" y="202">assistant-per-tenant · thread/project</text>
+        <text class="ts" x="656" y="218">send_to_llm=false · +local JSON</text>
+
+        <!-- back across to UI -->
+        <line class="ln" x1="640" y1="195" x2="430" y2="195" marker-end="url(#arr)"/>
+        <rect class="bx bxd" x="240" y="158" width="190" height="74" rx="10"/>
+        <text class="t" x="256" y="184">/api/capsule</text>
+        <text class="ts" x="256" y="202">{capsule, engine, ms,</text>
+        <text class="ts" x="256" y="218">score, store}</text>
+
+        <line class="ln" x1="240" y1="195" x2="192" y2="195" marker-end="url(#arr)"/>
+        <rect class="bx bxd" x="20" y="158" width="170" height="74" rx="10"/>
+        <text class="t" x="34" y="184">Zustand store</text>
+        <text class="ts" x="34" y="202">capturedCapsules[]</text>
+        <text class="ts" x="34" y="218">overlay (newest first)</text>
+
+        <line class="ln" x1="105" y1="232" x2="105" y2="288" marker-end="url(#arr)"/>
+
+        <!-- row 3: UI panels -->
+        <rect class="bx" x="20" y="296" width="840" height="150" rx="12"/>
+        <text class="t" x="40" y="322">page.tsx — surfaced in the UI</text>
+        <text class="ts" x="40" y="340">openPanel drives one of four side panels + the agentic gate</text>
+
+        <rect class="bxd bx" x="40" y="356" width="190" height="72" rx="9"/>
+        <text class="t" x="54" y="382">Knowledge Graph</text>
+        <text class="ts" x="54" y="400">/api/graph</text>
+        <text class="ts" x="54" y="414">entities + learns edges</text>
+
+        <rect class="bxd bx" x="244" y="356" width="190" height="72" rx="9"/>
+        <text class="t" x="258" y="382">Skills</text>
+        <text class="ts" x="258" y="400">/api/skills</text>
+        <text class="ts" x="258" y="414">registry + adopt</text>
+
+        <rect class="bxd bx" x="448" y="356" width="190" height="72" rx="9"/>
+        <text class="t" x="462" y="382">Versions</text>
+        <text class="ts" x="462" y="400">semver RL history</text>
+        <text class="ts" x="462" y="414">learnedFrom capsule</text>
+
+        <rect class="bxd bx" x="652" y="356" width="190" height="72" rx="9"/>
+        <text class="t" x="666" y="382">A/B</text>
+        <text class="ts" x="666" y="400">/api/inherit</text>
+        <text class="ts" x="666" y="414">cold vs warm agent</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><span class="sw" style="background:#f1f5ff;border-color:#2b6cf0"></span> on-device / memory-critical path</span>
+      <span><span class="sw" style="background:#fcfcfd"></span> route handler / UI surface</span>
+      <span><span class="sw" style="background:#fff"></span> lib stage</span>
+    </div>
+
+    <ol class="steps">
+      <li><b>Capture</b> — <code>captureSession(path)</code> reads the <code>.jsonl</code>, counts messages/tools, extracts <code>filesTouched</code> via regex, and compresses to a head+tail transcript capped at 28k chars (where the handoff signal lives).</li>
+      <li><b>Distill (local)</b> — <code>distill(raw)</code> sends a strict-JSON system prompt to <strong>Ollama qwen2.5-coder:14b</strong> with a 120s timeout. Output is parsed into intent / decisions / tried-and-rejected / current-state / next-steps / gotchas / mental-model / open-questions.</li>
+      <li><b>Score</b> — <code>scoreCapsule(capsule)</code> rates six transfer dimensions 0–100, picks the two weakest for coaching tips, and renders a verdict.</li>
+      <li><b>Store</b> — <code>storeCapsule(capsule)</code> writes to Backboard memory (one thread per project) and always mirrors to local JSON so the demo works offline.</li>
+      <li><b>Surface</b> — the route returns <code>{capsule, engine, ms, score, store}</code>; the client prepends it to the Zustand <code>capturedCapsules</code> overlay and opens the Capture panel.</li>
+    </ol>
+  </section>
+
+  <!-- API ROUTES -->
+  <section>
+    <p class="kicker">HTTP surface</p>
+    <h2>API routes</h2>
+    <p>Six handlers under <code>src/app/api</code>. All are <code>dynamic = "force-dynamic"</code>; the two model-calling routes set <code>maxDuration = 120</code> to accommodate the local model.</p>
+
+    <table class="tbl">
+      <thead>
+        <tr><th style="width:42%">Route</th><th>Input</th><th>Output shape</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="method post">POST</span> <code>/api/capsule</code><br><span class="sub" style="font-size:12px">capture → distill → score → store</span></td>
+          <td class="mono" style="font-size:12px">{ path?, index? }<br><span class="sub">path = exact .jsonl<br>index = Nth recent (0=latest)<br>neither = most recent</span></td>
+          <td class="mono" style="font-size:12px">{ capsule, engine, ms,<br>&nbsp;&nbsp;score, store }<br><span class="sub">404 if no sessions</span></td>
+        </tr>
+        <tr>
+          <td><span class="method post">POST</span> <code>/api/inherit</code><br><span class="sub" style="font-size:12px">the money demo — cold vs warm agent</span></td>
+          <td class="mono" style="font-size:12px">{ project, question? }</td>
+          <td class="mono" style="font-size:12px">{ hasCapsule, score,<br>&nbsp;&nbsp;cold, warm }<br><span class="sub">cold = no context, warm = capsule injected</span></td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span> <code>/api/sessions</code></td>
+          <td class="sub" style="font-size:12px">—</td>
+          <td class="mono" style="font-size:12px">{ sessions: SessionMeta[15] }<br><span class="sub">id, project, path, mtime, sizeKB</span></td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span> <code>/api/capsules</code></td>
+          <td class="sub" style="font-size:12px">—</td>
+          <td class="mono" style="font-size:12px">{ capsules: Capsule[] }<br><span class="sub">the 8 real CAP-R0* capsules</span></td>
+        </tr>
+        <tr>
+          <td>
+            <span class="method get">GET</span> <code>/api/skills</code><br>
+            <span class="method post">POST</span> <code>/api/skills</code>
+          </td>
+          <td class="mono" style="font-size:12px">GET —<br>POST { skillId, version }</td>
+          <td class="mono" style="font-size:12px">GET { skills: Skill[] }<br>POST { ok, adopted:{… tag} }<br><span class="sub">400/404 on bad input; no dataset mutation</span></td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span> <code>/api/graph</code></td>
+          <td class="sub" style="font-size:12px">—</td>
+          <td class="mono" style="font-size:12px">{ graph: { nodes, links } }<br><span class="sub">canonical + derived learns edges</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <div class="t">Adoption is a metadata op, not a write</div>
+      <p><code>POST /api/skills</code> validates the skill + version and <em>echoes</em> the adopted descriptor (<code>skillId@version</code> tag) — it never mutates <code>data.ts</code>. The client reflects adoption optimistically in the Zustand <code>adopted</code> overlay. This mirrors the memory-follows-the-entity rule: opting an org into a version touches the assistant&rsquo;s thread metadata, it does not trigger a generation.</p>
+    </div>
+  </section>
+
+  <!-- LIB MODULES -->
+  <section>
+    <p class="kicker">The engine</p>
+    <h2>Library modules &amp; responsibilities</h2>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">capture.ts</span><span class="r">read &amp; compress</span></div>
+      <div class="mod-body">
+        <p>Reads a Claude Code session transcript from <code>~/.claude/projects/&lt;proj&gt;/&lt;id&gt;.jsonl</code> and extracts the raw material for distillation. Walks each JSONL line, separating <code>USER</code> intents, <code>AI</code> text, and <code>TOOL[name]</code> actions; harvests <code>filesTouched</code> via a path regex (excluding <code>node_modules</code>); computes duration from first/last timestamps; and keeps the <strong>head (intent) + tail (latest state)</strong> when over 28k chars.</p>
+        <p class="exports">exports · <b>listSessions(limit)</b> · <b>captureSession(path, maxChars)</b> · types <b>RawSession</b>, <b>SessionMeta</b></p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">cerebras.ts</span><span class="r">distill — the local model engine</span></div>
+      <div class="mod-body">
+        <p>Despite the filename, the <strong>primary engine is local Ollama</strong>. <code>distill(session)</code> turns a transcript into a structured <code>HandoffCapsule</code> using a strict-JSON system prompt, then backfills any empty fields from the heuristic so a capsule is never blank. Returns <code>{ capsule, engine, ms }</code> where <code>engine</code> is stamped with the model that actually ran.</p>
+        <p class="exports">exports · <b>distill(session)</b> → { capsule, engine, ms }</p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">scorer.ts</span><span class="r">6-dimension transfer score</span></div>
+      <div class="mod-body">
+        <p>A handoff isn&rsquo;t notes — it&rsquo;s whether understanding <em>transfers</em>. <code>scoreCapsule(c)</code> rates six cognitive dimensions 0–100 using a <code>richness()</code> heuristic (length + specificity: file refs, <code>:line</code>, numbers, backticks, &ldquo;because&rdquo;), averages them into an overall, and emits a verdict plus coaching tips for the two weakest dimensions.</p>
+        <p class="exports">exports · <b>scoreCapsule(c)</b> → HandoffScore · dimensions: intent_clarity, decision_traceability, reasoning_explicitness, gotcha_coverage, next_step_actionability, mental_model_transfer</p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">backboard.ts</span><span class="r">memory store + tenant mapping</span></div>
+      <div class="mod-body">
+        <p>CAPSULE&rsquo;s memory component. <code>storeCapsule(c)</code> pushes the DISTILLED briefing into Backboard (<code>POST app.backboard.io/api/threads/messages</code>, <code>X-API-Key</code>, <code>send_to_llm:"false"</code>; <code>thread_id</code> omitted on the first write so Backboard auto-creates + returns a real uuid, then cached) and always mirrors to <code>~/.relay/capsules/*.json</code> as a fallback. Also creates/caches the single <code>capsule</code> assistant and exports the typed write envelope.</p>
+        <p class="exports">exports · <b>storeCapsule</b> · <b>storeCapsuleMemory</b> · <b>getAssistantId</b> · <b>listLocalCapsules</b> · <b>latestCapsuleForProject</b> · <b>capsuleToBackboardEnvelope</b> · <b>projectThreadKey</b> · <b>skillMemoryTag</b></p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">capsule.ts</span><span class="r">the handoff unit + briefing</span></div>
+      <div class="mod-body">
+        <p>Defines <code>HandoffCapsule</code> — the portable, structured record that survives the session boundary — plus the six <code>DIMENSIONS</code> and their labels. <code>capsuleToBriefing(c)</code> renders a compact, agent-ready Markdown briefing (&ldquo;Decisions already made — do NOT re-litigate&rdquo;, &ldquo;Already tried and rejected&rdquo;, gotchas, mental model, next steps) — this is what gets injected into the next agent.</p>
+        <p class="exports">exports · <b>HandoffCapsule</b> · <b>HandoffScore</b> · <b>DIMENSIONS</b> · <b>capsuleToBriefing(c)</b></p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">data.ts</span><span class="r">canonical immutable dataset</span></div>
+      <div class="mod-body">
+        <p>The real enterprise world: <strong>CAPSULE / Content Engine</strong> — requirements, work orders, 8 capsules (<code>CAP-R001…R008</code>) distilled from real sessions, 7 skills with semver version histories (8 versions forged, <code>learnedFrom</code> real capsules), 2 agents, models, MCPs, the knowledge graph, 3 A/B trials with <strong>measured</strong> Ollama token deltas, and roll-up metrics (<code>tokensSavedTotal 43,032</code>, <code>avgTransfer 46</code>, <code>adoptionRate 63</code>). Never mutated at runtime.</p>
+        <p class="exports">exports · <b>data: Dataset</b></p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">selectors.ts</span><span class="r">pure derivations over the dataset</span></div>
+      <div class="mod-body">
+        <p>Side-effect-free helpers: <code>buildGraph()</code> (canonical nodes/links + deduped capsule→skill <code>learns</code> edges), <code>recommendSkill(query)</code> (blends token savings 40% + transfer 40% + relevance 20%, with section-tag bias), <code>publishedCurrent()</code>/<code>latestVersion()</code> (semver resolution with adoption overlay), <code>provenanceFor()</code> (upstream/downstream lineage), and deterministic <code>fmt</code>/<code>fmtTime</code> formatters for hydration-safe rendering.</p>
+        <p class="exports">exports · <b>buildGraph</b> · <b>recommendSkill</b> · <b>publishedCurrent</b> · <b>latestVersion</b> · <b>capsulesForSkill</b> · <b>provenanceFor</b> · <b>totalSaved</b></p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">store.ts</span><span class="r">Zustand coordination store</span></div>
+      <div class="mod-body">
+        <p>The single client coordination contract. Owns all UI/session state — <code>openPanel</code>, panel width, <strong>agenticMode</strong> + <strong>agenticThreshold</strong>, the skill <code>adopted</code> overlay, and the <code>capturedCapsules</code> overlay where real captures land (<code>addCapsule</code> prepends, newest first). The canonical <code>data</code> stays immutable; adoption and captures are modelled as overlays on top of it.</p>
+        <p class="exports">exports · <b>useStore</b> · constants <b>AGENTIC_MIN/MAX</b>, <b>DEFAULT_ENGINE</b> (<span class="mono">ollama:qwen2.5-coder:14b (local)</span>)</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOCAL MODEL ENGINE -->
+  <section>
+    <p class="kicker">Distillation engine</p>
+    <h2>Local-first model, with graceful fallbacks</h2>
+    <p>
+      Distillation runs on the <strong>local model by default</strong>. The chain tries on-device
+      first, an optional cloud boost second, and a pure-heuristic backfill last — so a capsule
+      always renders, even fully offline with no API keys.
+    </p>
+
+    <div class="grid three">
+      <div class="card">
+        <p class="id">PRIMARY · on-device</p>
+        <h4>Ollama qwen2.5-coder:14b</h4>
+        <p><code>POST localhost:11434/api/chat</code>, <code>format:"json"</code>, temp 0.2, 120s <code>AbortController</code> timeout. Runs with no API key and no network. Engine label: <span class="mono" style="font-size:11px">ollama:&lt;model&gt; (local)</span>.</p>
+      </div>
+      <div class="card">
+        <p class="id">OPTIONAL · cloud boost</p>
+        <h4>Cerebras llama-3.3-70b</h4>
+        <p>Attempted <em>only</em> when <code>CEREBRAS_API_KEY</code> is set and the local run returns nothing. Wafer-scale speed; <code>response_format: json_object</code>.</p>
+      </div>
+      <div class="card">
+        <p class="id">LAST RESORT · no model</p>
+        <h4>Heuristic</h4>
+        <p>Pure string analysis of the transcript — pulls intents, &ldquo;because/instead&rdquo; decisions, error/gotcha lines, trailing state. Guarantees a non-blank capsule offline.</p>
+      </div>
+    </div>
+
+    <pre><span class="c">// cerebras.ts — distill() resolution order</span>
+<span class="k">const</span> r = (<span class="k">await</span> viaOllama(transcript))           <span class="c">// 1 · LOCAL, primary</span>
+  || (process.env.CEREBRAS_API_KEY
+        ? <span class="k">await</span> viaCerebras(transcript) : <span class="k">null</span>)   <span class="c">// 2 · cloud, only if key set</span>
+<span class="k">let</span> d = r?.d || heuristic(session)                  <span class="c">// 3 · heuristic backfill</span>
+<span class="k">let</span> engine = r?.engine || <span class="s">"heuristic"</span>
+<span class="c">// empty fields are topped up from the heuristic so a capsule is never blank</span></pre>
+
+    <p class="sub">Environment overrides: <code>OLLAMA_URL</code>, <code>RELAY_OLLAMA_MODEL</code>, <code>CEREBRAS_API_KEY</code>, <code>CEREBRAS_MODEL</code>. The <code>/api/inherit</code> demo uses the same precedence (Cerebras if keyed, else local Ollama) for both the cold and warm agent calls.</p>
+  </section>
+
+  <!-- BACKBOARD MEMORY -->
+  <section>
+    <p class="kicker">Memory model</p>
+    <h2>Backboard — memory that follows the entity</h2>
+    <p>
+      Backboard is CAPSULE&rsquo;s durable memory substrate. The governing rule across the
+      whole system: <strong>memory follows the entity (the assistant / tenant), not the
+      model.</strong> Swap the underlying model — Opus → Sonnet → Haiku — and every capsule
+      survives, because context lives in Backboard, not in the weights. That is exactly what
+      makes model selection safe.
+    </p>
+
+    <div class="grid two">
+      <div class="card">
+        <h4>Assistant-per-tenant</h4>
+        <p>Every enterprise gets <strong>one</strong> assistant (here named <code>capsule</code>), created once via <code>POST /assistants</code> and cached in <code>~/.capsule/backboard.json</code>. The <code>assistant_id</code> is the tenant-isolation boundary — a read/write can only ever touch its own enterprise&rsquo;s namespace; one tenant never sees another&rsquo;s capsules. <span class="mono" style="font-size:11px">getAssistantId() → cached "capsule" id</span></p>
+      </div>
+      <div class="card">
+        <h4>Thread-per-project</h4>
+        <p>Each project is one Backboard thread under that assistant. The first write per project omits <code>thread_id</code> so Backboard auto-creates one and returns a real uuid (e.g. <code>d877861b-…</code>), which is cached under a stable local key <code>projectThreadKey(ent, project)</code> = <code>&lt;ent&gt;__&lt;project&gt;</code>. Memory follows the entity (tenant + project), never the model.</p>
+      </div>
+      <div class="card">
+        <h4>send_to_llm = false</h4>
+        <p>A capsule write is a <strong>memory op, not an inference op</strong>. We persist context for later retrieval; we never trigger a generation on write. It costs storage tokens, not completion tokens.</p>
+      </div>
+      <div class="card">
+        <h4>Skill memories are tagged</h4>
+        <p>Skill memories carry a <code>&lt;skillId&gt;@&lt;semver&gt;</code> tag, pinning a recalled memory to the exact skill version that minted it — which is what makes the registry&rsquo;s semver bumps auditable end-to-end.</p>
+      </div>
+    </div>
+
+    <pre><span class="c">// backboard.ts — the typed write envelope (verified-live shape)</span>
+<span class="k">type</span> BackboardEnvelope = {
+  assistant_id: <span class="s">"capsule"</span>,                   <span class="c">// the single tenant assistant = isolation key</span>
+  tags:         [<span class="s">"skill/angular-upgrade@1.0.0"</span>], <span class="c">// pin to skill version</span>
+  send_to_llm:  <span class="s">"false"</span>,                    <span class="c">// memory write, never inference</span>
+  memory:       <span class="s">"Auto"</span>,
+  content:      <span class="s">"&lt;distilled briefing&gt;"</span>        <span class="c">// only the distilled capsule, never the transcript</span>
+  <span class="c">// thread_id omitted on first write → Backboard auto-creates + returns a uuid (cached)</span>
+}</pre>
+
+    <p class="sub">Backboard ranks #1 on LoCoMo / LongMemEval — high-recall long-term memory is what lets yesterday&rsquo;s capsule lift today&rsquo;s session, which is the token-savings reward the A/B panel surfaces. When no <code>BACKBOARD_API_KEY</code> is present, <code>storeCapsule</code> still mirrors to local JSON so the demo is fully self-contained.</p>
+  </section>
+
+  <!-- DATA MODEL -->
+  <section>
+    <p class="kicker">Domain model</p>
+    <h2>The data model</h2>
+    <p>
+      Strict TypeScript in <code>types.ts</code>, instantiated once in <code>data.ts</code>.
+      Every entity is reachable in the knowledge graph; the central hub is Backboard memory.
+    </p>
+
+    <div class="grid two">
+      <div class="card">
+        <p class="id">Capsule</p>
+        <h4>The learnable unit</h4>
+        <p>Each carries a single <code>finding</code> (the novel insight), <code>learnings[]</code>, <code>mentalModel</code>, <code>decisions[]</code>, <code>gotchas[]</code>, and economics: <code>transferScore</code>, <code>novelty</code>, <code>importance</code>, <code>tokensSpent</code>, <code>tokensSavedPerReuse</code>, <code>reuses</code>. The finding is <code>routedTo[]</code> the skills/agents that absorb it, each route proposing a semver <code>bump</code>.</p>
+      </div>
+      <div class="card">
+        <p class="id">Skill</p>
+        <h4>Versioned, opt-in capability</h4>
+        <p><code>scope</code> (enterprise/project/org), <code>repoPath</code> (<code>capsule://skills/…</code>), <code>currentVersion</code>, <code>optedIn</code>, <code>adoptionPolicy</code> (auto/manual), and a <code>versions[]</code> semver history. Each version records <code>learnedFrom: {capsule, finding}</code>, <code>changelog</code>, <code>tokenDeltaPerUse</code>, <code>scoreDelta</code>, <code>adoptedBy</code>.</p>
+      </div>
+      <div class="card">
+        <p class="id">Agent · WorkOrder · Requirement</p>
+        <h4>Who does the work</h4>
+        <p>Requirements (plain-English intent) → Work Orders (units of agent work) → Agents (<code>usesSkills[]</code>, <code>executes[]</code>, versioned). Each agent version is also <code>derivedFromCapsule</code> — the RL loop reaches agents too.</p>
+      </div>
+      <div class="card">
+        <p class="id">AbTrial · Metrics · Graph</p>
+        <h4>Proof &amp; topology</h4>
+        <p><code>AbTrial</code> pairs a <code>withCapsule</code> vs <code>withoutCapsule</code> run (tokens, steps, passed, transferScore). <code>Metrics</code> rolls up <code>tokensSavedTotal</code>, <code>avgTransfer</code>, <code>adoptionRate</code> + weekly compounding. <code>Graph</code> = nodes (requirement/workorder/agent/skill/capsule/model/mcp/memory) + typed links (implements/executes/uses/produces/derives/stores/reads/learns).</p>
+      </div>
+    </div>
+
+    <hr class="soft" />
+    <h4>Real tenant numbers (data.ts)</h4>
+    <div class="stats">
+      <div class="stat"><div class="n">43,032</div><div class="l">tokens saved total</div></div>
+      <div class="stat"><div class="n">46</div><div class="l">avg transfer score</div></div>
+      <div class="stat"><div class="n">63%</div><div class="l">adoption rate</div></div>
+      <div class="stat"><div class="n">8 / 7</div><div class="l">capsules / skills evolved</div></div>
+    </div>
+    <p class="sub">Tenant: <span class="mono">CAPSULE · Content Engine · assistant "capsule" · Backboard Memory Pro · 4 seats</span>. The compounding curve climbs 16,680 → 43,032 tokens saved across weeks 2026-W25 → W26. <code>avgTransfer 46</code> = mean of the 8 measured transfer scores.</p>
+  </section>
+
+  <!-- AGENTIC GATING -->
+  <section>
+    <p class="kicker">Autonomy</p>
+    <h2>The agentic gating loop</h2>
+    <p>
+      Auto-distillation decides whether a freshly-scored capsule is <em>worth keeping and
+      routing</em> without a human in the loop. The gate is a single boolean over two signals
+      already on the capsule:
+    </p>
+
+    <pre><span class="c">// keep / auto-adopt a capsule when EITHER signal clears the bar</span>
+<span class="k">const</span> keep = capsule.transferScore &gt;= agenticThreshold   <span class="c">// it transfers well…</span>
+          || capsule.novelty &gt;= 80                      <span class="c">// …or it's genuinely new</span></pre>
+
+    <ul>
+      <li><strong>transferScore ≥ threshold</strong> — the handoff is good enough to drop into the next agent. Threshold is user-set via the Zustand slider, clamped <code>[0,100]</code> (default 50).</li>
+      <li><strong>novelty ≥ 80</strong> — even a rougher capsule is worth keeping if the finding is genuinely new, so unique knowledge is never discarded on a quality technicality.</li>
+    </ul>
+
+    <div class="note">
+      <div class="t">Manual vs agentic</div>
+      <p>With <code>agenticMode</code> OFF, a routed finding waits for human sign-off before a skill version is adopted (<code>RouteStatus: "proposed"</code>). With it ON, findings clearing the gate <strong>auto-adopt org-wide</strong> — the toast reads &ldquo;findings ≥ N transfer auto-adopt.&rdquo; Either way, adoption is recorded in the <code>adopted</code> overlay, never as a dataset mutation.</p>
+    </div>
+  </section>
+
+  <!-- SKILLS REPO + RL -->
+  <section>
+    <p class="kicker">Compounding loop</p>
+    <h2>Where the skills repo + RL versioning fit</h2>
+    <p>
+      The capsule pipeline is the front half of a reinforcement loop. The back half is the
+      <strong>enterprise skills registry</strong>: a capsule&rsquo;s <code>finding</code> is
+      <code>routedTo</code> a skill, proposing a semver <strong>bump</strong>; once adopted it
+      becomes a new published <code>SkillVersion</code> that future sessions inherit. That is
+      the &ldquo;RL&rdquo; — reward (tokens saved, transfer lift) selects which findings get
+      promoted into durable, versioned capability.
+    </p>
+
+    <ol class="steps">
+      <li><b>Capsule mints a finding.</b> Distillation surfaces one novel, learnable insight per session — e.g. <em>&ldquo;when upgrading Angular versions, ensure local bridges and WebSocket servers are correctly configured.&rdquo;</em> (CAP-R004)</li>
+      <li><b>Finding routes to a skill.</b> <code>routedTo[]</code> names the target skill and proposes a <code>bump</code> (major/minor/patch) and a <code>proposedVersion</code>, status <code>proposed → adopted</code>.</li>
+      <li><b>Promotion, not push.</b> A capsule clearing the gate (<code>transferScore ≥ threshold</code> OR <code>novelty ≥ 80</code>) lands as a <code>proposed</code> version on a <code>promotion/&lt;skill&gt;</code> staging ref of <code>master</code>. <b>Agentic CI</b> then A/B-tests the new version vs current and regression-checks prior capsules, publishing only if the measured reward improves.</li>
+      <li><b>Registry publishes a version.</b> A new <code>SkillVersion</code> records <code>learnedFrom: {capsule, finding}</code>, a <code>changelog</code>, and the measured <code>tokenDeltaPerUse</code> + <code>scoreDelta</code> — the reward signal, pinned to <code>skillId@semver</code>.</li>
+      <li><b>Agents inherit it.</b> Agents that <code>usesSkills</code> the skill pick up the new version; their own version history is likewise <code>derivedFromCapsule</code>.</li>
+      <li><b>A/B proves the lift.</b> The A/B panel runs a task <em>with</em> vs <em>without</em> the capsule on the local model, measuring the real token reduction (e.g. AB-03: 404 → 247 tokens, –39%; AB-01 –16%; AB-02 honestly 0).</li>
+    </ol>
+
+    <p class="sub">
+      Versions are pure semver (<code>compareSemver</code>, <code>latestVersion</code>,
+      <code>publishedCurrent</code> in <code>selectors.ts</code>). The repo address is
+      <code>capsule://skills/&lt;name&gt;</code>; scope can be <code>enterprise</code>,
+      <code>org</code>, or <code>project</code>. The four side panels —
+      <strong>Knowledge Graph</strong>, <strong>Skills</strong>, <strong>Versions</strong>,
+      <strong>A/B</strong> — are each a read view onto a different slice of this loop.
+    </p>
+
+    <div class="grid two">
+      <div class="card">
+        <p class="id">skill/command-verification · v2.0.0</p>
+        <h4>A real RL bump</h4>
+        <p>v1.0.0 (major, from CAP-R007) — inspect system state, don&rsquo;t assume. v2.0.0 (major, from CAP-R005) — verify the actual current state from authoritative docs: <code>tokenDeltaPerUse −1920</code>, <code>scoreDelta +5</code>, <code>published</code>, adopted by 3. Both versions stay queryable.</p>
+      </div>
+      <div class="card">
+        <p class="id">/api/graph · learns edges</p>
+        <h4>Provenance is derived, not stored</h4>
+        <p><code>buildGraph()</code> synthesizes a <code>learns</code> edge from each capsule to every skill it adopted into (deduped against existing <code>produces</code> edges), so the graph always shows where a skill&rsquo;s knowledge actually came from.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p class="mono">CAPSULE · Next.js 15 App Router · React 19 · Tailwind v4 · Zustand 5 · <code>cd relay &amp;&amp; npm run dev</code> → localhost:3010</p>
+    <p>Backend: <span class="tag">src/lib/*.ts</span><span class="tag">src/app/api/*</span> · distilled locally on qwen2.5-coder:14b · memory in Backboard. Accurate to the working source.</p>
+  </footer>
+
+</div>
+</body>
+</html>

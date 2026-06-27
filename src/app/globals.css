@@ -1,0 +1,261 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* ============================================================
+   CAPSULE — 8090 Software Factory · LIGHT THEME
+   Palette + base + scrollbars ported 1:1 from factory.html
+   ============================================================ */
+:root {
+  /* surfaces */
+  --bg: #ffffff;
+  --side: #f7f8f9;
+  --side2: #f2f3f5;
+  --panel: #ffffff;
+  --line: #e6e8eb;
+  --line2: #eceef0;
+  --hover: #f0f1f3;
+  --activebg: #eaf1fe;
+
+  /* ink */
+  --ink: #1f2329;
+  --ink2: #3c4149;
+  --mut: #6b7280;
+  --dim: #9aa0a6;
+
+  /* primary blue */
+  --blue: #2b6cf0;
+  --blue-d: #1f5bd6;
+  --blue-bg: #eaf1fe;
+
+  /* entity colors */
+  --cap: #0ea5e9;     /* capsule  */
+  --skill: #7c3aed;   /* skill    */
+  --agent: #16a34a;   /* agent    */
+  --wo: #d97706;      /* workorder */
+  --req: #e11d48;     /* requirement */
+  --model: #2563eb;   /* model    */
+  --mcp: #0d9488;     /* mcp      */
+  --mem: #4f46e5;     /* memory (Backboard) */
+
+  /* semantic */
+  --green: #16a34a;
+  --green-bg: #e9f7ee;
+  --amber: #d97706;
+  --amber-bg: #fef3e2;
+  --rose: #e11d48;
+  --violet: #7c3aed;
+
+  --mono: ui-monospace, "SF Mono", "Consolas", monospace;
+  --r: 10px;
+
+  /* super-saiyan accent — bright fluorescent green-yellow (chartreuse).
+     Used as the border on action elements and the ON fill of toggles. Dark
+     ink rides on the bright fill so text stays readable; the soft glow is a
+     single rgba so every component shares the exact same bloom. */
+  --ss: #b6ff00;
+  --ss-2: #c2ff1a;
+  --ss-ink: #1f2329; /* dark ink for text on the bright fill */
+  --ss-glow: rgba(182, 242, 0, 0.55);
+  --ss-tint: #f3ffd4; /* faint fill for hover on outline actions */
+  --ss-tint2: #e9ff9f; /* slightly stronger fill for the pressed state */
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 13.5px/1.55 "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow: hidden; /* full-height app grid; inner regions scroll */
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+
+/* ---------- global clickable affordance ----------
+   Make "is this clickable?" unambiguous app-wide without shouting: every
+   interactive element resolves to a pointer cursor, disabled controls read as
+   blocked, and pressing any button gives a faint tactile dim. Calm by design —
+   the loud styling lives in the per-component hover/active states. */
+[role="button"],
+[role="switch"],
+[role="tab"],
+[role="separator"],
+summary,
+label:has(input:not([type="text"]):not([type="search"])) {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"],
+[disabled] {
+  cursor: not-allowed;
+}
+
+button:not(:disabled):active {
+  /* faint press feedback shared by all buttons; component active: states layer
+     their own color on top of this. */
+  filter: brightness(0.98);
+}
+
+a {
+  color: var(--blue);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+
+a:hover {
+  color: var(--blue-d);
+}
+
+/* ---------- scrollbars ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #dfe2e6;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #cbcfd5;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #dfe2e6 transparent;
+}
+
+/* ---------- global utilities ---------- */
+.mono {
+  font-family: var(--mono);
+}
+
+/* hide scrollbar (skill-selector pill rails) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* hairline divider */
+.hairline {
+  background: var(--line);
+}
+
+/* dotted graph backdrop used by the Knowledge Graph panel */
+.graph-grid {
+  background-image: radial-gradient(#eef0f3 1px, transparent 1px);
+  background-size: 18px 18px;
+  background-color: #fff;
+}
+
+/* ---------- CAPSULE super-saiyan aura ----------
+   When the composer's Capsule toggle is ON, the input box wears a bright
+   fluorescent-yellow energy field. Purely box-shadow (no layout/overflow):
+   a gentle 1.6s pulse breathes the inner ring + outer bloom. The intentional
+   capsule-yellow accent is the one sanctioned exception to the one-blue rule. */
+@keyframes capsule-aura {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px #ccff00,
+      0 0 6px 1px #eaff00cc,
+      0 0 16px 2px #eaff0066,
+      0 0 30px 6px #ccff0033;
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px #eaff00,
+      0 0 10px 2px #eaff00ee,
+      0 0 26px 5px #eaff0088,
+      0 0 46px 12px #ccff0044;
+  }
+}
+
+.capsule-aura {
+  border-color: #ccff00 !important;
+  animation: capsule-aura 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capsule-aura {
+    animation: none;
+    box-shadow:
+      0 0 0 1px #ccff00,
+      0 0 10px 2px #eaff00cc,
+      0 0 26px 5px #eaff0066;
+  }
+}
+
+/* ---------- super-saiyan glow ----------
+   Shared chartreuse bloom for action elements and ON toggles. `.ss-glow` is the
+   static soft halo; `.ss-glow-pulse` breathes it for hero affordances. Pure
+   box-shadow so it never affects layout or clipping. */
+@keyframes ss-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px 1px var(--ss-glow);
+  }
+  50% {
+    box-shadow: 0 0 13px 3px var(--ss-glow);
+  }
+}
+
+.ss-glow {
+  box-shadow: 0 0 10px 2px var(--ss-glow);
+}
+
+.ss-glow-pulse {
+  animation: ss-glow 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ss-glow-pulse {
+    animation: none;
+    box-shadow: 0 0 10px 2px var(--ss-glow);
+  }
+}
+
+/* tiny tooltip used by the editor's top-level icon toolbar */
+.tip {
+  position: absolute;
+  top: 38px;
+  right: 0;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.12s;
+  z-index: 8;
+}
+.tip-host:hover .tip {
+  opacity: 1;
+}

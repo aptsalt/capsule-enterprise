@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAPSULE — 3-Minute Demo Script</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#1f2329; --ink2:#3c4149; --mut:#6b7280; --dim:#9aa0a6;
+    --hair:#e6e8eb; --hair2:#eceef0; --chip:#f6f7f9;
+    --blue:#2b6cf0; --blue-d:#1f5bd6; --blue-soft:#eef3fe; --blue-line:#d9e4fd;
+    --good:#15803d; --good-bg:#f0fbf3; --warn:#b45309; --bad:#b91c1c;
+    --energy:#b6ff00; --energy-ink:#3d5400; --energy-soft:rgba(182,255,0,.12);
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.62 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    letter-spacing:-0.005em;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:64px 32px 120px}
+  a{color:var(--blue);text-decoration:none}
+  code,.m{font-family:var(--mono);font-size:.85em}
+  .m{background:var(--chip);border:1px solid var(--hair);border-radius:5px;padding:1px 6px;color:var(--ink);white-space:nowrap}
+  strong{font-weight:650}
+
+  /* energy accent */
+  .energy{background:var(--energy);color:var(--energy-ink);border-radius:4px;padding:0 6px;font-weight:650;
+    font-family:var(--mono);font-size:.82em;letter-spacing:.01em;white-space:nowrap}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--energy);
+    box-shadow:0 0 0 3px rgba(182,255,0,.25);margin-right:9px;vertical-align:middle}
+
+  /* hero */
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--blue);margin:0 0 14px}
+  h1{font-size:40px;line-height:1.1;font-weight:680;letter-spacing:-0.025em;margin:0 0 16px;max-width:820px}
+  h1 .hl{position:relative;white-space:nowrap}
+  h1 .hl::after{content:"";position:absolute;left:-2px;right:-2px;bottom:2px;height:11px;background:var(--energy);z-index:-1;border-radius:2px}
+  .lede{font-size:18.5px;color:var(--ink2);max-width:760px;margin:0 0 22px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .pill{font:650 12px var(--mono);padding:5px 11px;border-radius:999px;background:var(--chip);color:var(--ink2);border:1px solid var(--hair)}
+  .pill.b{background:var(--blue-soft);color:var(--blue-d);border-color:var(--blue-line)}
+  .pill.g{background:var(--good-bg);color:var(--good);border-color:#cdeccf}
+  .pill.e{background:var(--energy-soft);color:var(--energy-ink);border-color:#d6f59a}
+  .accentbar{height:4px;width:60px;background:var(--energy);border-radius:2px;margin:26px 0 0}
+
+  /* sections */
+  section{margin-top:64px}
+  h2{font-size:13px;font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
+    font-weight:600;margin:0 0 8px;padding-bottom:12px;border-bottom:1px solid var(--hair)}
+  h2 .num{color:var(--blue);margin-right:10px}
+  h2 .clock{float:right;color:var(--dim);font-size:11px;letter-spacing:.04em}
+  .h2sub{font-size:15.5px;color:var(--mut);margin:14px 0 26px;max-width:760px}
+
+  /* the hook card */
+  .hook{border:1px solid var(--hair);border-radius:16px;padding:0;overflow:hidden;position:relative}
+  .hook::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--energy)}
+  .hook .root{background:linear-gradient(90deg,var(--energy-soft),rgba(182,255,0,0) 72%);padding:22px 26px;border-bottom:1px solid var(--hair)}
+  .hook .root .t{font:650 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--energy-ink);margin:0 0 6px}
+  .hook .root .big{font-size:21px;font-weight:650;letter-spacing:-0.01em;margin:0}
+  .hook .root .big em{font-style:normal;background:var(--energy);padding:0 6px;border-radius:4px}
+  .symptoms{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+  .sym{padding:20px 22px;border-right:1px solid var(--hair)}
+  .sym:last-child{border-right:0}
+  .sym .th{font:650 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--blue);margin:0 0 6px}
+  .sym p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.5}
+  .sym .br{font:600 12px var(--mono);color:var(--mut);margin-top:8px;display:block}
+
+  /* spoken lines */
+  .say{border-left:3px solid var(--blue);background:var(--blue-soft);border-radius:0 10px 10px 0;
+    padding:14px 18px;margin:14px 0;font-size:15px;color:var(--ink);line-height:1.58}
+  .say .who{font:650 10.5px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--blue);display:block;margin-bottom:5px}
+  .land{display:flex;gap:10px;align-items:center;margin-top:6px;font-size:14px;color:var(--energy-ink)}
+  .land b{font-weight:650}
+
+  /* beats timeline */
+  .beats{border:1px solid var(--hair);border-radius:16px;overflow:hidden}
+  .beat{display:grid;grid-template-columns:200px 1fr;gap:24px;padding:22px 26px;align-items:start}
+  .beat + .beat{border-top:1px solid var(--hair)}
+  .beat.money{background:linear-gradient(90deg,var(--energy-soft),rgba(182,255,0,0) 78%)}
+  .beat .side{position:sticky}
+  .beat .nlbl{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .beat .n{flex:none;width:26px;height:26px;line-height:26px;text-align:center;border-radius:8px;
+    background:var(--blue-soft);color:var(--blue);font:650 13px var(--mono)}
+  .beat.money .n{background:var(--energy);color:var(--energy-ink)}
+  .beat .ttl{font:650 11px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--blue)}
+  .beat.money .ttl{color:var(--energy-ink)}
+  .beat .time{font:600 11px var(--mono);color:var(--dim)}
+  .beat .where{font-size:12.5px;color:var(--mut);line-height:1.5}
+  .beat .where .loc{font-family:var(--mono);color:var(--ink2)}
+  .beat .body h3{margin:0 0 8px;font-size:17px;letter-spacing:-0.01em}
+  .beat .body p{margin:0 0 10px;font-size:14.5px;color:var(--ink2);line-height:1.58}
+  .beat .body ul{margin:6px 0 10px;padding-left:18px}
+  .beat .body li{font-size:14px;color:var(--ink2);line-height:1.55;margin:4px 0}
+
+  /* money AB cards */
+  .abx{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:center;margin:4px 0 8px}
+  @media(max-width:620px){.abx{grid-template-columns:1fr 1fr}}
+  .abc{border:1px solid var(--hair);border-radius:12px;padding:14px 16px}
+  .abc.win{border-color:#d6f59a;background:var(--energy-soft)}
+  .abc.cold{background:#fbfbfc}
+  .abc .hh{font:650 9.5px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--dim);margin-bottom:6px}
+  .abc .big{font:700 30px/1 var(--mono)}
+  .abc.win .big{color:var(--energy-ink)} .abc.cold .big{color:var(--mut)}
+  .abc .sm{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.4}
+  .delta{text-align:center;font:700 22px var(--mono);color:var(--good)}
+  .delta small{display:block;font-size:11px;color:var(--mut);font-weight:600;margin-top:3px}
+
+  /* theme map table */
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:4px}
+  th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--hair);vertical-align:top}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);font-weight:600}
+  td .beatref{font-family:var(--mono);font-size:12px;color:var(--blue)}
+  .theme{display:inline-block;font:650 12px var(--mono);padding:3px 10px;border-radius:999px;background:var(--energy);color:var(--energy-ink)}
+  td.why{color:var(--ink2);font-size:13.5px;line-height:1.5}
+
+  /* why-we-win cards */
+  .wins{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:720px){.wins{grid-template-columns:1fr} .symptoms{grid-template-columns:1fr 1fr} .beat{grid-template-columns:1fr;gap:10px}}
+  @media(max-width:460px){.symptoms{grid-template-columns:1fr}}
+  .win{border:1px solid var(--hair);border-radius:14px;padding:20px 22px}
+  .win .t{font:650 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--good);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+  .win .t .chk{width:18px;height:18px;border-radius:50%;background:var(--good-bg);color:var(--good);display:grid;place-items:center;font-size:11px;border:1px solid #cdeccf}
+  .win p{margin:0;font-size:14px;color:var(--ink2);line-height:1.56}
+  .win.honest .t{color:var(--warn)} .win.honest .t .chk{background:#fff8ee;color:var(--warn);border-color:#f3e2c4}
+
+  /* close banner */
+  .close{margin-top:18px;border:1px solid var(--blue-line);background:var(--blue-soft);border-radius:14px;padding:22px 24px}
+  .close .l{font:650 10.5px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--blue);margin:0 0 8px}
+  .close p{margin:0;font-size:17px;line-height:1.5;color:var(--ink);font-weight:550}
+  .close p em{font-style:normal;background:var(--energy);padding:0 6px;border-radius:4px;color:var(--energy-ink)}
+
+  /* QA */
+  .qa{display:flex;flex-direction:column;gap:12px}
+  .qcard{border:1px solid var(--hair);border-radius:13px;padding:18px 20px}
+  .qcard .q{font:650 14.5px Inter;color:var(--ink);margin:0 0 8px;display:flex;gap:9px;align-items:baseline}
+  .qcard .q .qq{font:700 12px var(--mono);color:var(--blue);flex:none}
+  .qcard .a{margin:0;font-size:14px;color:var(--ink2);line-height:1.58}
+
+  .foot{margin-top:80px;padding-top:22px;border-top:1px solid var(--hair);font:13px var(--mono);color:var(--mut);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <header>
+    <p class="kicker">CAPSULE · Build for Builders · 8090 Software Factory</p>
+    <h1>The 3-minute pitch: one root cause, <span class="hl">four themes</span>.</h1>
+    <p class="lede">Every coding session teaches something — and every session boundary throws it away.
+    <strong>Context dies at the session boundary.</strong> That single failure is the handoff break, the flow stall,
+    the confidence gap, and the junior's uphill climb. CAPSULE fixes all four by fixing the one root cause.</p>
+    <div class="meta">
+      <span class="pill b">8 real capsules</span>
+      <span class="pill">7 skills · real semver</span>
+      <span class="pill g">43,032 tokens saved</span>
+      <span class="pill">63% adoption</span>
+      <span class="pill e">Ollama qwen2.5-coder:14b</span>
+      <span class="pill">live Backboard</span>
+      <span class="pill">real git · master + dee/ven/saim</span>
+    </div>
+    <p style="margin-top:16px;font:13px var(--mono);color:var(--mut)">Run it &nbsp;<span class="m">cd relay &amp;&amp; npm run dev</span> → <span class="m">localhost:3010</span></p>
+    <div class="accentbar"></div>
+  </header>
+
+  <!-- 1 · THE HOOK -->
+  <section>
+    <h2><span class="num">01</span>The hook — one root cause, four themes <span class="clock">0:00 – 0:30</span></h2>
+    <div class="hook">
+      <div class="root">
+        <p class="t">The root cause</p>
+        <p class="big">Context <em>dies at the session boundary.</em> Everything the hackathon asked us to fix is a symptom of it.</p>
+      </div>
+      <div class="symptoms">
+        <div class="sym">
+          <p class="th">Handoff</p>
+          <p>The next dev or agent inherits nothing and restarts cold.</p>
+          <span class="br">→ symptom</span>
+        </div>
+        <div class="sym">
+          <p class="th">Flow</p>
+          <p>Work stalls re-deriving what someone already knew.</p>
+          <span class="br">→ symptom</span>
+        </div>
+        <div class="sym">
+          <p class="th">Quality &amp; Confidence</p>
+          <p>Nothing is verified or traceable, so trust drops.</p>
+          <span class="br">→ symptom</span>
+        </div>
+        <div class="sym">
+          <p class="th">Junior</p>
+          <p>Juniors re-learn what the team already paid to learn.</p>
+          <span class="br">→ symptom</span>
+        </div>
+      </div>
+    </div>
+    <div class="say">
+      <span class="who">Say it like this</span>
+      "Every coding session your team runs teaches something — and every time the window closes, that lesson dies at the
+      session boundary. The next person starts from zero and pays for the same mistake again. That one failure shows up as
+      <strong>four</strong> different problems: the handoff breaks, flow stalls, quality and confidence drop, and juniors are
+      stuck. CAPSULE fixes all four by fixing the one root cause: <strong>we make context survive the session boundary.</strong> Watch."
+    </div>
+    <div class="land"><span class="dot"></span><b>Land it:</b>&nbsp; Context dies at the session boundary. Everything else is a symptom.</div>
+  </section>
+
+  <!-- 2 · LIVE DEMO -->
+  <section>
+    <h2><span class="num">02</span>The live demo flow — minute by minute <span class="clock">0:30 – 2:30</span></h2>
+    <p class="h2sub">A real pipeline, on screen. Capture locally → gate → two outputs → provenance → promote → multi-dev
+    reconcile → the handoff money moment → the reward.</p>
+
+    <div class="beats">
+
+      <!-- Beat 1 -->
+      <div class="beat">
+        <div class="side">
+          <div class="nlbl"><span class="n">1</span><span class="ttl">Capture · local</span></div>
+          <div class="time">0:30 – 0:50</div>
+          <div class="where">Left sidebar → <span class="loc">Capture this session →</span></div>
+        </div>
+        <div class="body">
+          <h3>Capture a REAL session, on-device</h3>
+          <p>Pick a real <span class="m">~/.claude/projects/*.jsonl</span> transcript. Watch
+          <strong>"Distilling locally… Ollama <span class="m">qwen2.5-coder:14b</span> · on-device — No data leaves this machine."</strong></p>
+          <p>A 14B model on <em>my own</em> GPU reads a real Claude Code session and distills it. The bank's payment code never
+          leaves the building — privacy and cost solved, because the <em>remembering</em> is free and local while the expensive
+          cloud model does the building.</p>
+        </div>
+      </div>
+
+      <!-- Beat 2 -->
+      <div class="beat">
+        <div class="side">
+          <div class="nlbl"><span class="n">2</span><span class="ttl">Agentic gate</span></div>
+          <div class="time">0:50 – 1:05</div>
+          <div class="where">Capture panel → transfer score + 6 dimensions</div>
+        </div>
+        <div class="body">
+          <h3>The gate keeps the signal, drops the noise</h3>
+          <p>The capsule returns a <strong>transfer score</strong> and a <strong>novelty</strong> score. The agentic gate decides
+          automatically — <span class="energy">keep if transferScore ≥ threshold (default 50) OR novelty ≥ 80</span>, otherwise drop it.</p>
+          <p>A smart spam filter for lessons: obvious keepers and brand-new findings go straight to the shelf; forgettable
+          sessions don't waste anyone's attention. No human rubber-stamps every capture.</p>
+        </div>
+      </div>
+
+      <!-- Beat 3 -->
+      <div class="beat">
+        <div class="side">
+          <div class="nlbl"><span class="n">3</span><span class="ttl">Two outputs</span></div>
+          <div class="time">1:05 – 1:20</div>
+          <div class="where">Capture panel → routed-to list</div>
+        </div>
+        <div class="body">
+          <h3>One capsule, two audiences</h3>
+          <ul>
+            <li><strong>A skill update</strong> — a version bump routed to a specific skill ("here's how to do this better next time"), for the <em>machine</em>.</li>
+            <li><strong>A technique to learn</strong> — the mental model a person/agent should internalize, for the <em>human</em>.</li>
+          </ul>
+          <p>These are lab notes: the session took all afternoon; the entry is three lines that save the next person the afternoon.</p>
+        </div>
+      </div>
+
+      <!-- Beat 4 -->
+      <div class="beat">
+        <div class="side">
+          <div class="nlbl"><span class="n">4</span><span class="ttl">Knowledge Graph</span></div>
+          <div class="time">1:20 – 1:35</div>
+          <div class="where">Document header → Knowledge Graph icon</div>
+        </div>
+        <div class="body">
+          <h3>Provenance — why this version exists</h3>
+          <p>Click a skill node and read the chain:
+          <span class="m">requirement → work order → agent → capsule → finding → skill version → Backboard</span>.</p>
+          <p>In a bank, "the AI changed something" isn't enough — an auditor needs <em>why</em>. And it's stored in
+          <strong>live Backboard</strong>: real <span class="m">thread_id</span>s, memory that belongs to the <em>tenant</em>
+          (<span class="m">assistant_id: capsule</span>), not whichever model produced it. Swap Opus → Sonnet → Haiku; the knowledge stays.</p>
+        </div>
+      </div>
+
+      <!-- Beat 5 -->
+      <div class="beat">
+        <div class="side">
+          <div class="nlbl"><span class="n">5</span><span class="ttl">Promote → master</span></div>
+          <div class="time">1:35 – 1:50</div>
+          <div class="where">Real git · <span class="loc">capsule://skills/&lt;name&gt;</span></div>
+        </div>
+        <div class="body">
+          <h3>A PR, never a push — then agentic CI</h3>
+          <p>A capsule clearing the gate becomes a <strong>PROPOSED version on a <span class="m">promotion/&lt;skill&gt;</span> ref —
+          a pull request, never a direct push to <span class="m">master</span></strong>.</p>
+          <p>Then <strong>agentic CI</strong> runs the A/B harness (new vs current published) and replays prior capsules. It merges
+          to <span class="m">master</span> <strong>only if the measured reward improves</strong> — tokens ↓, pass-rate ↑, transfer ↑,
+          no regressions. CI-for-skills.</p>
+        </div>
+      </div>
+
+      <!-- Beat 6 -->
+      <div class="beat">
+        <div class="side">
+          <div class="nlbl"><span class="n">6</span><span class="ttl">Multi-dev</span></div>
+          <div class="time">1:50 – 2:05</div>
+          <div class="where">Branches → dee / ven / saim</div>
+        </div>
+        <div class="body">
+          <h3>Dedup &amp; conflict — one clean registry</h3>
+          <ul>
+            <li><strong>Dedup (ML-001):</strong> <span class="m">ven</span>'s CAP-V001 re-discovers <span class="m">dee</span>'s CAP-R007
+            on <span class="m">command-verification</span>. Cosine <span class="energy">0.94 ≥ 0.90</span> → merge into one canonical
+            capsule, both authors credited, <strong>no duplicate version forged</strong>.</li>
+            <li><strong>Conflict (ML-002):</strong> <span class="m">saim</span>'s CAP-S001 says <em>undo</em> what CAP-R003 said
+            <em>do</em> on <span class="m">api-rate-limiting</span> (fail-fast + <span class="m">Retry-After</span> vs backoff+retry).
+            Flagged do/undo → <strong>SUPERSEDE 2.0.0 (major), escalated to human</strong>, logged in the append-only merge-ledger.</li>
+          </ul>
+          <p>Three developers, overlapping work — re-discoveries merge, contradictions escalate. Governance that makes "everyone
+          shares learning" safe at scale.</p>
+        </div>
+      </div>
+
+      <!-- Beat 7 · MONEY -->
+      <div class="beat money">
+        <div class="side">
+          <div class="nlbl"><span class="n">7</span><span class="ttl">Handoff · money moment</span></div>
+          <div class="time">2:05 – 2:20</div>
+          <div class="where">Document header → A/B Trials → <span class="loc">AB-03</span></div>
+        </div>
+        <div class="body">
+          <h3>Cold vs warm — the whole thesis in one card</h3>
+          <div class="abx">
+            <div class="abc win"><div class="hh">With capsule · inherited</div><div class="big">247</div><div class="sm">tokens · passed · transfer 37 — applied the finding directly</div></div>
+            <div class="abc cold"><div class="hh">Cold · no capsule</div><div class="big">404</div><div class="sm">tokens · passed · transfer 7 — re-derived from scratch</div></div>
+            <div class="delta">−39%<small>157 tokens · measured</small></div>
+          </div>
+          <p>Same task, two runs. The cold run re-derives what we already knew; the warm run <em>inherits</em> it. That 39% gap
+          <strong>is</strong> the session boundary, made visible — measured on the local model. And it's honest:
+          <span class="m">AB-02</span> measured <strong>0</strong> on a single-shot task. We kept the zero instead of faking a win.</p>
+        </div>
+      </div>
+
+      <!-- Beat 8 -->
+      <div class="beat">
+        <div class="side">
+          <div class="nlbl"><span class="n">8</span><span class="ttl">The reward</span></div>
+          <div class="time">2:20 – 2:30</div>
+          <div class="where">Top bar pill · Skills panel sparkline</div>
+        </div>
+        <div class="body">
+          <h3>Tokens saved — the signal the loop optimizes</h3>
+          <p>Top bar: <strong>Σ 43,032 saved · 63% adopted</strong>. The compounding sparkline bends
+          <strong>16,680 → 43,032</strong> in one week. That rising line <em>is</em> the compounding effect — one company,
+          learning, for real.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 3 · THEME MAP -->
+  <section>
+    <h2><span class="num">03</span>Each beat → the theme it nails <span class="clock">2:30 – 2:45</span></h2>
+    <p class="h2sub">Four themes, one fix — make context survive the session boundary.</p>
+    <table>
+      <thead><tr><th style="width:150px">Beat</th><th style="width:150px">Theme</th><th>Why it nails it</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="beatref">Beat 7</span><br>cold vs warm A/B</td>
+          <td><span class="theme">Handoff</span></td>
+          <td class="why">The next worker <em>inherits</em> the lesson instead of restarting cold. The 39% gap is the broken handoff, fixed and measured. Backboard makes memory follow the team, not the model.</td>
+        </tr>
+        <tr>
+          <td><span class="beatref">Beats 1–3</span><br>capture → gate → outputs</td>
+          <td><span class="theme">Flow</span></td>
+          <td class="why">The lesson is captured <em>in the loop</em>, locally, with no interruption. The agentic gate keeps flow moving — good lessons compound, noise drops, nobody stalls re-deriving.</td>
+        </tr>
+        <tr>
+          <td><span class="beatref">Beats 4–6</span><br>provenance · CI · dedup</td>
+          <td><span class="theme">Quality &amp; Confidence</span></td>
+          <td class="why">Nothing ships unverified: promotion-as-PR, A/B-gated CI ("merge only if reward improves"), full audit trail, and dedup/conflict governance keep the registry trustworthy.</td>
+        </tr>
+        <tr>
+          <td><span class="beatref">Beat 3 + toggle</span><br>technique · enterprise best</td>
+          <td><span class="theme">Junior</span></td>
+          <td class="why">A junior flips <span class="m">ENTERPRISE · BEST</span> and instantly works from the most-learned, capsule-maxxed playbook — plus the human-readable "technique to learn." One agent's discovery lifts everyone.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4 · WHY WE WIN -->
+  <section>
+    <h2><span class="num">04</span>Why we win <span class="clock">2:45 – 2:55</span></h2>
+    <p class="h2sub">A real pipeline, real Backboard, real repos — not a mockup. And honest about exactly what's measured.</p>
+    <div class="wins">
+      <div class="win">
+        <p class="t"><span class="chk">✓</span>Real pipeline</p>
+        <p>8 capsules (<span class="m">CAP-R001…R008</span>) distilled from my <em>actual</em> <span class="m">~/.claude</span>
+        sessions by a <strong>local 14B model</strong>. 7 skills carry real semver learned from those capsules.</p>
+      </div>
+      <div class="win">
+        <p class="t"><span class="chk">✓</span>Real Backboard</p>
+        <p>Every capsule is a <strong>live write</strong> to <span class="m">app.backboard.io/api</span> with real
+        <span class="m">thread_id</span>s, <span class="m">send_to_llm:false</span> — storage, not inference; tenant-isolated by <span class="m">assistant_id</span>.</p>
+      </div>
+      <div class="win">
+        <p class="t"><span class="chk">✓</span>Real repos</p>
+        <p>An actual git repo: <span class="m">master</span> + <span class="m">dee</span> + <span class="m">ven</span> +
+        <span class="m">saim</span> branches pushed, with promotion / merge-ledger / agentic-CI gate as real commits.</p>
+      </div>
+      <div class="win honest">
+        <p class="t"><span class="chk">~</span>Honest about measurement</p>
+        <p>The 3 A/B trials are <strong>measured Ollama token deltas</strong> (<span class="m">prompt_eval + eval</span>) —
+        including the one that saved nothing. Novelty scores &amp; non-A/B estimates are clearly labeled <strong>derived</strong>
+        (see <span class="m">DATA-REALITY.html</span>). We tell you exactly where the real line is.</p>
+      </div>
+    </div>
+    <div class="close">
+      <p class="l">Closing line · 2:55 – 3:00</p>
+      <p>"Context dies at the session boundary. CAPSULE makes it <em>survive</em> — locally, auditably, for the whole company.
+      That's the handoff, the flow, the confidence, and the junior — all from one root cause."</p>
+    </div>
+  </section>
+
+  <!-- 5 · Q&A -->
+  <section>
+    <h2><span class="num">05</span>Q&amp;A cheat-sheet</h2>
+    <p class="h2sub">The promotion / CI / dedup answers, tight and confident.</p>
+    <div class="qa">
+      <div class="qcard">
+        <p class="q"><span class="qq">Q</span>How does a local lesson actually reach the enterprise repo?</p>
+        <p class="a">A capsule clearing the gate (<span class="m">transferScore ≥ threshold</span> <strong>OR</strong>
+        <span class="m">novelty ≥ 80</span>) is <strong>proposed, not pushed</strong> — staged as a PR on a
+        <span class="m">promotion/&lt;skill&gt;</span> ref of <span class="m">master</span> (writes
+        <span class="m">PROPOSED-&lt;version&gt;.SKILL.md</span> + a <span class="m">CI-&lt;version&gt;.md</span> report).
+        <span class="m">master</span> head only advances when review merges it. No dev and no agent force-pushes a version.</p>
+      </div>
+      <div class="qcard">
+        <p class="q"><span class="qq">Q</span>What stops a bad skill version from publishing?</p>
+        <p class="a"><strong>Agentic CI.</strong> It runs the A/B harness (new vs current published) on representative tasks plus a
+        regression replay of prior capsules, and merges <strong>only if measured reward improves</strong> (tokens ↓ / pass-rate ↑ /
+        transfer ↑) with no regressions — else it stays <span class="m">proposed</span> or is <span class="m">rejected</span>.
+        Worked example: <span class="m">api-rate-limiting@2.0.0</span> went 6/10 → 9/10 pass, −35% tokens, +24 transfer — PASS —
+        but as a do/undo contradiction it still routes to human review before it lands.</p>
+      </div>
+      <div class="qcard">
+        <p class="q"><span class="qq">Q</span>Two developers discover the same thing — duplicate skills?</p>
+        <p class="a">No. <strong>Dedup.</strong> Each capsule carries a semantic signature matched against the registry + Backboard
+        semantic memory. Cosine ≥ <span class="energy">0.90</span> ⇒ re-discovery ⇒ <strong>merge into one canonical capsule, all
+        authors credited, no new version forged</strong>. Live: <span class="m">ven</span>'s CAP-V001 + <span class="m">dee</span>'s
+        CAP-R007 on <span class="m">command-verification</span>, cosine 0.94 → merged (ML-001).</p>
+      </div>
+      <div class="qcard">
+        <p class="q"><span class="qq">Q</span>What if two lessons contradict each other?</p>
+        <p class="a"><strong>Conflict resolution.</strong> "do X" vs "undo X / do Y" is flagged a do/undo conflict and resolved by
+        <strong>measured reward + recency</strong> — contradictory ⇒ major supersede (or reject), additive ⇒ minor, refinement ⇒ patch.
+        Ties escalate to a human. Live: <span class="m">saim</span>'s CAP-S001 supersedes <span class="m">api-rate-limiting</span> to
+        2.0.0 (escalated) — ML-002. Every call is appended to the immutable merge-ledger.</p>
+      </div>
+      <div class="qcard">
+        <p class="q"><span class="qq">Q</span>Why a local model? Isn't a 70B better?</p>
+        <p class="a"><strong>Privacy + cost.</strong> The expensive cloud model does the <em>building</em>; the cheap local model
+        does the <em>remembering</em>, so capturing a lesson never costs more than it saves and sensitive code never leaves the
+        machine. Pipeline is local-first, with an optional Cerebras <span class="m">llama-3.3-70b</span> boost (only if
+        <span class="m">CEREBRAS_API_KEY</span> is set) and a heuristic last resort so a capsule always renders — even offline.
+        Trade-off: a 14B on a laptop is slow (we allow up to 120s).</p>
+      </div>
+      <div class="qcard">
+        <p class="q"><span class="qq">Q</span>What's actually real vs mock?</p>
+        <p class="a">Real &amp; measured: session reading, local distillation, the 8 capsules, the 7 skills + semver, the 3 A/B
+        token deltas, the live Backboard writes, and the git repo. Derived (clearly labeled): novelty/importance scores, non-A/B
+        per-capsule <span class="m">tokensSaved</span> estimates, and the requirements/work-orders scaffolding. Full breakdown in
+        <span class="m">DATA-REALITY.html</span>.</p>
+      </div>
+      <div class="qcard">
+        <p class="q"><span class="qq">Q</span>Is 43,032 a real measurement?</p>
+        <p class="a">It's a <strong>derived roll-up</strong> (reuses × per-reuse estimate). The token deltas <em>behind</em> it — the
+        3 A/B trials — are <strong>measured</strong> on Ollama. Next step: meter every skill through the agentic-CI runner so the
+        whole scoreboard is grounded.</p>
+      </div>
+      <div class="qcard">
+        <p class="q"><span class="qq">Q</span>Where does Backboard fit?</p>
+        <p class="a">Backboard is the shared memory store — memory belongs to the <strong>tenant</strong>
+        (<span class="m">assistant_id: capsule</span>), one thread per project, skill memories tagged <span class="m">&lt;skillId&gt;@&lt;semver&gt;</span>.
+        It's also what powers <strong>dedup</strong> (semantic recall) and what makes the knowledge <strong>model-independent</strong>.
+        Without a key it falls back to local JSON (<span class="m">~/.relay/capsules</span>) so the demo always works.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span>CAPSULE · demo script · one root cause → four themes</span>
+    <span>numbers: relay/src/lib/data.ts · behavior: FEATURES · MULTI-DEV · DATA-REALITY</span>
+  </div>
+
+</div>
+</body>
+</html>

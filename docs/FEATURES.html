@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAPSULE — Every Feature in Plain English</title>
+<style>
+  :root{
+    --bg:#ffffff; --side:#f7f8f9; --side2:#f2f3f5; --panel:#ffffff;
+    --line:#e6e8eb; --line2:#eceef0; --hover:#f0f1f3;
+    --ink:#1f2329; --ink2:#3c4149; --mut:#6b7280; --dim:#9aa0a6;
+    --blue:#2b6cf0; --blue-d:#1f5bd6; --blue-bg:#eaf1fe;
+    --cap:#0ea5e9; --skill:#7c3aed; --agent:#16a34a; --wo:#d97706;
+    --req:#e11d48; --model:#2563eb; --mem:#4f46e5;
+    --green:#16a34a; --green-bg:#e9f7ee; --amber:#d97706; --amber-bg:#fef3e2;
+    --violet:#7c3aed; --rose:#e11d48;
+    --mono:ui-monospace,"SF Mono",Consolas,monospace;
+    --r:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 "Inter",-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .mono{font-family:var(--mono)}
+  a{color:var(--blue);text-decoration:none}
+
+  /* layout */
+  .wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:248px 1fr;gap:0}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}.toc{display:none}}
+
+  /* sidebar TOC */
+  .toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    background:var(--side);border-right:1px solid var(--line);padding:22px 14px}
+  .toc .brand{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+  .toc .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#11141a,#2b313c);
+    color:#fff;font:800 10px/24px var(--mono);text-align:center;letter-spacing:-.5px}
+  .toc .brand b{font-size:14px}
+  .toc .brand .s{font:600 10px var(--mono);color:var(--dim)}
+  .toc nav{margin-top:10px;display:flex;flex-direction:column;gap:1px}
+  .toc a{display:flex;gap:9px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink2);font-size:13px}
+  .toc a:hover{background:var(--hover)}
+  .toc a .n{font:700 10px var(--mono);color:var(--dim);min-width:16px}
+  .toc .grp{font:700 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin:16px 9px 5px}
+
+  /* content */
+  .content{padding:40px 48px 90px;min-width:0}
+  @media(max-width:900px){.content{padding:28px 20px 70px}}
+
+  .hero{margin-bottom:30px}
+  .kicker{font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--blue)}
+  h1{font-size:34px;letter-spacing:-.02em;margin:8px 0 6px;font-weight:800;line-height:1.12}
+  .lede{font-size:16.5px;color:var(--ink2);max-width:700px;line-height:1.62}
+  .hero-meta{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .pill{font:700 11px var(--mono);padding:5px 10px;border-radius:99px;background:var(--side2);color:var(--ink2)}
+  .pill.blue{background:var(--blue-bg);color:var(--blue-d)}
+  .pill.green{background:var(--green-bg);color:var(--green)}
+  .pill.violet{background:#f1e9fe;color:var(--violet)}
+  .legend{margin-top:14px;font-size:12.5px;color:var(--mut);display:flex;flex-wrap:wrap;gap:14px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+  /* the big loop band */
+  .loop{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fbfcff,#f7f9ff);
+    padding:22px 24px;margin:26px 0 34px}
+  .loop h2{margin:0 0 4px;font-size:17px}
+  .loop p{margin:0 0 16px;color:var(--ink2);font-size:14.5px;max-width:740px}
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0}
+  .step{flex:1;min-width:130px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin:4px}
+  .step .t{font:700 10px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--blue);margin-bottom:4px;display:flex;gap:6px;align-items:center}
+  .step .t .d{width:8px;height:8px;border-radius:3px;background:var(--blue)}
+  .step .b{font-size:12.5px;color:var(--ink2);line-height:1.45}
+  .step.c1 .t{color:var(--cap)}.step.c1 .t .d{background:var(--cap)}
+  .step.c2 .t{color:var(--skill)}.step.c2 .t .d{background:var(--skill)}
+  .step.c3 .t{color:var(--agent)}.step.c3 .t .d{background:var(--agent)}
+  .step.c4 .t{color:var(--amber)}.step.c4 .t .d{background:var(--amber)}
+  .loop .ring{margin-top:10px;font-size:12.5px;color:var(--mut);display:flex;gap:7px;align-items:center}
+  .loop .ring b{color:var(--ink2)}
+
+  /* feature cards */
+  .feat{border:1px solid var(--line);border-radius:16px;background:#fff;padding:0;margin-bottom:20px;overflow:hidden;
+    box-shadow:0 1px 2px #0000000a}
+  .feat-h{display:flex;align-items:center;gap:13px;padding:18px 22px;border-bottom:1px solid var(--line2)}
+  .feat-ic{width:42px;height:42px;border-radius:12px;flex:none;display:grid;place-items:center;font-size:20px}
+  .feat-h .num{font:700 11px var(--mono);color:var(--dim)}
+  .feat-h h3{margin:2px 0 0;font-size:19px;letter-spacing:-.01em}
+  .feat-h .one{font-size:13px;color:var(--mut);margin-top:2px}
+  .feat-body{padding:6px 22px 20px}
+  .block{padding:14px 0;border-bottom:1px dashed var(--line2)}
+  .block:last-child{border-bottom:0}
+  .block .lab{display:flex;align-items:center;gap:7px;font:700 10.5px var(--mono);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+  .block .lab.what{color:var(--blue)}
+  .block .lab.why{color:var(--green)}
+  .block .lab.where{color:var(--violet)}
+  .block .lab.improve{color:var(--amber)}
+  .block .lab .dot{width:7px;height:7px;border-radius:50%}
+  .block.what .dot{background:var(--blue)}.block.why .dot{background:var(--green)}
+  .block.where .dot{background:var(--violet)}.block.improve .dot{background:var(--amber)}
+  .block p{margin:0;font-size:14.5px;color:var(--ink2);line-height:1.6}
+  .block p + p{margin-top:8px}
+  .block ul{margin:6px 0 0;padding-left:18px}
+  .block li{font-size:14px;color:var(--ink2);line-height:1.55;margin:3px 0}
+  .ana{background:#f7f9fc;border-left:3px solid var(--cap);border-radius:0 8px 8px 0;padding:10px 13px;margin:10px 0 2px;
+    font-size:13.5px;color:var(--ink2);line-height:1.55}
+  .ana b{color:var(--cap)}
+  code,.kbdmono{font-family:var(--mono);font-size:.88em;background:var(--side2);border-radius:5px;padding:1px 6px;color:var(--ink2)}
+  .where-tag{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--mono);background:#f1e9fe;color:var(--violet);
+    border-radius:7px;padding:3px 9px;margin:2px 4px 2px 0}
+
+  /* mini stat strip used inside some cards */
+  .mini{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .mstat{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#fbfcfd;min-width:110px}
+  .mstat .v{font:800 17px/1 var(--mono);color:var(--ink)}
+  .mstat .v.g{color:var(--green)}.mstat .v.b{color:var(--blue)}.mstat .v.v{color:var(--violet)}
+  .mstat .k{font-size:11px;color:var(--mut);margin-top:3px}
+
+  /* ab table */
+  .abx{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  @media(max-width:560px){.abx{grid-template-columns:1fr}}
+  .abc{border:1px solid var(--line);border-radius:11px;padding:12px}
+  .abc.win{border-color:#cdebd9;background:#fbfefc}
+  .abc.cold{background:#fbfbfc}
+  .abc .hh{font:700 9.5px var(--mono);text-transform:uppercase;letter-spacing:.04em;color:var(--dim);margin-bottom:7px}
+  .abc .big{font:800 22px/1 var(--mono)}
+  .abc.win .big{color:var(--green)}.abc.cold .big{color:var(--mut)}
+  .abc .sm{font-size:11.5px;color:var(--mut);margin-top:5px;line-height:1.4}
+
+  /* demo steps */
+  .demo{border:1px solid #d8e4fd;border-radius:16px;background:linear-gradient(180deg,#eef4ff,#f8fbff);padding:24px 26px;margin-top:14px}
+  .demo h2{margin:0 0 4px;font-size:19px}
+  .demo .sub{color:var(--mut);font-size:13.5px;margin-bottom:16px}
+  .demo ol{margin:0;padding:0;list-style:none;counter-reset:d}
+  .demo li{counter-increment:d;position:relative;padding:13px 0 13px 46px;border-top:1px solid #dbe6fb}
+  .demo li:first-child{border-top:0}
+  .demo li::before{content:counter(d);position:absolute;left:0;top:11px;width:30px;height:30px;border-radius:9px;
+    background:var(--blue);color:#fff;font:800 13px/30px var(--mono);text-align:center}
+  .demo li b{display:block;font-size:14.5px;margin-bottom:2px}
+  .demo li span{font-size:13.5px;color:var(--ink2);line-height:1.5}
+  .demo li .where{font:600 12px var(--mono);color:var(--violet);margin-top:4px;display:block}
+
+  .foot{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--dim)}
+  .foot b{color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- TOC -->
+  <aside class="toc">
+    <div class="brand">
+      <div class="mark">80</div>
+      <div><b>CAPSULE</b><div class="s">Features, plain-English</div></div>
+    </div>
+    <div class="grp">Start here</div>
+    <nav>
+      <a href="#big-idea"><span class="n">★</span> The big idea (the loop)</a>
+    </nav>
+    <div class="grp">The 12 features</div>
+    <nav>
+      <a href="#capsule"><span class="n">1</span> Capsule</a>
+      <a href="#local-model"><span class="n">2</span> Local model distillation</a>
+      <a href="#agentic"><span class="n">3</span> Agentic auto-distill</a>
+      <a href="#graph"><span class="n">4</span> Knowledge Graph</a>
+      <a href="#registry"><span class="n">5</span> Skills Registry</a>
+      <a href="#enterprise"><span class="n">6</span> Enterprise toggle</a>
+      <a href="#versions"><span class="n">7</span> Versions / History</a>
+      <a href="#ab"><span class="n">8</span> A/B Trials</a>
+      <a href="#backboard"><span class="n">9</span> Backboard memory</a>
+      <a href="#tokens"><span class="n">10</span> Token value</a>
+      <a href="#repos"><span class="n">11</span> Multi-dev promotion &amp; CI</a>
+      <a href="#workspace"><span class="n">12</span> Workspace UX</a>
+    </nav>
+    <div class="grp">For the demo</div>
+    <nav>
+      <a href="#demo"><span class="n">▶</span> How to demo it</a>
+    </nav>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <div class="hero" id="top">
+      <div class="kicker">8090 Software Factory · CAPSULE · Content Engine</div>
+      <h1>CAPSULE, every feature explained like you're new here</h1>
+      <p class="lede">CAPSULE turns every coding session into a lesson the whole company keeps. One agent solves a problem once; everyone else gets the answer for free, forever. The dataset is <b>real</b> — 8 capsules distilled from the user's actual <code>~/.claude</code> sessions by a local model. This page walks each feature in plain words — <b>what it does</b>, <b>why it's needed</b>, <b>where to find it in the app</b>, and <b>what can be improved</b>. Run it locally: <code>cd relay &amp;&amp; npm run dev</code> → <code>localhost:3010</code>.</p>
+      <div class="hero-meta">
+        <span class="pill blue">8 real capsules</span>
+        <span class="pill violet">7 skills</span>
+        <span class="pill green">43,032 tokens saved</span>
+        <span class="pill">46 avg transfer</span>
+        <span class="pill">63% adoption</span>
+        <span class="pill">4 seats</span>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--blue)"></i> What it is</span>
+        <span><i style="background:var(--green)"></i> Why it's needed</span>
+        <span><i style="background:var(--violet)"></i> Where in the app</span>
+        <span><i style="background:var(--amber)"></i> What can be improved</span>
+      </div>
+    </div>
+
+    <!-- BIG IDEA -->
+    <section class="loop" id="big-idea">
+      <div class="kicker" style="color:var(--violet)">★ The big idea</div>
+      <h2>Every coding session teaches the whole company — a learning loop for a team</h2>
+      <p>Normally, when an AI finishes a coding task, what it learned disappears. The next person starts from zero and pays for the same mistakes again. CAPSULE closes that gap. It runs a loop: <b>do the work</b>, <b>squeeze out the lesson</b>, <b>fold the lesson back</b> into the company's shared skills, and the next task starts smarter. This is the "RL loop" — reinforcement learning, but for a team. The reward it chases is simple and measurable: <b>tokens saved</b>.</p>
+
+      <div class="flow">
+        <div class="step c1"><div class="t"><span class="d"></span>1 · Work</div><div class="b">An agent does a real coding session — say, making payments safe to retry.</div></div>
+        <div class="step c2"><div class="t"><span class="d"></span>2 · Capture</div><div class="b">A <b>local</b> model reads the session and distils a <b>capsule</b>: the one lesson worth keeping.</div></div>
+        <div class="step c3"><div class="t"><span class="d"></span>3 · Improve</div><div class="b">The lesson updates a shared <b>skill</b> (a new version) and a <b>technique</b> for people to learn.</div></div>
+        <div class="step c4"><div class="t"><span class="d"></span>4 · Reuse</div><div class="b">The next task pulls that skill in and finishes faster, cheaper, on the first try.</div></div>
+      </div>
+      <div class="ring">↻&nbsp; <b>The loop compounds.</b>&nbsp; More sessions → better skills → cheaper sessions → which produce more lessons. In this workspace the savings curve bends from 16,680 tokens in week one (2026-W25) to 43,032 the next (W26).</div>
+    </section>
+
+    <!-- 1 CAPSULE -->
+    <section class="feat" id="capsule">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#e6f6fd;color:var(--cap)">🫧</div>
+        <div><div class="num">FEATURE 01</div><h3>Capsule</h3><div class="one">A compressed lesson from one session — with two outputs</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>A capsule is the squeezed-down takeaway from a single coding session. A long, messy chat transcript goes in; one clear, reusable insight comes out — plus the decisions made, the gotchas hit, and a score for how widely it transfers.</p>
+          <p>Each capsule produces <b>two outputs</b>: (1) a proposed <b>skill update</b> — "here's how to do this better next time," routed to a specific skill as a version bump; and (2) a <b>technique to learn</b> — the mental model a person or agent should internalise, like <i>"idempotency is an identity problem, not a caching problem."</i></p>
+          <div class="ana">Think of it as <b>lab notes</b>. The experiment took all afternoon, but the notebook entry is three lines that save the next scientist the whole afternoon.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>Without capsules, hard-won knowledge evaporates when the chat window closes. With them, one painful debugging session — like learning an Angular upgrade needs the local bridge + WebSocket server running — becomes a permanent company asset. In this dataset, capsule <code>CAP-R004</code> has been reused 5 times, saving ~1,968 tokens each time, and minted the published <code>skill/angular-upgrade@1.0.0</code>.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Left sidebar → "Capsules from today"</span> Each row shows the capsule's ID, the model that authored the work, and a transfer score. Click a real (local) capsule to open its full detail in the Capture panel; click a dataset capsule to focus it in the Knowledge Graph. The blue <code>Capture this session →</code> button at the bottom of the sidebar mints a new one.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>When the local model returns thin JSON, the distiller silently backfills fields from a keyword heuristic (<code>cerebras.ts</code> → <code>heuristic()</code>) — useful, but the capsule should flag which fields were inferred so reviewers trust them less. There's also no de-dupe: two near-identical sessions mint two capsules. Next steps: a confidence flag per field, near-duplicate detection, and an inline "edit the finding before storing" step.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 LOCAL MODEL -->
+    <section class="feat" id="local-model">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#eef2ff;color:var(--model)">💻</div>
+        <div><div class="num">FEATURE 02</div><h3>Local model distillation</h3><div class="one">Your own machine writes the capsule — private and free</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>The job of reading a session and writing the capsule is done by a model running on your own computer — <code>qwen2.5-coder:14b</code> via Ollama. The pipeline tries <b>local first</b>, then an <b>optional</b> cloud boost (Cerebras <code>llama-3.3-70b</code>, only if <code>CEREBRAS_API_KEY</code> is set), then a <b>heuristic last resort</b> so a capsule always renders — even fully offline.</p>
+          <div class="ana">Like having an <b>in-house note-taker</b> instead of mailing your private meeting recordings to a stranger to summarise. The notes never leave the building.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>Two big wins. <b>Privacy:</b> a bank's payment code and sensitive data never leave the machine just to be summarised — important when the whole point is keeping card numbers safe. <b>Cost:</b> the summarising step is free, so capturing a lesson never costs more than the lesson saves. Expensive cloud models do the actual building; the cheap local model does the remembering.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Capture panel → "Distilling locally…"</span> When you capture a session, a pulsing state shows <code>Ollama qwen2.5-coder:14b · on-device</code> with the line "No data leaves this machine." <span class="where-tag">Top bar → engine chip</span> A muted mono chip always shows which engine ran the last capture (e.g. <code>Ollama qwen2.5-coder:14b</code>).</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>A 14B model on a laptop GPU is slow — the distiller allows up to <b>120 seconds</b> before aborting, and its JSON is lower-quality than the 70B cloud model. Today the spinner is opaque (no token stream, no progress). Next steps: stream partial output, add a quality gate that re-runs on Cerebras when the local handoff score comes back thin, and surface a model picker in the UI instead of an env var.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 AGENTIC AUTO-DISTILL -->
+    <section class="feat" id="agentic">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#e9f7ee;color:var(--agent)">🤖</div>
+        <div><div class="num">FEATURE 03</div><h3>Agentic auto-distill + score gating</h3><div class="one">Keep the good lessons automatically — drop the noise</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>Not every session is worth remembering. CAPSULE has an <b>agentic mode</b> that decides automatically. The gate is simple: <b>keep the capsule (and let its skill update adopt without a human) when its transfer score is at or above the threshold, OR when its novelty is ≥ 80.</b> The threshold defaults to <b>50</b> and can be set anywhere from 0 to 100.</p>
+          <p>So a high-transfer lesson (an agent could continue cold) or a genuinely new discovery (novelty 82, 88…) is kept and routed on its own; a thin, low-novelty session is dropped instead of cluttering the registry.</p>
+          <div class="ana">Like a <b>smart spam filter for lessons</b>. Obvious keepers and brand-new findings go straight to the shelf; the forgettable ones don't waste anyone's attention.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>If every session minted an adopted skill change, the registry would drown in noise and humans would rubber-stamp everything. Gating keeps the signal high and lets the loop run at scale without a person reviewing every capture — and a clearing capsule is only <em>proposed</em> on a <code>promotion/&lt;skill&gt;</code> ref, with <b>agentic CI</b> publishing it only if the measured reward improves. It's the difference between "a team that learns" and "a team buried in notes."</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Capture panel → handoff score + dimensions</span> Every capture shows its overall transfer score and the six dimensions that feed the gate. <span class="where-tag">Right rail → "New capsule ready"</span> A high-novelty capsule like <code>CAP-R004</code> (novelty 97) surfaces a Review card; the three <em>proposed</em> skills (creative-franchise-expansion, automation-maintenance, api-rate-limiting) route as proposed-not-published versions you can see in the graph's "Routed to" list.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>The gate is fully modelled in the store (<code>agenticMode</code>, <code>agenticThreshold</code> default 50, clamped 0–100, with the <code>toggleAgentic</code> toast) and the score/novelty fields exist on every capsule — but <b>there's no visible control yet</b>: no toggle, no threshold slider, no "auto-adopted" audit log. Next step is to surface a slider + a running list of what the gate kept, dropped, and auto-adopted, so the automation is legible and auditable.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 KNOWLEDGE GRAPH -->
+    <section class="feat" id="graph">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#eef4ff;color:var(--blue)">🕸️</div>
+        <div><div class="num">FEATURE 04</div><h3>Knowledge Graph + provenance</h3><div class="one">A map of how everything connects — and why each version exists</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>A live map showing how the pieces link: <b>requirements</b> (what the business asked) → <b>work orders</b> (units of work) → <b>agents</b> (who did it) → <b>skills</b> (reusable know-how) → <b>capsules</b> (the lessons) → <b>memory</b> (where they're stored). Lines show relationships: <i>implements, executes, uses, produces, derives, stores, reads, learns.</i></p>
+          <p>Click any skill node and it shows a <b>provenance chain</b> — the answer to "why does this version exist?" — tracing the skill back to the exact capsule, session, finding, work order, and requirement that created it. Nothing is a mystery; every improvement has a paper trail.</p>
+          <div class="ana">Like a <b>family tree</b> for your code's knowledge. Point at any skill and ask "who are your parents?" — and follow the line all the way back to the original business need.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>In a regulated business like a bank, "the AI changed something" isn't good enough — an auditor needs to know <i>why</i>. The graph turns every change into a traceable chain: this skill version exists because that capsule found that insight in that session, serving that requirement. It makes the whole learning loop accountable.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Document header → Knowledge Graph icon</span> The first (network-shaped) icon in the toolbar above the document opens the <b>Knowledge Graph Explorer</b> panel. Click any node for its details and provenance; type filters along the top hide or show node types. <span class="where-tag">Right rail → Actions → Graph / Audit trail</span> shortcuts jump straight to the highest-value skill's trace.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>The skill→requirement link is a hard-coded lookup (<code>SKILL_REQ</code> in the panel) rather than being derived from the graph's own links — so adding a skill means editing that map by hand. The chain is also static text; it can't be exported. Next steps: derive provenance from <code>graph.links</code>, highlight the full path on hover, and add a one-click "export audit trail" for regulators.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 SKILLS REGISTRY -->
+    <section class="feat" id="registry">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#f4efff;color:var(--skill)">📚</div>
+        <div><div class="num">FEATURE 05</div><h3>Skills Registry</h3><div class="one">The company's library of reusable skills</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>The shelf of the company's reusable skills — packaged know-how an agent picks up and applies. In this dataset there are seven, each forged from a real session: <code>Angular Upgrade</code>, <code>Command Verification</code> (two versions), <code>API Security</code>, <code>Memory Management</code>, <code>Creative Franchise Expansion</code>, <code>Automation Maintenance</code>, and <code>API Rate Limiting</code>. You choose a skill by two things: <b>how many tokens it saves per use</b>, and <b>which use-case it fits</b>. A free-text recommender suggests the right one for whatever you're working on.</p>
+          <div class="ana">Like a <b>cookbook of perfected recipes</b>. You don't reinvent the sauce every dinner — you grab the recipe that already works, plus the notes on what to watch out for.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>Skills are where the learning actually accumulates. A capsule is a single lesson; a skill is the running total of every lesson on a topic. The registry recommends the right skill for the active section, so the agent reaches for proven know-how instead of guessing — that's how one agent's discovery lifts everyone.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Document header → Skills icon</span> The stacked-diamond icon opens the Skills panel: a recommendation banner, an impact note (highest-value skill + Σ saved + adoption), the compounding sparkline, and per-skill cards with token savings, use-case tags, and adopt buttons. <span class="where-tag">Left sidebar → "Search skills by use-case" (Ctrl-K)</span> drives the same recommender.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>The recommender is keyword matching (<code>recommendSkill</code>) — it can miss a fit phrased differently and doesn't learn from which skills actually got adopted. There's also no way to author or edit a skill in-app; skills only arrive via captured capsules. Next steps: embeddings-based recall ranked by real usage history, and an in-app skill editor.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 ENTERPRISE TOGGLE -->
+    <section class="feat" id="enterprise">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#f6f2fe;color:var(--violet)">🎚️</div>
+        <div><div class="num">FEATURE 06</div><h3>Enterprise toggle</h3><div class="one">Flip to the most-learned "capsule-maxxed" best version</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>A single switch that says "use the best, most-learned version of every skill." When it's on, the panel serves the <b>capsule-maxxed</b> build — the versions that have absorbed the most lessons and save the most tokens. When it's off, you see the versions <b>pinned in this project</b>. A banner and badge make the active mode obvious (<code>ENTERPRISE · BEST</code> vs <code>PROJECT · PINNED</code>).</p>
+          <div class="ana">Like flipping your team from <b>"good enough" mode to "company-best" mode</b> with one switch — everyone instantly works from the most experienced playbook.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>Learning is worthless if people keep using the old version. The toggle makes adopting improved skills a one-click decision instead of a manual chore — so the savings the loop generates actually reach every seat. It's how a discovery by one agent becomes the default for all 4 seats on the plan.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Skills panel → "ENTERPRISE" switch (top-right)</span> Toggling it re-renders every skill card and the recommendation from the capsule-maxxed versions and fires a toast. The right rail also surfaces one-off "Adopt this newer version?" prompts (e.g. <code>SCA Challenge v1.1.0 — saves 2,600 tokens/use</code>).</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>The toggle flips a <em>view</em> overlay; it doesn't persist a per-seat or per-team rollout, and there's no staged "canary then everyone" path. Next steps: persist adoption per team, add staged rollout with a rollback, and show how many seats are on each version live.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 VERSIONS -->
+    <section class="feat" id="versions">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#f1e9fe;color:var(--violet)">🕑</div>
+        <div><div class="num">FEATURE 07</div><h3>Versions / Version History + compare</h3><div class="one">Every skill change is numbered and comparable</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>Every skill is versioned using <b>semver</b> — three numbers like <code>2.1.0</code>. <b>Major</b> = a big rethink that changes behaviour. <b>Minor</b> = a real new capability. <b>Patch</b> = a small fix. The newest published version wears a blue <b>Latest</b> badge; a pending one wears <b>Proposed</b>. Tick the <b>Compare</b> box on any two versions to drop into a side-by-side, word-level diff of the changelog and guidance — added words green, removed words struck red.</p>
+          <div class="ana">Like <b>track-changes for know-how</b>. <code>1.0 → 2.0</code> rewrites the chapter; <code>2.0 → 2.1</code> adds a paragraph; <code>2.1.0 → 2.1.1</code> fixes a typo.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>You can see how a skill got smart over time. <code>Command Verification</code> went <code>1.0.0</code> (from CAP-R007: inspect system state, don't assume) → <code>2.0.0</code> (from CAP-R005: verify the actual current state from authoritative docs, −1,920 tokens/use, published). The bump badge tells you at a glance whether an update is safe to adopt or a bigger behaviour change to review first.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Document header → Versions icon</span> Opens the <b>Version History</b> panel: skill pills across the top, <b>All / Named</b> tabs, day-grouped rows (Today / Yesterday / date), each with its semver chip, bump, adoption count, tokens/use, and a Compare checkbox. <code>+ Create Version</code> drafts a named one; <code>Exit Comparison</code> returns to the list.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>The diff is set-based (it highlights words present in one side but not the other), so a moved or reordered phrase can mis-highlight — a true line/word LCS diff would be cleaner. <code>+ Create Version</code> only fires a toast today, and there's no one-click rollback to a prior version. Next steps: real diff, persistent version creation, and rollback.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 A/B TRIALS -->
+    <section class="feat" id="ab">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#e9f7ee;color:var(--green)">⚖️</div>
+        <div><div class="num">FEATURE 08</div><h3>A/B Trials — Capsule vs Cold</h3><div class="one">Same task, with the capsule vs without — see the win</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>A head-to-head test. The same task is run twice: once <b>with</b> the capsule's lesson recalled, once <b>cold</b> (no memory, from scratch). You see both results — tokens spent, steps taken, duration, transfer score, and whether it passed.</p>
+          <div class="ana">Like a <b>before-and-after photo</b>. Same task, two runs, side by side — so the benefit isn't a claim, it's measured.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>This is the proof the loop works — and these are <b>measured Ollama token counts</b>, not a story. Take <code>AB-03</code>, the API Rate Limiting task:</p>
+          <div class="abx">
+            <div class="abc win"><div class="hh">With capsule</div><div class="big">247</div><div class="sm">tokens · passed · transfer 37. Applied the capsule finding directly (162 output tokens).</div></div>
+            <div class="abc cold"><div class="hh">Cold · no capsule</div><div class="big">404</div><div class="sm">tokens · passed · transfer 7. Re-derived the approach cold (352 output tokens).</div></div>
+          </div>
+          <p style="margin-top:11px">That's <b>157 fewer tokens (−39%)</b> — just from remembering. <code>AB-01</code> cut 72 (−16%); <code>AB-02</code> honestly measured <b>0</b> on a single-shot task — we show the zero rather than fake it. (This same harness is what <b>agentic CI</b> uses to decide whether a new skill version may publish.)</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Document header → A/B Trials icon</span> The bar-chart icon opens "A/B Trials — Capsule vs Cold." Each trial is a card with two columns (with vs cold), pass/fail badges, and a one-line verdict with the token delta. <span class="where-tag">Right rail → Actions → A/B trials</span> opens it too.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>The three trials carry <b>real measured</b> token deltas, but only three skills have been A/B'd so far — you can't yet A/B a freshly captured capsule on demand from the panel. Next step: wire the panel to the live runner (the agentic-CI harness) so any new capsule can be put head-to-head against a cold baseline and the result written back.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 BACKBOARD -->
+    <section class="feat" id="backboard">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#eef0ff;color:var(--mem)">🗄️</div>
+        <div><div class="num">FEATURE 09</div><h3>Backboard memory</h3><div class="one">The memory follows the team, not the model</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>Backboard is the shared memory store where every capsule lives — and these are <b>live writes</b> (real <code>thread_id</code>s) to <code>app.backboard.io/api</code> with an <code>X-API-Key</code>. The key rule: memory belongs to <b>the entity</b> (the tenant/assistant), not to whichever AI model produced it. The enterprise gets one assistant (named <code>capsule</code>); each project is one thread under it (auto-created on first write); skill memories are tagged <code>&lt;skillId&gt;@&lt;semver&gt;</code>. Writes store only the <b>distilled briefing</b> and are storage ops, not inferences (<code>send_to_llm: "false"</code>).</p>
+          <div class="ana">Like a <b>company wiki</b> instead of notes in one employee's head. People (and models) come and go; the wiki — and everything the team learned — stays.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>Models change fast. If your knowledge were trapped inside one model, every upgrade would reset you to zero. Backboard makes it model-independent: swap Opus → Sonnet → Haiku and every capsule is still there. Tenant isolation via <code>assistant_id</code> means one tenant never sees another customer's capsules. Backboard's semantic memory is also what <b>dedups</b> near-identical capsules from different developers into one canonical lesson.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Knowledge Graph → "Backboard" memory node</span> The central indigo hub every capsule connects to with a "stores" line and every model with a "reads" line. <span class="where-tag">Capture panel → "stored in Backboard" chip</span> Each captured capsule shows where it landed.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>Without a <code>BACKBOARD_API_KEY</code> the store falls back to a local JSON folder (<code>~/.relay/capsules</code>) — fine for the demo, but there's no sync status or retry UI, and recalled memories aren't surfaced back in the composer. Next steps: a connection/sync indicator, and showing which capsule got recalled into the current prompt.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 TOKEN VALUE -->
+    <section class="feat" id="tokens">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#fef3e2;color:var(--amber)">🪙</div>
+        <div><div class="num">FEATURE 10</div><h3>Token value</h3><div class="one">Spent vs saved = the reward signal</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>Tokens are what AI work costs. CAPSULE tracks two numbers per capsule: tokens <b>spent</b> to discover the lesson, and tokens <b>saved</b> each time it's reused. Saved-over-time is the scoreboard — and the <b>reward signal</b> the whole loop optimises for (savings = Σ reuses × tokens-saved-per-reuse).</p>
+          <div class="ana">Like <b>"invest once, earn forever."</b> You pay to learn a lesson once; every reuse afterward is dividends. A capsule reused 12 times at 1,800 tokens each has paid for itself many times over.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>It turns "learning" from a vague idea into a number on a dashboard. Across this workspace the loop has saved <b>43,032 tokens</b>, and the weekly curve keeps bending upward (16,680 → 43,032). That rising line <i>is</i> the compounding effect made visible — the single metric that justifies the whole system, and the A/B token deltas behind it are measured on the local model.</p>
+          <div class="mini">
+            <div class="mstat"><div class="v g">43,032</div><div class="k">tokens saved total</div></div>
+            <div class="mstat"><div class="v b">10</div><div class="k">sessions captured</div></div>
+            <div class="mstat"><div class="v v">8</div><div class="k">capsules minted</div></div>
+            <div class="mstat"><div class="v">63%</div><div class="k">adoption rate</div></div>
+          </div>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Top bar → "Σ 43,032 saved · 63% adopted" pill</span> The quiet ledger chip (opens the Skills panel). <span class="where-tag">Skills panel → "Compounding" sparkline</span> plots tokens-saved-per-week, and green "saves N tokens/use" chips appear on every skill and version.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>The roll-up total is <em>derived</em> (reuses × a per-reuse estimate), but the three A/B token deltas behind it are now <b>measured</b> on the local model. Next step: meter actual token spend on capsuled vs cold runs for <em>every</em> skill (tie it to the agentic-CI runner) so the whole scoreboard — not just three trials — is grounded in real usage.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 ENTERPRISE VS PERSONAL REPO -->
+    <section class="feat" id="repos">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#eef4ff;color:var(--blue)">🗂️</div>
+        <div><div class="num">FEATURE 11</div><h3>Multi-dev registry — promotion, agentic CI, dedup &amp; conflict</h3><div class="one">Shared best vs pinned, and how a local lesson graduates to enterprise</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>Skills live in a <b>repo</b> (addressed like <code>capsule://skills/angular-upgrade</code>) on <code>master</code>, shared across developers (<code>dee</code>, <code>ven</code>, <code>saim</code>). The <b>enterprise repo</b> holds the capsule-maxxed best versions; each <b>project pins</b> the versions it currently runs. A lesson graduates through a governed pipeline:</p>
+          <ul>
+            <li><b>Promotion (PR, not push).</b> A capsule clearing the gate (<code>transferScore ≥ threshold</code> OR <code>novelty ≥ 80</code>) is promoted as a <em>proposed</em> version on a <code>promotion/&lt;skill&gt;</code> staging ref of <code>master</code> — never a direct push.</li>
+            <li><b>Agentic CI (test before upgrade).</b> The pipeline runs the A/B harness (new vs current) and regression-checks prior capsules, merging the bump <em>only if the measured reward improves</em>; else it stays proposed or is rejected.</li>
+            <li><b>Dedup.</b> Near-identical capsules from different devs carry a semantic signature and <em>merge into one canonical capsule</em>, all authors kept.</li>
+            <li><b>Conflict.</b> "do X" vs "undo X / do Y" is a do/undo conflict resolved by reward + recency (contradictory ⇒ major, additive ⇒ minor, refinement ⇒ patch), logged in a merge-ledger.</li>
+          </ul>
+          <div class="ana">Like <b>the company's master cookbook with a tasting panel</b>: anyone can submit a recipe (PR), but it only enters the book after a blind taste-test (agentic CI) proves it's better — and two cooks submitting the same dish get merged into one credited entry.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>Teams need to move at their own pace without losing the company's best, and a shared registry must not drown in duplicate or contradictory lessons. Promotion-as-PR + agentic CI means improvements graduate <em>only</em> when measurably better; dedup and conflict resolution keep the registry one clean, authoritative source even when <code>dee</code>, <code>ven</code> and <code>saim</code> all capture overlapping work. It's the governance boundary that makes "everyone shares learning" safe at scale.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Skills panel → enterprise/project banner</span> Reads "Enterprise skill set — capsule-maxxed versions" or "This project's active skills — versions pinned in Content Engine," with an <code>ENTERPRISE · BEST</code> / <code>PROJECT · PINNED</code> badge. <span class="where-tag">REPO-FLOW.html</span> renders the full <code>master</code> + <code>dee</code>/<code>ven</code>/<code>saim</code> + <code>promotion/*</code> git history and the merge-ledger worked example.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>The promotion/CI/dedup/conflict model is designed and demonstrated in the docs + git history, but is not yet a live in-app surface: there's no merge-ledger viewer, no per-skill <code>promotion/*</code> status panel, and no per-seat rollout. Next step: surface the staging refs, the agentic-CI pass/fail, and the do/undo merge-ledger as a panel so the governance is legible and auditable in the UI.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 WORKSPACE UX -->
+    <section class="feat" id="workspace">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#f2f3f5;color:var(--ink2)">🧩</div>
+        <div><div class="num">FEATURE 12</div><h3>Workspace UX</h3><div class="one">Doc tabs · read-only mode · @-mentions · resizable panels</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>The everyday document-editor chrome that makes CAPSULE feel like a real workspace, not a dashboard:</p>
+          <ul>
+            <li><b>Doc tabs</b> — switch between <code>Requirements</code>, <code>Product Overview</code>, and <code>Technical Requirements</code> across the top.</li>
+            <li><b>Read-only mode</b> — a document can be <code>editing</code>, <code>read-only</code> (frozen for review), or <code>inactive</code> (archived); the toolbar keys off that status.</li>
+            <li><b>@-mentions &amp; /-skills</b> — in the composer, type <b>@</b> to mention a requirement and <b>/</b> to pull in a skill.</li>
+            <li><b>Resizable / draggable side panels</b> — the side-panel rail is meant to be dragged wider or narrower, clamped between 360 and 680 px so it can never collapse the canvas.</li>
+          </ul>
+          <div class="ana">Like the <b>familiar furniture of a doc tool</b> — tabs, a freeze switch, @-mentions, draggable panes — so the powerful stuff sits inside something everyone already knows how to use.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>CAPSULE's value is the loop, but people only adopt tools that feel natural. Tabs keep related docs together; read-only protects a doc under review; @-mentions tie the conversation to real requirements and skills; resizable panels let each person trade document space for graph/skills space. These are the affordances that make the deep features reachable.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Top bar → document tabs</span> · <span class="where-tag">Document header → formatting toolbar + contentEditable surface</span> · <span class="where-tag">Right rail composer → "Use @ to mention requirements, / to use skills"</span>. The side panel opens to the left of the right rail and animates in when you click a header icon (Esc closes it).</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>Several of these are modelled in the store but not yet fully wired in the UI: the <b>doc tabs</b> are local view state and don't swap the document body; <b>read-only/inactive</b> (<code>docStatus</code>) doesn't yet freeze the editor; the <b>@/ affordances</b> show a hint and open the Skills panel but have no autocomplete; and the <b>resizable rail</b> (<code>panelWidth</code>, 360–680) exists in the store while the live grid uses a fixed 360 px column. Next steps: bind tabs to real docs, enforce the read-only freeze, add @/ autocomplete, and wire the drag-resizer to the grid.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEMO -->
+    <section class="demo" id="demo">
+      <h2>▶ How to demo it — 5 steps</h2>
+      <div class="sub">Tell the story of the learning loop in under two minutes.</div>
+      <ol>
+        <li>
+          <b>Capture a real session.</b>
+          <span>Click <code>Capture this session →</code>. Pick a real <code>~/.claude/projects/*.jsonl</code> session and watch "Distilling locally… Ollama qwen2.5-coder:14b · on-device." Read the resulting capsule's intent, score, and "stored in Backboard."</span>
+          <span class="where">Left sidebar → Capture this session →</span>
+        </li>
+        <li>
+          <b>Follow it through the Knowledge Graph.</b>
+          <span>Open the graph. Click a skill node and read its "Why vX exists" chain — capsule → session → finding → work order → requirement. That's the provenance an auditor wants.</span>
+          <span class="where">Document header → Knowledge Graph icon</span>
+        </li>
+        <li>
+          <b>Open Skills and flip the Enterprise toggle.</b>
+          <span>Show the seven skills with token savings and the compounding sparkline. Flip ENTERPRISE — the banner switches from PROJECT · PINNED to ENTERPRISE · BEST, serving the capsule-maxxed versions to everyone.</span>
+          <span class="where">Document header → Skills icon → ENTERPRISE switch</span>
+        </li>
+        <li>
+          <b>Compare two versions.</b>
+          <span>In Version History, tick Compare on <code>Command Verification 1.0.0</code> (CAP-R007) and <code>2.0.0</code> (CAP-R005). Read the word-level diff and the major-bump supersede.</span>
+          <span class="where">Document header → Versions icon</span>
+        </li>
+        <li>
+          <b>Land it on the A/B trial.</b>
+          <span>Open A/B Trials and show <code>AB-03</code>: 247 tokens with the capsule vs 404 cold — 39% cheaper, measured on the local model. Note <code>AB-02</code> honestly reads 0. End on the 43,032-token total: "this is one company, learning — for real."</span>
+          <span class="where">Document header → A/B Trials icon</span>
+        </li>
+      </ol>
+    </section>
+
+    <div class="foot">
+      <b>CAPSULE</b> — Content Engine · 8090 Software Factory · CAPSULE module, 4 seats. Numbers come straight from the real dataset
+      (<span class="mono">src/lib/data.ts</span>), distilled from the user's own <span class="mono">~/.claude</span> sessions: 8 capsules (CAP-R001…R008), 7 skills, 43,032 tokens saved, 46 average transfer, 63% adoption, 10 sessions captured, 3 A/B trials with measured Ollama token deltas.
+      Behaviour described from <span class="mono">src/lib/{cerebras,scorer,backboard,store}.ts</span> and <span class="mono">src/components/*</span>.
+      Self-contained · inline CSS · no external assets · 8090 light theme.
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

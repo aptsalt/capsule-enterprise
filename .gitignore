@@ -1,0 +1,32 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# Next.js build output
+/.next/
+/out/
+/build
+next-env.d.ts
+
+# Environment — NEVER commit secrets (Backboard key lives here)
+.env
+.env.*
+!.env.example
+
+# Logs & temp
+*.log
+scripts/*.log
+scripts/real-dataset.log
+
+# Local capsule cache (assistant/thread ids)
+.capsule/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Vercel
+.vercel

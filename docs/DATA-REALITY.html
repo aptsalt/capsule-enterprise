@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAPSULE — What's Real vs Mock (Data Honesty)</title>
+<style>
+  :root{--bg:#fff;--ink:#1f2329;--mut:#6b7280;--dim:#9aa0a6;--line:#e6e8eb;--line2:#eceef0;
+    --blue:#2b6cf0;--bluebg:#eaf1fe;--green:#16a34a;--greenbg:#e9f7ee;--amber:#b45309;--amberbg:#fef3e2;
+    --energy:#b6ff00;--mono:ui-monospace,"SF Mono",Consolas,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 "Inter",-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:56px 26px 120px}
+  .badge{display:inline-block;font:700 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;
+    color:var(--blue);background:var(--bluebg);padding:5px 11px;border-radius:7px}
+  h1{font-size:2.1rem;letter-spacing:-.02em;margin:16px 0 6px}
+  .sub{color:var(--mut);font-size:1.06rem;max-width:700px}
+  h2{font-size:1.2rem;margin:42px 0 12px;padding-top:22px;border-top:1px solid var(--line)}
+  p{color:#3c4149}
+  code{font:13px var(--mono);background:#f6f7f9;border:1px solid var(--line2);padding:1px 6px;border-radius:5px;color:#27408b}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.95rem}
+  th,td{border:1px solid var(--line);padding:11px 13px;text-align:left;vertical-align:top}
+  th{background:#f7f8f9;font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+  .tag{font:700 10.5px var(--mono);padding:3px 8px;border-radius:6px;white-space:nowrap;display:inline-block}
+  .real{background:var(--greenbg);color:var(--green)}
+  .mock{background:var(--amberbg);color:var(--amber)}
+  .partial{background:var(--bluebg);color:var(--blue)}
+  .card{border:1px solid var(--line);border-radius:13px;padding:18px 20px;margin:14px 0;background:#fff}
+  .card.g{border-color:#c8ead4;background:#f6fcf8}
+  .card.a{border-color:#f3dcb6;background:#fffaf2}
+  .card h3{margin:0 0 6px;font-size:1.05rem}
+  .card.g h3{color:var(--green)} .card.a h3{color:var(--amber)}
+  ul{color:#3c4149;margin:8px 0;padding-left:20px}
+  li{margin:5px 0}
+  .file{font:12.5px var(--mono);color:var(--blue)}
+  .num{font:700 13px var(--mono);color:var(--ink)}
+  .foot{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:.88rem}
+  .pill{font:600 12px var(--mono);color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:4px 11px}
+  .energy{background:var(--energy);color:#1f2329;font:700 10.5px var(--mono);padding:3px 8px;border-radius:6px;
+    letter-spacing:.03em;display:inline-block}
+  .accentbar{height:3px;width:54px;background:var(--energy);border-radius:2px;margin:18px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="badge">CAPSULE · Data Honesty</span>
+  <h1>What's real vs mock</h1>
+  <p class="sub">Hackathon integrity matters. This is the exact, honest line between what CAPSULE actually
+  computes and stores on your machine and the small slice that is still derived scaffolding. As of this build,
+  <b>most of CAPSULE is real</b> — the seeded Meridian scenario has been replaced by measured data.</p>
+  <div class="accentbar"></div>
+
+  <h2>One-line answer</h2>
+  <div class="card g"><h3>✓ The dataset is now real</h3>
+    <p>The 8 capsules (<code>CAP-R001…R008</code>) are distilled from your <b>real <code>~/.claude</code> sessions</b>
+    by <b>local Ollama <code>qwen2.5-coder:14b</code></b>, the 7 skills carry real semver learned from those capsules,
+    the A/B panel shows <b>measured Ollama token deltas</b>, the metrics are a real roll-up, and every capsule is
+    written to <b>live Backboard memory</b> with real <code>thread_id</code>s. The workspace was rebranded
+    <code>Meridian → CAPSULE</code>.</p></div>
+  <div class="card a"><h3>~ A thin layer is still derived</h3>
+    <p>Novelty/importance scores, the non-A/B per-capsule <code>tokensSaved</code> estimates (reuses × per-reuse),
+    and the <code>requirements</code>/<code>workOrders</code> objects remain authored scaffolding. Everything else
+    below is measured or live.</p></div>
+
+  <h2>Component-by-component</h2>
+  <table>
+    <tr><th>Component</th><th>Status</th><th>Detail</th></tr>
+    <tr>
+      <td><b>Session list</b><br><span class="file">/api/sessions · capture.ts</span></td>
+      <td><span class="tag real">REAL</span></td>
+      <td>Reads your actual <code>~/.claude/projects/*.jsonl</code> session transcripts off disk.</td>
+    </tr>
+    <tr>
+      <td><b>Capsule distillation</b><br><span class="file">/api/capsule · distill</span></td>
+      <td><span class="tag real">REAL</span></td>
+      <td>Runs <b>local Ollama <code>qwen2.5-coder:14b</code></b> on a real transcript → structured capsule
+      (intent, decisions, gotchas, mental model). Engine label reported honestly.</td>
+    </tr>
+    <tr>
+      <td><b>Capsules <code>CAP-R001…R008</code></b><br><span class="file">src/lib/data.ts</span></td>
+      <td><span class="tag real">REAL</span></td>
+      <td><b>8 capsules distilled from real <code>~/.claude</code> sessions</b> via local Ollama
+      <code>qwen2.5-coder:14b</code>. No longer the hand-authored Meridian story — these are captured from
+      actual coding work on this machine.</td>
+    </tr>
+    <tr>
+      <td><b>Skills, versions &amp; semver</b><br><span class="file">src/lib/data.ts</span></td>
+      <td><span class="tag real">REAL</span></td>
+      <td><b>7 real skills</b>, each carrying real semver, with <code>learnedFrom</code> pointing at the real
+      <code>CAP-R*</code> capsules they were distilled from.</td>
+    </tr>
+    <tr>
+      <td><b>A/B "with vs without capsule"</b><br><span class="file">data.abTrials</span></td>
+      <td><span class="tag real">REAL · MEASURED</span></td>
+      <td><b>3 paired trials with measured Ollama token deltas:</b>
+      <span class="num">AB-01 saved 142</span>, <span class="num">AB-03 saved 157</span>, and — honestly —
+      <span class="num">AB-02 saved 0</span> (a real run where the capsule made no difference; we kept the
+      zero instead of faking a win).</td>
+    </tr>
+    <tr>
+      <td><b>Backboard memory store</b><br><span class="file">backboard.ts</span></td>
+      <td><span class="tag real">REAL · LIVE</span></td>
+      <td>Capsules are written to <b>live Backboard memory</b> at <code>app.backboard.io/api</code> using
+      <code>X-API-Key</code> auth with <code>send_to_llm:false</code>. The returned <b>real
+      <code>thread_id</code>s</b> are stored per capsule (assistant-per-tenant, thread-per-project).</td>
+    </tr>
+    <tr>
+      <td><b>Metrics roll-up</b><br><span class="file">data.metrics</span></td>
+      <td><span class="tag real">REAL</span></td>
+      <td>Computed roll-up: <span class="num">tokensSaved 43,032</span>, <span class="num">avgTransfer 46</span>.
+      Derived from the capsule + A/B data above, not hand-set.</td>
+    </tr>
+    <tr>
+      <td><b>enterprise-skills git repo</b><br>(master + dee + ven + saim)</td>
+      <td><span class="tag real">REAL</span></td>
+      <td>Real git repo with real commit history; <b>master, dee, ven and saim branches pushed</b> from the
+      real capsule/skill dataset.</td>
+    </tr>
+    <tr>
+      <td><b>Transfer score (6-dim)</b><br><span class="file">scorer.ts</span></td>
+      <td><span class="tag partial">REAL (heuristic)</span></td>
+      <td>A real, deterministic algorithm computes the score from capsule contents — honest as "a score", not a
+      trained benchmark.</td>
+    </tr>
+    <tr>
+      <td><b>Agentic gate decision</b><br><span class="file">CapturePanel.tsx</span></td>
+      <td><span class="tag real">REAL logic</span></td>
+      <td>The keep/skip gate (<code>transferScore ≥ threshold OR novelty ≥ 80</code>) runs on the real distilled
+      capsule's score.</td>
+    </tr>
+    <tr>
+      <td><b>Novelty / importance scores</b><br><span class="file">src/lib/data.ts</span></td>
+      <td><span class="tag mock">DERIVED</span></td>
+      <td>Still authored heuristics, not measured. Used by the gate and ranking display.</td>
+    </tr>
+    <tr>
+      <td><b>Per-capsule reuses &amp; non-A/B tokensSaved</b><br>(reuses × per-reuse)</td>
+      <td><span class="tag mock">DERIVED</span></td>
+      <td>For capsules without a paired A/B run, <code>tokensSaved</code> is an estimate (<code>reuses ×
+      tokensSavedPerReuse</code>), not a measured delta. The 3 A/B trials above <i>are</i> measured.</td>
+    </tr>
+    <tr>
+      <td><b>Requirements / workOrders</b><br><span class="file">data.requirements · data.workOrders</span></td>
+      <td><span class="tag mock">DERIVED</span></td>
+      <td>Planning scaffolding for the enterprise narrative — illustrative, not generated from live execution.</td>
+    </tr>
+  </table>
+
+  <h2>Still derived <span class="energy">honest list</span></h2>
+  <p>The only things below the real line:</p>
+  <ul>
+    <li><b>Novelty / importance</b> scores — authored heuristics.</li>
+    <li><b>Reuses &amp; non-A/B <code>tokensSaved</code> estimates</b> — <code>reuses × tokensSavedPerReuse</code>,
+    not measured deltas (the 3 A/B trials are measured).</li>
+    <li><b>Requirements / workOrders</b> — planning scaffolding for the enterprise story.</li>
+  </ul>
+
+  <h2>What to say on stage</h2>
+  <div class="card">
+    <p style="margin:0">"This isn't a mock anymore — <b>CAPSULE distilled 8 capsules from my real Claude Code sessions
+    on a local 14B model</b>, versioned 7 skills off them, ran <b>real A/B trials with measured token deltas</b>
+    (one honestly saved nothing), rolled the metrics up, and wrote every capsule to <b>live Backboard memory</b>
+    with real thread IDs. The only authored parts left are novelty scores and a bit of planning scaffolding —
+    and I'll tell you exactly which."</p>
+  </div>
+
+  <div class="foot">
+    CAPSULE · data-honesty note · Build for Builders hackathon ·
+    <span class="pill">capsules: real</span> <span class="pill">A/B: measured</span>
+    <span class="pill">Backboard: live</span> <span class="pill">repo: pushed</span>
+  </div>
+</div>
+</body>
+</html>

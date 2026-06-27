@@ -1,0 +1,90 @@
+{
+  "shots": [
+    {
+      "file": "01-workspace-home.png",
+      "caption": "CAPSULE workspace — split sidebar with scrollable Capsules (CAP-R001..R008) and the super-saiyan Capture button."
+    },
+    {
+      "file": "02-knowledge-graph.png",
+      "caption": "Knowledge Graph Explorer — the contained force graph of requirements → capsules → skills → Backboard memory."
+    },
+    {
+      "file": "03-graph-node-provenance.png",
+      "caption": "A capsule node selected — its provenance trace (finding, routed-to skill, technique to learn)."
+    },
+    {
+      "file": "04-skills-enterprise-off.png",
+      "caption": "Skills panel — Enterprise OFF: project-pinned versions, condensed cards with fluorescent action buttons."
+    },
+    {
+      "file": "05-skills-enterprise-on.png",
+      "caption": "Skills panel — Enterprise ON (blue): capsule-maxxed best versions with the upgrade deltas lit."
+    },
+    {
+      "file": "06-version-history.png",
+      "caption": "Version History — day-grouped semver versions of a skill; every accepted finding mints a new version."
+    },
+    {
+      "file": "07-versions-compare.png",
+      "caption": "Versions Compare — two versions ticked drop into a word-level diff of changelog + guidance."
+    },
+    {
+      "file": "08-ab-trials.png",
+      "caption": "A/B Trials — Capsule vs Cold: measured tokens, steps and pass/fail per task; capsuled runs win."
+    },
+    {
+      "file": "09-capture-manual.png",
+      "caption": "Capture — MANUAL mode: pick a real ~/.claude session to distill on-device into a Handoff Capsule."
+    },
+    {
+      "file": "10-capture-agentic-gate.png",
+      "caption": "Capture — AGENTIC mode: auto-distill + the keep/skip gate (transfer ≥ threshold OR novelty ≥ 80)."
+    },
+    {
+      "file": "11-composer-capsule-aura.png",
+      "caption": "Composer with Capsule injected ON (yellow aura) and the matching Agentic toggle — both the shared super-saiyan ON state."
+    },
+    {
+      "file": "12-doc-read-only.png",
+      "caption": "Document set to Read only — the formatting toolbar dims and the surface goes inert for review."
+    },
+    {
+      "file": "13-at-mention.png",
+      "caption": "@-mention in the composer — type @ to mention a requirement; the popover filters the requirement list live."
+    },
+    {
+      "file": "14-panel-wide.png",
+      "caption": "Side panel dragged wide — the graph + cards fluidly fill the extra width (resize separator, up to 680px)."
+    },
+    {
+      "file": "15-handoff-result.png",
+      "caption": "Handoff & warm start — the 'You inherit' briefing plus the measured cold-vs-warm result from running both agents."
+    },
+    {
+      "file": "16-multidev-enterprise-vs-personal.png",
+      "caption": "MULTI-DEV doc — 'Four branches: one enterprise master, three dev personal branches' that pin enterprise skills and contribute capsules back."
+    }
+  ],
+  "videos": [
+    {
+      "file": "vid-handoff.webm",
+      "caption": "Hero — Handoff warm start: the 'You inherit' briefing, then the measured cold-vs-warm result of running both agents."
+    },
+    {
+      "file": "vid-agentic.webm",
+      "caption": "Agentic capture gate — auto-distill a real session on-device, then the keep/skip verdict against the threshold."
+    },
+    {
+      "file": "vid-capsule-glow.webm",
+      "caption": "Capsule context toggle — the composer's yellow super-saiyan aura blooms as the latest capsule is injected."
+    },
+    {
+      "file": "vid-graph-play.webm",
+      "caption": "Knowledge Graph Play — the RL story assembles in order: requirements → work orders → agents → sessions → capsules → skills → memory."
+    },
+    {
+      "file": "vid-enterprise.webm",
+      "caption": "Enterprise toggle — skill cards flip from project-pinned to the capsule-maxxed enterprise-best versions in blue."
+    }
+  ]
+}

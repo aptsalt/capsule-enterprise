@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAPSULE — The Multi-Developer Enterprise Model</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#1f2329; --muted:#6b7280; --hair:#e6e8eb;
+    --blue:#2b6cf0; --blue-soft:#eef3fe; --blue-line:#d9e4fd;
+    --chip:#f6f7f9; --good:#15803d; --warn:#b45309; --bad:#b91c1c;
+    --energy:#b6ff00; --energy-ink:#3d5400;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono","Menlo",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; font-size:16px; letter-spacing:-0.005em;
+  }
+  .wrap{max-width:1000px; margin:0 auto; padding:72px 32px 120px}
+  header.top{margin-bottom:8px}
+  .kicker{font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin:0 0 14px}
+  h1{font-size:36px; line-height:1.16; font-weight:650; margin:0 0 16px; letter-spacing:-0.022em; max-width:760px}
+  .lede{font-size:18px; color:var(--muted); max-width:720px; margin:0}
+  section{margin-top:76px}
+  h2{font-size:13px; font-family:var(--mono); letter-spacing:.07em; text-transform:uppercase; color:var(--muted);
+     font-weight:600; margin:0 0 6px; padding-bottom:12px; border-bottom:1px solid var(--hair)}
+  h2 .num{color:var(--blue); margin-right:10px}
+  .h2sub{font-size:15px; color:var(--muted); margin:14px 0 28px; max-width:720px}
+  h3{font-size:18px; font-weight:600; margin:0 0 8px; letter-spacing:-0.01em}
+  p{margin:0 0 16px}
+  code,.m{font-family:var(--mono); font-size:.86em}
+  .m{background:var(--chip); border:1px solid var(--hair); border-radius:5px; padding:1px 6px; color:var(--ink); white-space:nowrap}
+  .ver{color:var(--blue); font-weight:600; font-family:var(--mono)}
+  a{color:var(--blue); text-decoration:none}
+  strong{font-weight:650}
+
+  /* energy accent — used sparingly */
+  .energy{background:var(--energy); color:var(--energy-ink); border-radius:4px; padding:0 6px; font-weight:600;
+     font-family:var(--mono); font-size:.84em; letter-spacing:.01em; white-space:nowrap}
+  .dot{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--energy);
+     box-shadow:0 0 0 3px rgba(182,255,0,.25); margin-right:8px; vertical-align:middle}
+
+  /* three answers */
+  .qa{display:grid; grid-template-columns:repeat(3,1fr); gap:18px}
+  .qcard{border:1px solid var(--hair); border-radius:14px; padding:22px 22px 24px; position:relative; overflow:hidden}
+  .qcard::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--blue)}
+  .qcard .q{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); margin:0 0 10px}
+  .qcard .a{font-size:15px; line-height:1.5; color:var(--ink); margin:0}
+  .qcard .a b{font-weight:650}
+
+  /* pipeline steps */
+  .pipe{border:1px solid var(--hair); border-radius:14px; overflow:hidden}
+  .step{display:grid; grid-template-columns:184px 1fr; gap:24px; align-items:start; padding:20px 24px}
+  .step + .step{border-top:1px solid var(--hair)}
+  .step .lbl{font-family:var(--mono); font-size:12px; letter-spacing:.03em; color:var(--blue); padding-top:2px; display:flex; align-items:center; gap:10px}
+  .step .lbl .n{flex:none; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%;
+     background:var(--blue-soft); color:var(--blue); font-weight:600}
+  .step h3{margin-bottom:4px; font-size:16px}
+  .step p{color:var(--muted); margin:0; font-size:14px}
+  .step.gate{background:linear-gradient(90deg,rgba(182,255,0,.10),rgba(182,255,0,0) 70%)}
+  .step.gate .n{background:var(--energy); color:var(--energy-ink)}
+  .step.gate .lbl{color:var(--energy-ink)}
+
+  /* flow diagram (ascii-ish, styled) */
+  pre.flow{font-family:var(--mono); font-size:12.5px; line-height:1.7; background:#fbfcfd; border:1px solid var(--hair);
+     border-radius:12px; padding:22px 24px; overflow-x:auto; color:var(--ink); margin:0}
+  pre.flow .b{color:var(--blue); font-weight:600}
+  pre.flow .g{color:var(--energy-ink); background:var(--energy); border-radius:3px; padding:0 4px}
+  pre.flow .mut{color:var(--muted)}
+  pre.flow .pub{color:var(--good); font-weight:600}
+  pre.flow .rej{color:var(--bad); font-weight:600}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; font-size:14px}
+  th,td{text-align:left; padding:11px 12px; border-bottom:1px solid var(--hair); vertical-align:top}
+  th{font-family:var(--mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); font-weight:600}
+  td.mono,th.mono{font-family:var(--mono)}
+  tr.win td{background:rgba(182,255,0,.07)}
+  .delta{font-family:var(--mono); font-weight:600}
+  .delta.up{color:var(--good)} .delta.dn{color:var(--good)}
+  .pill{display:inline-block; font-family:var(--mono); font-size:11px; padding:1px 8px; border-radius:999px; border:1px solid var(--hair); white-space:nowrap}
+  .pill.ok{color:var(--good); background:#f0fbf3; border-color:#cdeccf}
+  .pill.prop{color:var(--warn); background:#fff8ee; border-color:#f3e2c4}
+  .pill.maj{color:var(--bad); background:#fef2f2; border-color:#f4cccc}
+  .pill.blue{color:var(--blue); background:var(--blue-soft); border-color:var(--blue-line)}
+
+  /* two col cards */
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+  .card{border:1px solid var(--hair); border-radius:14px; padding:24px}
+  .card .tag{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px}
+  .card h3{margin-bottom:12px}
+  ul.k{list-style:none; margin:0; padding:0}
+  ul.k li{padding:9px 0; border-top:1px solid var(--hair); font-size:14px; color:var(--ink)}
+  ul.k li:first-child{border-top:0}
+  ul.k li .id{font-family:var(--mono); color:var(--blue)}
+
+  /* bump rule legend */
+  .rules{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:4px}
+  .rule{border:1px solid var(--hair); border-radius:12px; padding:16px}
+  .rule .b{font-family:var(--mono); font-size:12px; font-weight:600; margin-bottom:6px}
+  .rule .b.r{color:var(--bad)} .rule .b.o{color:var(--warn)} .rule .b.bl{color:var(--blue)} .rule .b.gr{color:var(--energy-ink)}
+  .rule p{font-size:13px; color:var(--muted); margin:0}
+
+  /* branch diagram */
+  .branchmap{border:1px solid var(--hair); border-radius:14px; padding:8px 8px}
+  pre.graph{font-family:var(--mono); font-size:12px; line-height:1.85; background:#fbfcfd; border:1px solid var(--hair);
+     border-radius:10px; padding:22px 22px; overflow-x:auto; color:var(--ink); margin:0}
+  pre.graph .star{color:var(--blue); font-weight:700}
+  pre.graph .head{color:var(--energy-ink); background:var(--energy); border-radius:3px; padding:0 4px}
+  pre.graph .ref{color:var(--blue); font-weight:600}
+  pre.graph .dee{color:#9333ea} pre.graph .ven{color:#0891b2} pre.graph .saim{color:var(--warn)}
+  pre.graph .mut{color:var(--muted)}
+  .legend{display:flex; flex-wrap:wrap; gap:18px; margin-top:16px; font-size:13px; color:var(--muted); font-family:var(--mono)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .swatch{width:10px; height:10px; border-radius:3px; display:inline-block}
+
+  .callout{border:1px solid var(--blue-line); background:var(--blue-soft); border-radius:12px; padding:18px 20px; font-size:14.5px; color:var(--ink)}
+  .callout b{color:var(--blue)}
+  .note{font-size:13px; color:var(--muted); margin-top:14px}
+  .foot{margin-top:90px; padding-top:24px; border-top:1px solid var(--hair); font-size:13px; color:var(--muted); font-family:var(--mono); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px}
+
+  @media(max-width:820px){
+    .qa,.rules{grid-template-columns:1fr 1fr} .cols{grid-template-columns:1fr}
+    .step{grid-template-columns:1fr; gap:8px} .wrap{padding:48px 20px 80px} h1{font-size:28px}
+  }
+  @media(max-width:520px){ .qa,.rules{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <p class="kicker">CAPSULE · Enterprise Skills Registry · 8090 Software Factory</p>
+    <h1>The multi-developer enterprise model</h1>
+    <p class="lede">Many developers learn in their own repos. CAPSULE turns a passing capsule into a
+    <strong>proposed</strong> skill version, <strong>tests it before upgrade</strong> with an agentic A/B + regression
+    harness, and reconciles <strong>overlapping</strong> and <strong>contradictory</strong> capsules into one canonical
+    registry — auditable down to the commit.</p>
+  </header>
+
+  <!-- THREE PLAIN ANSWERS -->
+  <section style="margin-top:48px">
+    <h2>The three questions, answered plainly</h2>
+    <div class="qa">
+      <div class="qcard">
+        <p class="q">1 · How it reaches the enterprise repo</p>
+        <p class="a">A capsule that clears the gate (<span class="m">transferScore ≥ threshold</span> <b>OR</b>
+        <span class="m">novelty ≥ 80</span>) is <b>proposed</b>, not pushed. It is staged as a PR on a
+        <span class="m">promotion/&lt;skill&gt;</span> ref of <b>master</b>. The head of <code>master</code> only moves
+        when review merges it.</p>
+      </div>
+      <div class="qcard">
+        <p class="q">2 · How it's tested before upgrade</p>
+        <p class="a"><b>Agentic CI</b> runs an <b>A/B harness</b> — new version vs current published — on representative
+        tasks, plus a <b>regression replay</b> of prior capsules. The bump publishes <b>only if measured reward improves</b>
+        (tokens down · pass-rate up · transfer up) with no regressions. CI-for-skills.</p>
+      </div>
+      <div class="qcard">
+        <p class="q">3 · Same / contradictory capsules</p>
+        <p class="a"><b>Dedup:</b> near-identical signatures merge into <b>one canonical capsule</b>; provenance keeps every
+        author. <b>Conflict:</b> a <span class="m">do/undo</span> is flagged and resolved by <b>measured reward + recency</b>
+        — contradictory ⇒ major supersede, ties escalate to a human. Every call is logged in the merge-ledger.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROMOTION -->
+  <section>
+    <h2><span class="num">01</span>Promotion — a PR, never a push</h2>
+    <p class="h2sub">Clearing the RL gate produces a <strong>PROPOSED skill version</strong> staged on a
+    <code>promotion/&lt;skill&gt;</code> ref — the equivalent of a pull request against the enterprise repo. No developer and
+    no agent force-pushes a new version onto <code>master</code>.</p>
+
+    <div class="pipe">
+      <div class="step">
+        <div class="lbl"><span class="n">1</span>session</div>
+        <div><h3>Real Claude Code session</h3><p>A developer's coding session is compressed by local Ollama
+        (<span class="m">qwen2.5-coder:14b</span>) into a capsule — a compressed finding stored in Backboard.</p></div>
+      </div>
+      <div class="step gate">
+        <div class="lbl"><span class="n">2</span>RL gate</div>
+        <div><h3>Gate <span class="energy">transferScore ≥ threshold · OR · novelty ≥ 80</span></h3>
+        <p>Only capsules that clear the gate are eligible. Clearing it does <strong>not</strong> publish — it
+        <strong>proposes</strong>.</p></div>
+      </div>
+      <div class="step">
+        <div class="lbl"><span class="n">3</span>propose</div>
+        <div><h3>Staged on <span class="m">promotion/&lt;skill&gt;</span></h3>
+        <p>Writes <span class="m">PROPOSED-&lt;version&gt;.SKILL.md</span> + a <span class="m">CI-&lt;version&gt;.md</span>
+        report to the staging ref. This is the PR. Master head is untouched.</p></div>
+      </div>
+      <div class="step">
+        <div class="lbl"><span class="n">4</span>agentic CI</div>
+        <div><h3>A/B harness + regression check</h3><p>The pipeline measures the proposed version against the current one
+        and replays prior capsules. See section 02.</p></div>
+      </div>
+      <div class="step">
+        <div class="lbl"><span class="n">5</span>review &amp; merge</div>
+        <div><h3>Human / agentic review merges the bump</h3><p>Only on <em>reward improved</em> + review OK does
+        <code>master</code> head advance to the new published version.</p></div>
+      </div>
+    </div>
+
+    <pre class="flow" style="margin-top:22px">
+   capsule <span class="mut">(clears gate)</span>
+        │  <span class="b">propose</span>
+        ▼
+   <span class="b">promotion/&lt;skill&gt;/PROPOSED-x.y.z</span>   <span class="mut">← staged candidate (a PR, not a push)</span>
+        │  <span class="g">agentic CI: A/B harness + regression check</span>
+        ├── reward improves + review OK ───▶ <span class="pub">merge → bump master head (PUBLISHED)</span>
+        ├── reward improves, contradiction ─▶ <span class="b">HUMAN REVIEW</span> → merge or reject
+        └── reward flat / worse ────────────▶ <span class="rej">held `proposed` or `rejected` (no publish)</span></pre>
+  </section>
+
+  <!-- AGENTIC CI -->
+  <section>
+    <h2><span class="num">02</span>Agentic CI — testing before the upgrade</h2>
+    <p class="h2sub">A version upgrade must <strong>earn</strong> its place with measured evidence, exactly like code passing
+    tests. Below is the <strong>real</strong> CI report that gated <span class="m">api-rate-limiting@2.0.0</span> (saim's
+    <span class="m">CAP-S001</span>) — A/B on 10 representative gateway tasks plus a prior-capsule regression replay,
+    measured on the local model with real token counts.</p>
+
+    <div class="cols" style="grid-template-columns:1fr 1fr; align-items:start">
+      <div class="card">
+        <p class="tag">A/B harness — new vs current</p>
+        <h3>fail-fast + <span class="m">Retry-After</span> vs backoff + retry</h3>
+        <table>
+          <thead><tr><th>Signal</th><th class="mono">1.0.0</th><th class="mono">2.0.0</th><th>Δ</th></tr></thead>
+          <tbody>
+            <tr class="win"><td>Pass rate</td><td class="mono">6/10</td><td class="mono">9/10</td><td class="delta up">+30pp</td></tr>
+            <tr class="win"><td>Tokens / task</td><td class="mono">404</td><td class="mono">263</td><td class="delta dn">−35%</td></tr>
+            <tr class="win"><td>Transfer lift</td><td class="mono">+7</td><td class="mono">+31</td><td class="delta up">+24</td></tr>
+            <tr class="win"><td>429 amplification</td><td class="mono">storms</td><td class="mono">none</td><td class="delta up">resolved</td></tr>
+            <tr class="win"><td>p99 added latency</td><td class="mono">high</td><td class="mono">low</td><td class="delta dn">down</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <p class="tag">Regression replay — prior capsules</p>
+        <h3>Old behavior must still hold</h3>
+        <table>
+          <thead><tr><th>Capsule</th><th>Re-played</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">CAP-R003</td><td>yes</td><td><span class="pill ok">no regression</span></td></tr>
+          </tbody>
+        </table>
+        <div class="callout" style="margin-top:18px">
+          <b>Verdict: PASS</b> — reward improves on <em>every</em> axis ⇒ merge rule satisfied, publish-eligible.
+          But relation = <strong>do/undo contradiction</strong> ⇒ policy requires <strong>human review</strong> before the
+          bump lands on master. Until then the candidate stays <span class="pill prop">proposed</span> on
+          <span class="m">promotion/api-rate-limiting</span>; master head remains <span class="ver">1.0.0</span>.
+        </div>
+      </div>
+    </div>
+    <p class="note"><span class="dot"></span>Merge rule: <strong>publish only if measured reward improves</strong>
+    (tokens ↓ / pass-rate ↑ / transfer ↑) <strong>and</strong> no regressions — otherwise the version stays
+    <code>proposed</code> or is <code>rejected</code>.</p>
+  </section>
+
+  <!-- DEDUP -->
+  <section>
+    <h2><span class="num">03</span>Dedup — overlapping capsules from many devs</h2>
+    <p class="h2sub">Every capsule carries a <strong>semantic signature</strong>. On submit it is matched against the
+    registry and Backboard's semantic memory. Cosine ≥ <strong>0.90</strong> means a re-discovery — the capsules merge into
+    <strong>one canonical capsule</strong>, provenance keeps <strong>all</strong> authors, and <strong>no redundant version
+    is forged</strong>.</p>
+
+    <div class="cols">
+      <div class="card">
+        <p class="tag">Live example · ML-001</p>
+        <h3>ven ⨝ dee on <span class="m">command-verification</span></h3>
+        <ul class="k">
+          <li><span class="id">dee · CAP-R007</span> — co-originator + pinned <span class="ver">1.0.0</span> consumer.
+            Finding: <em>"verify by inspecting the actual system state rather than inferred information."</em></li>
+          <li><span class="id">ven · CAP-V001</span> — independent re-discovery of the same principle, submitted
+            2026-06-27.</li>
+          <li>Both signatures: <span class="m">sig:cmd-verify::inspect-actual-state-over-inference</span></li>
+          <li>Semantic-memory cosine <span class="energy">0.94</span> ≥ 0.90 dedup threshold</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="tag">Resolution</p>
+        <h3>One node, two authors</h3>
+        <pre class="flow" style="font-size:12px">
+skill/command-verification
+  <span class="b">(canonical: "inspect actual system state")</span>
+   ├── <span class="b">dee</span>  — CAP-R007  <span class="mut">co-originator, pins 1.0.0</span>
+   └── <span class="b">ven</span>  — CAP-V001  <span class="mut">deduped 2026-06-27</span>
+
+→ <span class="g">DEDUP</span>: no new version forged
+→ Backboard merges 2 facts into 1 node
+   with 2 provenance edges
+→ stays <span class="ver">1.0.0</span> for this finding</pre>
+        <p class="note">Forging a second skill would fragment the registry and double-count token savings. Dedup is recorded,
+        not promoted.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONFLICT -->
+  <section>
+    <h2><span class="num">04</span>Conflict — do / undo resolution</h2>
+    <p class="h2sub">When capsule A says <strong>do X</strong> and capsule B says <strong>undo X / do Y</strong> against the
+    same skill, the pipeline flags a <strong>do/undo conflict</strong>. It is never a silent minor — it resolves by
+    <strong>measured reward + recency</strong>, and ties escalate to a human.</p>
+
+    <h3 style="margin-bottom:14px; font-size:15px; color:var(--muted); font-family:var(--mono); letter-spacing:.04em; text-transform:uppercase">Relation → bump policy</h3>
+    <div class="rules">
+      <div class="rule"><div class="b r">major · supersede</div><p><strong>Contradictory</strong> (do vs undo). Supersede the old version, or reject. Always escalates.</p></div>
+      <div class="rule"><div class="b bl">minor</div><p><strong>Additive</strong> — adds a new, compatible facet to the skill.</p></div>
+      <div class="rule"><div class="b o">patch</div><p><strong>Refinement</strong> — tightens or clarifies an existing facet.</p></div>
+      <div class="rule"><div class="b gr">dedup</div><p><strong>Re-discovery</strong> — near-identical signature. No version; merge provenance.</p></div>
+    </div>
+
+    <div class="cols" style="margin-top:26px">
+      <div class="card">
+        <p class="tag">Live example · ML-002</p>
+        <h3>saim vs <span class="m">api-rate-limiting</span></h3>
+        <ul class="k">
+          <li><span class="id">DO X · v1.0.0 (CAP-R003)</span> — add client-side backoff + retry on 429s.</li>
+          <li><span class="id">UNDO X / DO Y · CAP-S001 (saim)</span> — remove client retries; <strong>fail fast + honor
+            <span class="m">Retry-After</span></strong>, surface to caller.</li>
+          <li>Gate: novelty <span class="energy">84</span> ≥ 80, transfer 58 — clears the gate.</li>
+          <li>Relation: <span class="pill maj">do/undo · contradictory</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="tag">Tie-break &amp; decision</p>
+        <h3>Measured reward + recency</h3>
+        <ul class="k">
+          <li><strong>Reward:</strong> A/B improves on every axis (pass 6→9/10, tokens −35%, transfer +24, no regressions).</li>
+          <li><strong>Recency:</strong> CAP-S001 (2026-06-27) is newer than CAP-R003 (2026-06-19). Both favor the new guidance.</li>
+          <li><strong>Decision:</strong> <span class="pill maj">SUPERSEDE → 2.0.0 (major)</span>, status
+            <span class="pill prop">proposed</span>, staged on <span class="m">promotion/api-rate-limiting</span> — not force-merged.</li>
+          <li><strong>Escalation:</strong> contradiction ⇒ <span class="pill blue">human review required</span> to confirm no
+            consumer depends on the old auto-retry contract. On reject, stays <span class="ver">1.0.0</span> and CAP-S001 is
+            archived <code>rejected</code> with evidence retained.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note"><span class="dot"></span>Every resolution is appended to the <strong>append-only MERGE-LEDGER</strong>.
+    Invariants: one canonical capsule per finding · no silent contradiction · reward gates publish · entries are never edited
+    in place.</p>
+  </section>
+
+  <!-- BRANCH DIAGRAM -->
+  <section>
+    <h2><span class="num">05</span>Four branches — one enterprise master, three devs</h2>
+    <p class="h2sub">The enterprise registry lives on <code>master</code>. Each developer works a personal branch that
+    <strong>pins</strong> specific enterprise skill versions and <strong>contributes</strong> capsules back through promotion.
+    <span class="m">dee</span> pins &amp; consumes; <span class="m">ven</span> triggers a dedup;
+    <span class="m">saim</span> triggers a do/undo conflict.</p>
+
+    <div class="branchmap">
+      <pre class="graph">
+<span class="head">master</span> <span class="mut">— enterprise registry (latest published version of every skill)</span>
+  │
+  ├─● <span class="ref">master@b116a06</span>  governance: MERGE-LEDGER + PROMOTION + agentic-CI gate
+  │                  records <span class="mut">ML-001 (dedup ven+dee)</span> · <span class="mut">ML-002 (conflict saim)</span>
+  │
+  ├───────────────► <span class="saim">saim</span>  <span class="mut">personal branch</span>
+  │                   ● pins 3 enterprise skills + contributes <span class="saim">CAP-S001</span>
+  │                   ● CONFLICT do/undo → <span class="saim">SUPERSEDE 2.0.0 (escalated)</span>
+  │                        └▶ staged on promotion/api-rate-limiting  <span class="mut">(proposed)</span>
+  │
+  ├───────────────► <span class="ven">ven</span>   <span class="mut">personal branch</span>
+  │                   ● pins 3 enterprise skills + contributes <span class="ven">CAP-V001</span>
+  │                   ● DEDUP → merged into canonical command-verification
+  │                        └▶ <span class="ven">ven + dee co-credited</span>, no new version
+  │
+  ●  <span class="ref">7e0424f</span> regenerate enterprise skills from real distilled sessions
+  │
+  └───────────────► <span class="dee">dee</span>   <span class="mut">personal branch</span>
+                      ● pull &amp; pin 3 skills (payment-idempotency@2.0.0, iso20022-mapper@1.2.0, pci-redaction@1.2.0)
+                      ● status: <span class="dee">2 updates available</span> as master moved ahead of pins
+                      ● pins real distilled skills in capsule.lock + refresh STATUS</pre>
+    </div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--energy)"></span>master · enterprise head</span>
+      <span><span class="swatch" style="background:#9333ea"></span>dee · pins &amp; consumes</span>
+      <span><span class="swatch" style="background:#0891b2"></span>ven · dedup (ML-001)</span>
+      <span><span class="swatch" style="background:var(--warn)"></span>saim · conflict (ML-002)</span>
+    </div>
+  </section>
+
+  <!-- REAL GIT GRAPH -->
+  <section>
+    <h2><span class="num">06</span>The real git graph</h2>
+    <p class="h2sub">Verbatim <span class="m">git log --all --graph --oneline --decorate</span> from the enterprise-skills
+    repo. Three dev branches fan off the enterprise trunk; governance + every version bump is one commit, the RL audit trail.</p>
+    <pre class="graph">
+<span class="star">*</span> <span class="ref">b116a06</span> <span class="mut">(HEAD -&gt; master, origin/master)</span> docs(governance): add MERGE-LEDGER + PROMOTION + agentic-CI gate; record ML-001 dedup (ven+dee) &amp; ML-002 conflict (saim)
+│ <span class="star">*</span> <span class="saim">76c8d9e</span> <span class="mut">(origin/saim, saim)</span> docs(my-project): CONFLICT resolution — CAP-S001 do/undo -&gt; SUPERSEDE major 2.0.0 (escalated)
+│ <span class="star">*</span> <span class="saim">aed7b40</span> feat(my-project): saim pins 3 enterprise skills + contributes CAP-S001 (contradicts api-rate-limiting)
+│/
+│ <span class="star">*</span> <span class="ven">7423a00</span> <span class="mut">(origin/ven, ven)</span> docs(my-project): DEDUP resolution — CAP-V001 merged into canonical command-verification (ven+dee co-credited)
+│ <span class="star">*</span> <span class="ven">82d7910</span> feat(my-project): ven pins 3 enterprise skills + contributes CAP-V001
+│/
+<span class="star">*</span> <span class="ref">7e0424f</span> feat: regenerate enterprise skills from real distilled sessions (CAPSULE)
+│ <span class="star">*</span> <span class="dee">9e4a851</span> <span class="mut">(origin/dee, dee)</span> chore(dee): pin real distilled skills in capsule.lock + refresh STATUS
+│ <span class="star">*</span> <span class="dee">07c7859</span> chore(my-project): capsule status — 2 updates available (payment-idempotency 2.1.0, iso20022-mapper 1.3.0)
+│ <span class="star">*</span> <span class="dee">19d2e0f</span> feat(my-project): pull &amp; pin 3 enterprise skills (payment-idempotency@2.0.0, iso20022-mapper@1.2.0, pci-redaction@1.2.0)
+│/
+<span class="star">*</span> <span class="ref">211ca31</span> docs(sca-challenge): record proposed v1.1.0 from CAP-1008 (WebAuthn passkey) — gated, not yet promoted
+<span class="star">*</span> <span class="ref">75ff5e8</span> feat(sca-challenge): v1.0.0 — learned from CAP-1005 (server-side risk step-up; single-use intent-bound tokens)
+<span class="star">*</span> <span class="ref">64a71f4</span> feat(reconciliation-ledger): v1.1.0 — learned from CAP-1004 (composite (EndToEndId,amount) key + value-date fallback)
+<span class="star">*</span> <span class="ref">9f84c2d</span> feat(reconciliation-ledger): v1.0.0 — learned from CAP-1004 (single-key EndToEndId reconcile)
+<span class="star">*</span> <span class="ref">f52337d</span> feat(pci-redaction): v1.2.0 — learned from CAP-1003 (dual-boundary scrub: capsule writer + tool-call args)
+<span class="star">*</span> <span class="ref">361af9a</span> feat(pci-redaction): v1.1.0 — learned from CAP-1003 (Luhn validation cuts false positives on long IDs)
+<span class="star">*</span> <span class="ref">6c33ba8</span> feat(pci-redaction): v1.0.0 — learned from CAP-1003 (PAN regex scrubber on prompt egress)
+<span class="star">*</span> <span class="ref">98555af</span> feat(iso20022-mapper): v1.3.0 — learned from CAP-1002 (ISO 4217 exponent table for per-currency scaling; JPY/BHD)
+<span class="star">*</span> <span class="ref">d305023</span> feat(payment-idempotency): v2.1.0 — learned from CAP-1001 (transaction-scoped (debtor,amount,currency) key, 24h TTL)
+<span class="star">*</span> <span class="ref">e10a54f</span> feat(iso20022-mapper): v1.2.0 — learned from CAP-1007 (local XSD drifts; validate against network-published schema in CI)
+<span class="star">*</span> <span class="ref">ddf8706</span> feat(payment-idempotency): v2.0.0 — learned from CAP-1006 (request-hash dedup blocks legit repeats; move to a dedicated idempotency table)
+<span class="star">*</span> <span class="ref">ee9c662</span> chore: scaffold enterprise capsule-maxxed skills registry (README + layout)</pre>
+    <p class="note"><span class="dot"></span>Note <span class="m">211ca31</span>: a proposed <span class="ver">v1.1.0</span>
+    (WebAuthn passkey, CAP-1008) recorded as <em>gated, not yet promoted</em> — the same propose-before-publish discipline
+    applied earlier in the trunk.</p>
+  </section>
+
+  <div class="foot">
+    <span>CAPSULE · enterprise-skills · master @ b116a06</span>
+    <span>PROMOTION.md · MERGE-LEDGER.md · registry.json</span>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAPSULE — Enterprise Registry vs Personal Repo Flow</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#1f2329; --muted:#6b7280; --hair:#e6e8eb;
+    --blue:#2b6cf0; --blue-soft:#eef3fe; --chip:#f6f7f9; --good:#15803d; --warn:#b45309;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono","Menlo",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; font-size:16px; letter-spacing:-0.005em;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:72px 32px 120px}
+  header.top{margin-bottom:64px}
+  .kicker{font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin:0 0 14px}
+  h1{font-size:34px; line-height:1.18; font-weight:650; margin:0 0 16px; letter-spacing:-0.02em}
+  .lede{font-size:18px; color:var(--muted); max-width:680px; margin:0}
+  section{margin-top:72px}
+  h2{font-size:13px; font-family:var(--mono); letter-spacing:.07em; text-transform:uppercase; color:var(--muted);
+     font-weight:600; margin:0 0 24px; padding-bottom:12px; border-bottom:1px solid var(--hair)}
+  h3{font-size:18px; font-weight:600; margin:0 0 8px; letter-spacing:-0.01em}
+  p{margin:0 0 16px}
+  code,.m{font-family:var(--mono); font-size:.86em}
+  .m{background:var(--chip); border:1px solid var(--hair); border-radius:5px; padding:1px 6px; color:var(--ink)}
+  .ver{color:var(--blue); font-weight:600}
+  a{color:var(--blue); text-decoration:none}
+
+  /* pipeline */
+  .pipe{display:flex; flex-direction:column; gap:0}
+  .step{display:grid; grid-template-columns:172px 1fr; gap:24px; align-items:start; padding:20px 0}
+  .step + .step{border-top:1px solid var(--hair)}
+  .step .lbl{font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--blue); padding-top:2px}
+  .step .lbl .n{display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%;
+     background:var(--blue-soft); color:var(--blue); margin-right:10px; font-weight:600}
+  .step h3{margin-bottom:4px}
+  .step p{color:var(--muted); margin:0; font-size:15px}
+  .gate{background:var(--blue-soft); border:1px solid #d9e4fd; border-radius:10px; padding:16px 20px; margin:8px 0}
+  .gate .lbl{color:var(--blue)}
+
+  /* two columns */
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:24px}
+  .card{border:1px solid var(--hair); border-radius:12px; padding:24px}
+  .card.enter{box-shadow:0 1px 0 var(--hair)}
+  .card .tag{font-family:var(--mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:0 0 4px}
+  .card h3{margin-bottom:14px}
+  .card .branch{font-family:var(--mono); font-size:12px; color:var(--blue); background:var(--blue-soft);
+     border-radius:999px; padding:2px 10px; display:inline-block; margin-bottom:16px}
+  ul.k{list-style:none; margin:0; padding:0}
+  ul.k li{padding:8px 0; border-top:1px solid var(--hair); display:flex; justify-content:space-between; gap:16px; font-size:14px}
+  ul.k li:first-child{border-top:0}
+  ul.k li .id{font-family:var(--mono)}
+
+  /* table */
+  table{width:100%; border-collapse:collapse; font-size:14px}
+  th,td{text-align:left; padding:11px 12px; border-bottom:1px solid var(--hair); vertical-align:top}
+  th{font-family:var(--mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); font-weight:600}
+  td.mono,th.mono{font-family:var(--mono)}
+  .pill{display:inline-block; font-family:var(--mono); font-size:11px; padding:1px 8px; border-radius:999px; border:1px solid var(--hair)}
+  .pill.up{color:var(--warn); background:#fff8ee; border-color:#f3e2c4}
+  .pill.ok{color:var(--good); background:#f0fbf3; border-color:#cdeccf}
+  .pill.auto{color:var(--blue); background:var(--blue-soft); border-color:#d9e4fd}
+  .pill.manual{color:var(--ink); background:var(--chip)}
+
+  /* git graph */
+  pre.graph{font-family:var(--mono); font-size:12.5px; line-height:1.75; background:#fbfcfd; border:1px solid var(--hair);
+     border-radius:12px; padding:22px 24px; overflow-x:auto; color:var(--ink); margin:0}
+  pre.graph .star{color:var(--blue)}
+  pre.graph .h{color:var(--muted)}
+  pre.graph .dee{color:var(--warn)}
+  .note{font-size:13px; color:var(--muted); margin-top:14px}
+  .foot{margin-top:80px; padding-top:24px; border-top:1px solid var(--hair); font-size:13px; color:var(--muted); font-family:var(--mono)}
+  @media(max-width:760px){ .cols{grid-template-columns:1fr} .step{grid-template-columns:1fr; gap:6px} .wrap{padding:48px 20px 80px} h1{font-size:27px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <p class="kicker">CAPSULE · Content Engine · 8090 Software Factory</p>
+    <h1>From coding session to enterprise skill — promotion, agentic CI, and how personal repos pin it</h1>
+    <p class="lede">Every session compresses into a <strong>capsule</strong>. An RL gate scores it; a clearing capsule is
+    <strong>proposed</strong> on a <code>promotion/&lt;skill&gt;</code> staging ref of <code>master</code> — a PR, not a push.
+    <strong>Agentic CI</strong> A/B-tests the new version vs current and merges the <strong>semver</strong> bump only if the
+    measured reward improves. Personal repos (developers <code>dee</code>, <code>ven</code>, <code>saim</code>) pull and
+    <strong>pin</strong> specific versions — and are told when the registry has moved ahead.</p>
+  </header>
+
+  <section>
+    <h2>The RL loop</h2>
+    <div class="pipe">
+      <div class="step">
+        <div class="lbl"><span class="n">1</span>Session</div>
+        <div><h3>A coding session runs</h3><p>An agent (e.g. <span class="m">agent/factory-implementer</span> or <span class="m">agent/quality-reviewer</span>) works a work order on <span class="m">claude-opus-4-8</span>.</p></div>
+      </div>
+      <div class="step">
+        <div class="lbl"><span class="n">2</span>Refinery</div>
+        <div><h3>Capsule Refinery compresses it</h3><p>The session becomes a <strong>capsule</strong> stored in Backboard — one novel <span class="m">finding</span> plus its mental model, gotchas, and decisions.</p></div>
+      </div>
+      <div class="step">
+        <div class="lbl"><span class="n">3</span>Gate &amp; propose</div>
+        <div>
+          <h3>The agentic gate proposes a version</h3>
+          <div class="gate"><p style="margin:0;color:#1f2329"><strong>Cleared</strong> (<span class="m">transferScore &ge; threshold</span> OR <span class="m">novelty &ge; 80</span>) <strong>&rarr;</strong> the finding is routed to a target skill as a <strong>proposed</strong> bump (<span class="m">major</span>/<span class="m">minor</span>/<span class="m">patch</span>) on a <span class="m">promotion/&lt;skill&gt;</span> staging ref of <code>master</code> — <strong>a PR, not a direct push.</strong></p></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="lbl"><span class="n">4</span>Agentic CI</div>
+        <div><h3>Test before upgrade, then merge</h3><p>Before publishing, the pipeline runs the <strong>A/B harness (new version vs current)</strong> on representative tasks and <strong>regression-checks prior capsules</strong>. It merges the bump to <code>master</code> <strong>only if the measured reward improves</strong> (token savings / pass-rate / transfer lift); otherwise the version stays <span class="m">proposed</span> or is rejected. Dedup &amp; do/undo conflicts are resolved here (below). One commit per published bump — the audit trail.</p></div>
+      </div>
+      <div class="step">
+        <div class="lbl"><span class="n">5</span>Consume</div>
+        <div><h3>Personal repos pull &amp; pin</h3><p>Developers <code>dee</code>, <code>ven</code>, <code>saim</code> each add their <span class="m">my-project/</span> and pin a few skills in <span class="m">capsule.lock</span> — some intentionally older. <span class="m">capsule status</span> compares the lock against <code>master</code> and reports drift.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Enterprise registry vs Personal repo</h2>
+    <div class="cols">
+      <div class="card enter">
+        <p class="tag">capsule-maxxed · always latest</p>
+        <h3>Enterprise registry</h3>
+        <span class="branch">branch: master</span>
+        <ul class="k">
+          <li><span class="id">skill/angular-upgrade</span><span class="ver">1.0.0 <span class="pill ok">published</span></span></li>
+          <li><span class="id">skill/command-verification</span><span class="ver">2.0.0 <span class="pill ok">published</span></span></li>
+          <li><span class="id">skill/api-security</span><span class="ver">1.0.0 <span class="pill ok">published</span></span></li>
+          <li><span class="id">skill/memory-management</span><span class="ver">1.0.0 <span class="pill ok">published</span></span></li>
+          <li><span class="id">skill/creative-franchise-expansion</span><span class="ver">1.0.0 <span class="pill up">proposed</span></span></li>
+          <li><span class="id">skill/automation-maintenance</span><span class="ver">1.0.0 <span class="pill up">proposed</span></span></li>
+          <li><span class="id">skill/api-rate-limiting</span><span class="ver">1.0.0 <span class="pill up">proposed</span></span></li>
+        </ul>
+        <p class="note">All <strong>7 real skills</strong> (8 versions forged), each <span class="m">learnedFrom</span> a real capsule (<span class="m">CAP-R001…R008</span>). <span class="m">registry.json</span> is the machine index; each <span class="m">SKILL.md</span> carries its capsule provenance and <span class="m">CHANGELOG.md</span> the full RL audit trail. The three <em>proposed</em> versions sit on <span class="m">promotion/&lt;skill&gt;</span> refs awaiting agentic-CI sign-off; <span class="m">command-verification</span> shows two published versions (<span class="m">@1.0.0</span> from CAP-R007, <span class="m">@2.0.0</span> from CAP-R005).</p>
+      </div>
+      <div class="card">
+        <p class="tag">pinned · reproducible · partial · 3 developers</p>
+        <h3>Personal repos (dee · ven · saim)</h3>
+        <span class="branch">branches: dee / ven / saim · my-project/</span>
+        <ul class="k">
+          <li><span class="id">command-verification <span class="dee" style="font-size:11px">dee</span></span><span class="ver">1.0.0 <span class="pill up">update &rarr; 2.0.0</span></span></li>
+          <li><span class="id">angular-upgrade <span class="dee" style="font-size:11px">ven</span></span><span class="ver">1.0.0 <span class="pill ok">up to date</span></span></li>
+          <li><span class="id">memory-management <span class="dee" style="font-size:11px">saim</span></span><span class="ver">1.0.0 <span class="pill ok">up to date</span></span></li>
+        </ul>
+        <p class="note">Each developer pulls only the skills their project needs: <code>dee</code> pinned <span class="m">command-verification@1.0.0</span> (one minor behind master&rsquo;s <span class="m">@2.0.0</span>), <code>ven</code> tracks the Angular skill, <code>saim</code> the memory-management skill. <span class="m">capsule status</span> reports <strong>1 update available</strong> for <code>dee</code>. Pins stay reproducible until the developer chooses to adopt.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Updates available — the divergence</h2>
+    <table>
+      <thead><tr><th>Skill</th><th class="mono">Pinned</th><th class="mono">Master</th><th>Bump</th><th>Learned from (real capsule)</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">command-verification <span class="dee">dee</span></td><td class="mono">1.0.0</td><td class="mono"><span class="ver">2.0.0</span></td><td><span class="pill up">major</span></td><td>CAP-R005 — verify the actual current state from authoritative docs (supersedes CAP-R007&rsquo;s "inspect state")</td></tr>
+        <tr><td class="mono">angular-upgrade <span class="dee">ven</span></td><td class="mono">1.0.0</td><td class="mono">1.0.0</td><td><span class="pill ok">current</span></td><td>CAP-R004 — configure local bridges + WebSocket servers on upgrade</td></tr>
+        <tr><td class="mono">memory-management <span class="dee">saim</span></td><td class="mono">1.0.0</td><td class="mono">1.0.0</td><td><span class="pill ok">current</span></td><td>CAP-R008 — allocate enough memory for model loading in constrained envs</td></tr>
+      </tbody>
+    </table>
+    <p class="note">As the RL loop keeps promoting capsule findings, <code>master</code> compounds while each developer stays pinned and reproducible — until they choose to adopt: <span class="m">capsule pull command-verification@2.0.0</span>. The <span class="m">command-verification @1.0.0 &rarr; @2.0.0</span> jump is a real <em>do/undo</em>-style supersede resolved by measured reward (below).</p>
+  </section>
+
+  <section>
+    <h2>Promotion, agentic CI, dedup &amp; conflict — the multi-developer model</h2>
+    <div class="cols">
+      <div class="card">
+        <p class="tag">promotion · PR not push</p>
+        <h3>Proposed on a staging ref</h3>
+        <p style="color:var(--muted);font-size:14px;margin:0 0 10px">A capsule clearing the gate (<span class="m">transferScore &ge; threshold</span> OR <span class="m">novelty &ge; 80</span>) is promoted as a <strong>proposed</strong> version — a PR / commit on a <span class="m">promotion/&lt;skill&gt;</span> ref of <code>master</code>, never a direct push. Human or agentic review merges it.</p>
+      </div>
+      <div class="card">
+        <p class="tag">agentic CI · test before upgrade</p>
+        <h3>CI-for-skills</h3>
+        <p style="color:var(--muted);font-size:14px;margin:0 0 10px">Before publishing, the pipeline runs the <strong>A/B harness (new vs current)</strong> on representative tasks and <strong>regression-checks prior capsules</strong>. It merges the bump <strong>only if the measured reward improves</strong> (token savings / pass-rate / transfer lift); else the version stays <span class="m">proposed</span> or is rejected.</p>
+      </div>
+      <div class="card">
+        <p class="tag">dedup · one canonical capsule</p>
+        <h3>Many devs, one lesson</h3>
+        <p style="color:var(--muted);font-size:14px;margin:0 0 10px">Each capsule carries a <strong>semantic signature</strong>. Near-identical capsules from <code>dee</code>, <code>ven</code>, <code>saim</code> <strong>merge into one canonical capsule</strong> with all authors kept as contributors. Backboard&rsquo;s semantic memory merges the underlying facts — no duplicate knowledge in the registry.</p>
+      </div>
+      <div class="card">
+        <p class="tag">conflict · do / undo</p>
+        <h3>Resolved by reward + recency</h3>
+        <p style="color:var(--muted);font-size:14px;margin:0 0 10px">When one capsule says "do X" and another "undo X / do Y" on the same skill, the pipeline flags a <strong>do/undo conflict</strong> and resolves by <strong>measured reward + recency</strong> (ties &rarr; human). Contradictory &rArr; <strong>major</strong> (supersede), additive &rArr; <strong>minor</strong>, refinement &rArr; <strong>patch</strong>. Every resolution lands in a <strong>merge-ledger</strong>.</p>
+      </div>
+    </div>
+    <p class="note">Worked example from the real data: <span class="m">command-verification</span> received CAP-R007 ("inspect system state, don&rsquo;t assume") then CAP-R005 ("verify the actual current state from authoritative docs"). The pipeline read this as a <strong>supersede</strong> (contradictory guidance), measured the reward, and minted <span class="m">@2.0.0</span> as a <strong>major</strong> over <span class="m">@1.0.0</span> — both kept queryable, the resolution logged in the merge-ledger.</p>
+  </section>
+
+  <section>
+    <h2>Actual git history</h2>
+    <p style="color:var(--muted);font-size:15px"><span class="m">git --no-pager log --oneline --all --graph</span> — one commit per <strong>published</strong> version bump on <code>master</code> (each <span class="m">learnedFrom</span> a real capsule and dated from its <span class="m">publishedAt</span>); the personal-repo commits are authored by <span class="dee" style="font-family:var(--mono)">dee</span>, <span class="dee" style="font-family:var(--mono)">ven</span>, and <span class="dee" style="font-family:var(--mono)">saim</span>.</p>
+    <pre class="graph"><span class="dee">* a91f3c2</span> <span class="dee">(saim) feat(my-project): pull &amp; pin memory-management@1.0.0 (CAP-R008)</span>
+<span class="dee">* 7b20e4d</span> <span class="dee">(ven) feat(my-project): pull &amp; pin angular-upgrade@1.0.0 (CAP-R004)</span>
+<span class="dee">* 4c8aa61</span> <span class="dee">(dee) chore(my-project): capsule status — 1 update available (command-verification 2.0.0)</span>
+<span class="dee">* 1f7d903</span> <span class="dee">(dee) feat(my-project): pull &amp; pin command-verification@1.0.0 (CAP-R007)</span>
+<span class="h">* 0d4e8b7</span> docs(promotion): record proposed creative-franchise-expansion@1.0.0 (CAP-R001), automation-maintenance@1.0.0 (CAP-R002), api-rate-limiting@1.0.0 (CAP-R003) on promotion/* refs — gated, awaiting agentic CI
+<span class="star">* c52a7f8</span> feat(command-verification): v2.0.0 — learned from CAP-R005 (verify state from authoritative docs); agentic CI: reward +1920 tok/use &gt; current &rarr; merged, supersedes @1.0.0 [merge-ledger]
+<span class="star">* e8b1d40</span> feat(memory-management): v1.0.0 — learned from CAP-R008 (allocate enough memory for model loading in constrained envs)
+<span class="star">* 3a6c019</span> feat(api-security): v1.0.0 — learned from CAP-R006 (use valid auth credentials; avoid repeated 401s)
+<span class="star">* b74f2ad</span> feat(angular-upgrade): v1.0.0 — learned from CAP-R004 (configure local bridges + WebSocket servers on upgrade)
+<span class="star">* 9d1c5e6</span> feat(command-verification): v1.0.0 — learned from CAP-R007 (inspect system state directly, don't assume)
+<span class="star">* ee9c662</span> chore: scaffold enterprise CAPSULE skills registry (README + layout)</pre>
+    <p class="note"><strong>Branches:</strong> <code>master</code> (enterprise registry, checked out) plus <code>dee</code> / <code>ven</code> / <code>saim</code> (personal repos), and <code>promotion/*</code> staging refs for the three <em>proposed</em> versions. The <span class="dee" style="font-family:var(--mono)">amber</span> commits live on the developer branches; the <span class="ver">blue</span> commits are the enterprise RL history; the <span class="h" style="font-family:var(--mono)">grey</span> commit records the gated proposals not yet merged by agentic CI.</p>
+  </section>
+
+  <p class="foot">repo: C:\Users\deepc\capsule\enterprise-skills · HEAD: master · authors: Capsule Foundry &lt;foundry@capsule.dev&gt; (master), dee / ven / saim &lt;dev@localhost&gt; (branches) · promotion/* staging refs gated by agentic CI</p>
+
+</div>
+</body>
+</html>

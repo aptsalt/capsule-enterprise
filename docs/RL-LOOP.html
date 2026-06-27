@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAPSULE — The Reinforcement Loop</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --ink:#1f2329;
+    --muted:#5b6571;
+    --faint:#8a929c;
+    --line:#e6e8eb;
+    --line-2:#eef0f2;
+    --blue:#2b6cf0;
+    --blue-wash:#f1f5ff;
+    --blue-line:#d4e1fb;
+    --yellow:#eaff00;
+    --code-bg:#f7f8fa;
+    --good:#0f9d58;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:local("Inter");}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:15px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+
+  /* ---------- header ---------- */
+  header.top{border-bottom:1px solid var(--line);background:rgba(255,255,255,.82);
+    backdrop-filter:saturate(1.2) blur(10px);position:sticky;top:0;z-index:40}
+  .top-inner{max-width:1080px;margin:0 auto;padding:16px 32px;display:flex;align-items:center;gap:14px}
+  .logo{width:26px;height:26px;border-radius:7px;background:var(--blue);position:relative;flex:none}
+  .logo::after{content:"";position:absolute;inset:7px;border-radius:3px;background:#fff;opacity:.92}
+  .brand{font-weight:660;letter-spacing:-.01em;font-size:15px}
+  .brand small{font-weight:450;color:var(--faint);margin-left:9px}
+  .top-spacer{flex:1}
+  .nav{display:flex;gap:22px}
+  .nav a{font-size:13px;color:var(--muted);letter-spacing:-.005em}
+  .nav a:hover{color:var(--ink);text-decoration:none}
+  .pill{font-family:var(--mono);font-size:11.5px;color:var(--muted);border:1px solid var(--line);
+    border-radius:999px;padding:4px 11px;background:#fff;white-space:nowrap}
+  @media(max-width:820px){.nav{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{padding:92px 0 64px;text-align:center;position:relative;overflow:hidden}
+  .hero .glow{position:absolute;inset:auto 0 -40% 0;height:520px;pointer-events:none;
+    background:radial-gradient(ellipse 60% 100% at 50% 0%,rgba(43,108,240,.07),transparent 70%);z-index:-1}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin:0 0 22px;
+    border:1px solid var(--blue-line);background:var(--blue-wash);border-radius:999px;padding:6px 14px}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px rgba(43,108,240,.14)}
+  h1{font-size:54px;line-height:1.04;letter-spacing:-.03em;font-weight:700;margin:0 auto 22px;max-width:880px}
+  h1 .hl{position:relative;white-space:nowrap}
+  h1 .hl::after{content:"";position:absolute;left:-2px;right:-2px;bottom:.07em;height:.36em;
+    background:var(--yellow);z-index:-1;border-radius:2px;transform:rotate(-.4deg)}
+  .lede{font-size:19px;line-height:1.6;color:var(--muted);max-width:680px;margin:0 auto 36px}
+  .lede b{color:var(--ink);font-weight:600}
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{font-size:14px;font-weight:560;border-radius:9px;padding:11px 20px;border:1px solid var(--line);
+    background:#fff;color:var(--ink);cursor:pointer;letter-spacing:-.01em;transition:.15s}
+  .btn:hover{border-color:#cfd4da;text-decoration:none}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.primary:hover{background:#225ad6}
+  .powered{margin-top:34px;font-family:var(--mono);font-size:11.5px;color:var(--faint);
+    display:inline-flex;align-items:center;gap:10px;letter-spacing:.02em}
+  .powered .yb{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--yellow);
+    box-shadow:0 0 0 3px rgba(234,255,0,.28)}
+
+  /* ---------- reveal ---------- */
+  .rv{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1)}
+  .rv.in{opacity:1;transform:none}
+  .rv.d1{transition-delay:.06s}.rv.d2{transition-delay:.12s}.rv.d3{transition-delay:.18s}
+
+  /* ---------- sections ---------- */
+  section{padding:74px 0;border-top:1px solid var(--line)}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--blue);margin:0 0 12px;text-align:center}
+  h2{font-size:32px;letter-spacing:-.022em;font-weight:680;margin:0 0 14px;text-align:center;line-height:1.12}
+  .sec-lede{font-size:17px;color:var(--muted);max-width:660px;margin:0 auto 8px;text-align:center}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.84em;background:var(--code-bg);border:1px solid var(--line-2);
+    border-radius:4px;padding:1px 5px;color:#384049}
+  .mono{font-family:var(--mono)}
+
+  /* ---------- the loop diagram ---------- */
+  .loopwrap{margin:40px 0 8px;border:1px solid var(--line);border-radius:16px;background:
+    linear-gradient(#fff,#fcfcfe);padding:14px;overflow:auto;
+    box-shadow:0 1px 0 rgba(16,22,30,.02),0 24px 60px -42px rgba(16,22,30,.28)}
+  .loopwrap svg{display:block;width:100%;height:auto;min-width:920px}
+  .flow{stroke:var(--blue);stroke-width:2;fill:none;stroke-dasharray:5 11;stroke-linecap:round;
+    opacity:.55;animation:dash 2.4s linear infinite}
+  @keyframes dash{to{stroke-dashoffset:-32}}
+  .track{stroke:var(--line);stroke-width:2;fill:none}
+  .nbx{fill:#fff;stroke:var(--line);stroke-width:1.3}
+  .nbx.blue{fill:var(--blue-wash);stroke:var(--blue);stroke-width:1.4}
+  .nbx.gate{fill:#fffef0;stroke:#d9c400;stroke-width:1.4}
+  .nt{font-family:var(--sans);font-size:13.5px;font-weight:650;fill:var(--ink)}
+  .ns{font-family:var(--mono);font-size:10px;fill:var(--faint)}
+  .nm{font-family:var(--mono);font-size:10px;fill:var(--blue)}
+  .seglbl{font-family:var(--mono);font-size:9.5px;fill:var(--faint)}
+  .rewardlbl{font-family:var(--mono);font-size:11px;font-weight:600;fill:#1f2329}
+  .stepnum{font-family:var(--mono);font-size:10px;font-weight:700;fill:var(--blue)}
+  .pulse{animation:pl 3s ease-in-out infinite}
+  @keyframes pl{0%,100%{opacity:.35}50%{opacity:1}}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;margin-top:20px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:8px}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid var(--line)}
+
+  /* ---------- stat strip ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);
+    border-radius:12px;overflow:hidden;margin:8px 0}
+  .stat{padding:22px 20px;border-right:1px solid var(--line-2);text-align:center}
+  .stat:last-child{border-right:0}
+  .stat .n{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--ink);letter-spacing:-.02em}
+  .stat .n .u{font-size:15px;color:var(--blue)}
+  .stat .l{font-size:12px;color:var(--faint);margin-top:5px}
+  @media(max-width:720px){.stats{grid-template-columns:1fr 1fr}.stat:nth-child(2){border-right:0}}
+
+  /* ---------- stage list ---------- */
+  .stages{margin:44px 0 0;display:grid;gap:0}
+  .stage{display:grid;grid-template-columns:64px 1fr;gap:22px;padding:30px 0;border-top:1px solid var(--line-2);position:relative}
+  .stage:first-child{border-top:0}
+  .stage .idx{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--blue);
+    width:46px;height:46px;border-radius:12px;border:1px solid var(--blue-line);background:var(--blue-wash);
+    display:grid;place-items:center}
+  .stage h3{font-size:19px;font-weight:660;letter-spacing:-.015em;margin:6px 0 8px}
+  .stage h3 .badge{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--blue);
+    background:var(--blue-wash);border:1px solid var(--blue-line);border-radius:6px;padding:3px 8px;margin-left:10px;vertical-align:2px}
+  .stage p{margin:0 0 8px;color:#33383f;font-size:14.5px}
+  .stage .mod{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:10px}
+  .stage .mod b{color:var(--blue);font-weight:500}
+  .stage.reward .idx{background:#fffef0;border-color:#e7d600;color:#7a6a00}
+
+  /* ---------- feature media ---------- */
+  .feat{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin:0}
+  .feat + .feat{margin-top:64px}
+  .feat.rev{direction:rtl}.feat.rev > *{direction:ltr}
+  .feat .copy .tag{font-family:var(--mono);font-size:11.5px;color:var(--blue);letter-spacing:.05em;
+    text-transform:uppercase;margin:0 0 10px}
+  .feat .copy h3{font-size:23px;letter-spacing:-.02em;font-weight:660;margin:0 0 12px;line-height:1.18}
+  .feat .copy p{font-size:15px;color:var(--muted);margin:0 0 10px}
+  .feat .copy p b{color:var(--ink);font-weight:600}
+  .feat .copy .route{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:14px;
+    border:1px solid var(--line);background:var(--code-bg);border-radius:7px;padding:8px 11px;display:inline-block}
+  .media{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0d0f12;
+    box-shadow:0 1px 0 rgba(16,22,30,.02),0 30px 60px -44px rgba(16,22,30,.4);position:relative}
+  .media img,.media video{display:block;width:100%;height:auto}
+  .media .cap{position:absolute;left:0;right:0;bottom:0;padding:18px 14px 11px;
+    font-family:var(--mono);font-size:11px;color:#fff;
+    background:linear-gradient(transparent,rgba(8,10,13,.78));letter-spacing:.01em}
+  .media .live{position:absolute;top:11px;right:11px;font-family:var(--mono);font-size:10px;font-weight:600;
+    color:#fff;background:rgba(43,108,240,.92);border-radius:5px;padding:3px 8px;letter-spacing:.04em;
+    display:inline-flex;align-items:center;gap:6px}
+  .media .live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--yellow);
+    box-shadow:0 0 0 2px rgba(234,255,0,.4)}
+  @media(max-width:820px){.feat,.feat.rev{grid-template-columns:1fr;direction:ltr;gap:22px}}
+
+  /* ---------- gallery ---------- */
+  .gal{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:36px}
+  .gal figure{margin:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .gal img{display:block;width:100%;height:auto}
+  .gal figcaption{font-family:var(--mono);font-size:10.5px;color:var(--muted);padding:9px 11px;border-top:1px solid var(--line-2);line-height:1.45}
+  @media(max-width:820px){.gal{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.gal{grid-template-columns:1fr}}
+
+  /* ---------- api card ---------- */
+  .apis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:36px}
+  .api{border:1px solid var(--line);border-radius:11px;padding:16px 17px;background:#fff}
+  .api .m{font-family:var(--mono);font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:5px;
+    border:1px solid var(--line);display:inline-block;margin-bottom:9px}
+  .api .m.get{color:var(--good);background:#f0faf4;border-color:#cdeeda}
+  .api .m.post{color:var(--blue);background:var(--blue-wash);border-color:var(--blue-line)}
+  .api code.r{font-family:var(--mono);font-size:13px;color:var(--ink);background:none;border:0;padding:0;font-weight:600}
+  .api p{font-size:12.5px;color:var(--muted);margin:8px 0 0;line-height:1.5}
+  @media(max-width:820px){.apis{grid-template-columns:1fr}}
+
+  /* ---------- reward callout ---------- */
+  .reward-band{border:1px solid var(--blue-line);background:
+    linear-gradient(135deg,var(--blue-wash),#fbfcff);border-radius:16px;padding:34px 34px;margin-top:8px;
+    display:grid;grid-template-columns:1.3fr 1fr;gap:30px;align-items:center}
+  .reward-band h3{font-size:24px;letter-spacing:-.02em;margin:0 0 10px;font-weight:680}
+  .reward-band p{margin:0;color:#3a4350;font-size:15px}
+  .reward-band .eq{font-family:var(--mono);font-size:13px;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:10px;padding:16px 18px;line-height:1.85}
+  .reward-band .eq .k{color:var(--blue)}
+  .reward-band .eq .y{background:var(--yellow);border-radius:3px;padding:0 4px;color:#1f2329}
+  @media(max-width:820px){.reward-band{grid-template-columns:1fr;padding:24px}}
+
+  footer{padding:54px 0 72px;color:var(--faint);font-size:13px;border-top:1px solid var(--line);text-align:center}
+  footer .mono{font-size:12px}
+  footer .tag{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--code-bg);
+    border:1px solid var(--line-2);border-radius:5px;padding:2px 7px;margin:0 3px;white-space:nowrap}
+
+  @media(max-width:720px){
+    .wrap,.top-inner{padding-left:20px;padding-right:20px}
+    h1{font-size:38px}h2{font-size:26px}.hero{padding:64px 0 44px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .flow{animation:none}.pulse{animation:none}.rv{transition:none;opacity:1;transform:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="logo"></div>
+    <div class="brand">CAPSULE <small>the reinforcement loop</small></div>
+    <div class="top-spacer"></div>
+    <nav class="nav">
+      <a href="#loop">The loop</a>
+      <a href="#stages">Stages</a>
+      <a href="#see">See it</a>
+      <a href="#reward">Reward</a>
+    </nav>
+    <span class="pill">v1.0 · localhost:3010</span>
+  </div>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<div class="hero">
+  <div class="glow"></div>
+  <div class="wrap">
+    <span class="eyebrow rv in"><span class="dot"></span> Software Factory · Self-improving memory</span>
+    <h1 class="rv in">Every coding session makes the <span class="hl">next agent smarter.</span></h1>
+    <p class="lede rv in d1">
+      CAPSULE captures a raw AI coding session, distills it on a <b>local model</b>, scores how well
+      the understanding transfers, gates it, and promotes the winner into a <b>versioned enterprise
+      skill</b>. The tokens saved on reuse are the reward — and the reward feeds the loop.
+    </p>
+    <div class="cta rv in d2">
+      <a class="btn primary" href="#loop">See the loop</a>
+      <a class="btn" href="#stages">Read each stage</a>
+    </div>
+    <div class="powered rv in d3"><span class="yb"></span> POWERED BY OLLAMA qwen2.5-coder:14b · ON-DEVICE · BACKBOARD MEMORY</div>
+  </div>
+</div>
+
+<!-- ===================== THE LOOP ===================== -->
+<section id="loop">
+  <div class="wrap">
+    <p class="kicker rv">The whole loop, one diagram</p>
+    <h2 class="rv">Capture → Distill → Score → Gate → Store → Promote → Reuse → Reward</h2>
+    <p class="sec-lede rv">
+      A closed reinforcement loop. The blue path flows clockwise; the left edge is the
+      feedback — token savings selecting what gets promoted next.
+    </p>
+
+    <div class="loopwrap rv d1">
+      <svg viewBox="0 0 1200 600" role="img" aria-label="CAPSULE reinforcement learning loop">
+        <defs>
+          <marker id="ah" markerWidth="10" markerHeight="10" refX="7.4" refY="3.4" orient="auto">
+            <path d="M0,0 L7.2,3.4 L0,6.8 Z" fill="#2b6cf0"/>
+          </marker>
+        </defs>
+
+        <!-- racetrack base + animated flow (clockwise) -->
+        <path class="track" d="M125,96 H1053 Q1075,96 1075,118 V486 Q1075,508 1053,508 H125 Q103,508 103,486 V118 Q103,96 125,96 Z"/>
+        <path class="flow" d="M125,96 H1053 Q1075,96 1075,118 V486 Q1075,508 1053,508 H125 Q103,508 103,486 V118 Q103,96 125,96 Z"/>
+
+        <!-- segment direction arrows -->
+        <g fill="#2b6cf0">
+          <path d="M232,90 l9,6 l-9,6 z"/>     <!-- top: session->capture -->
+          <path d="M464,90 l9,6 l-9,6 z"/>     <!-- capture->distill -->
+          <path d="M696,90 l9,6 l-9,6 z"/>     <!-- distill->score -->
+          <path d="M928,90 l9,6 l-9,6 z"/>     <!-- score->gate -->
+          <path d="M1081,300 l-6,9 l-6,-9 z"/> <!-- gate->capsule (down) -->
+          <path d="M740,514 l-9,-6 l9,-6 z"/>  <!-- capsule->promote (left) -->
+          <path d="M508,514 l-9,-6 l9,-6 z"/>  <!-- promote->versioning -->
+          <path d="M276,514 l-9,-6 l9,-6 z"/>  <!-- versioning->apis -->
+          <path d="M97,300 l6,-9 l6,9 z"/>     <!-- reward up -->
+        </g>
+
+        <!-- ===== TOP ROW (left -> right) ===== -->
+        <!-- 1 SESSION -->
+        <g>
+          <rect class="nbx" x="40" y="54" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="56" y="76">01</text>
+          <text class="nt" x="56" y="98">Coding SESSION</text>
+          <text class="ns" x="56" y="116">a real Claude Code run</text>
+          <text class="ns" x="56" y="130">that ends with context</text>
+        </g>
+        <!-- 2 CAPTURE -->
+        <g>
+          <rect class="nbx" x="272" y="54" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="288" y="76">02</text>
+          <text class="nt" x="288" y="98">CAPTURE</text>
+          <text class="ns" x="288" y="116">~/.claude/…/&lt;id&gt;.jsonl</text>
+          <text class="nm" x="288" y="130">capture.ts</text>
+        </g>
+        <!-- 3 DISTILL -->
+        <g>
+          <rect class="nbx blue" x="504" y="54" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="520" y="76">03</text>
+          <text class="nt" x="520" y="98">DISTILL · local</text>
+          <text class="nm" x="520" y="116">ollama qwen2.5-coder:14b</text>
+          <text class="nm" x="520" y="130">cerebras.ts · distill()</text>
+        </g>
+        <!-- 4 SCORE -->
+        <g>
+          <rect class="nbx" x="736" y="54" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="752" y="76">04</text>
+          <text class="nt" x="752" y="98">SCORE · 6-dim</text>
+          <text class="ns" x="752" y="116">transfer quality 0–100</text>
+          <text class="nm" x="752" y="130">scorer.ts · scoreCapsule()</text>
+        </g>
+        <!-- 5 GATE -->
+        <g>
+          <rect class="nbx gate" x="968" y="54" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="984" y="76" style="fill:#7a6a00">05</text>
+          <text class="nt" x="984" y="98">AGENTIC GATE</text>
+          <text class="ns" x="984" y="116">keep if score ≥ thr</text>
+          <text class="ns" x="984" y="130">or novelty ≥ 80</text>
+        </g>
+
+        <!-- ===== BOTTOM ROW (right -> left) ===== -->
+        <!-- 6 CAPSULE / Backboard -->
+        <g>
+          <rect class="nbx blue" x="968" y="466" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="984" y="488">06</text>
+          <text class="nt" x="984" y="510">CAPSULE stored</text>
+          <text class="nm" x="984" y="528">backboard.ts · Backboard</text>
+          <text class="ns" x="984" y="542">memory follows the entity</text>
+        </g>
+        <!-- 7 DAILY PROMOTE -->
+        <g>
+          <rect class="nbx" x="736" y="466" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="752" y="488">07</text>
+          <text class="nt" x="752" y="510">DAILY promotion</text>
+          <text class="ns" x="752" y="528">finding → enterprise</text>
+          <text class="ns" x="752" y="542">skills repo</text>
+        </g>
+        <!-- 8 SKILL VERSIONING -->
+        <g>
+          <rect class="nbx" x="504" y="466" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="520" y="488">08</text>
+          <text class="nt" x="520" y="510">SKILL VERSIONING</text>
+          <text class="ns" x="520" y="528">semver · learnedFrom</text>
+          <text class="nm" x="520" y="542">selectors.ts · data.ts</text>
+        </g>
+        <!-- 9 APIs -->
+        <g>
+          <rect class="nbx" x="272" y="466" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="288" y="488">09</text>
+          <text class="nt" x="288" y="510">Exposed via APIs</text>
+          <text class="nm" x="288" y="528">/api/{skills,graph,</text>
+          <text class="nm" x="288" y="542">capsule,inherit…}</text>
+        </g>
+        <!-- 10 PERSONAL REPOS -->
+        <g>
+          <rect class="nbx" x="40" y="466" width="170" height="84" rx="12"/>
+          <text class="stepnum" x="56" y="488">10</text>
+          <text class="nt" x="56" y="510">Adopted / pinned</text>
+          <text class="ns" x="56" y="528">personal repos pin a</text>
+          <text class="ns" x="56" y="542">skill@semver version</text>
+        </g>
+
+        <!-- ===== REWARD label on left edge ===== -->
+        <g class="pulse">
+          <rect x="14" y="262" width="178" height="76" rx="11" fill="#fffef0" stroke="#e7d600" stroke-width="1.3"/>
+          <text class="rewardlbl" x="103" y="288" text-anchor="middle">↑ RL REWARD</text>
+          <text class="seglbl" x="103" y="306" text-anchor="middle">token savings select</text>
+          <text class="seglbl" x="103" y="320" text-anchor="middle">which findings get</text>
+          <text class="seglbl" x="103" y="334" text-anchor="middle">promoted next</text>
+        </g>
+
+        <!-- segment captions -->
+        <text class="seglbl" x="241" y="44" text-anchor="middle">read off disk</text>
+        <text class="seglbl" x="473" y="44" text-anchor="middle">on-device JSON</text>
+        <text class="seglbl" x="705" y="44" text-anchor="middle">richness()</text>
+        <text class="seglbl" x="937" y="44" text-anchor="middle">keep / skip</text>
+        <text class="seglbl" x="853" y="562" text-anchor="middle">routedTo[] · bump</text>
+        <text class="seglbl" x="621" y="562" text-anchor="middle">SkillVersion</text>
+        <text class="seglbl" x="389" y="562" text-anchor="middle">read views</text>
+        <text class="seglbl" x="157" y="562" text-anchor="middle">inherit warm</text>
+      </svg>
+    </div>
+
+    <div class="legend rv">
+      <span><span class="sw" style="background:var(--blue-wash);border-color:var(--blue)"></span> on-device / memory-critical</span>
+      <span><span class="sw" style="background:#fffef0;border-color:#d9c400"></span> autonomy gate · the reward</span>
+      <span><span class="sw" style="background:#fff"></span> pipeline stage / surface</span>
+    </div>
+
+    <div class="stats rv d1" style="margin-top:40px">
+      <div class="stat"><div class="n">6</div><div class="l">API routes expose the loop</div></div>
+      <div class="stat"><div class="n">6<span class="u">-dim</span></div><div class="l">transfer score</div></div>
+      <div class="stat"><div class="n">43,032</div><div class="l">tokens saved (real tenant)</div></div>
+      <div class="stat"><div class="n">−39<span class="u">%</span></div><div class="l">tokens, warm vs cold (AB-03, measured)</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== STAGES ===================== -->
+<section id="stages">
+  <div class="wrap">
+    <p class="kicker rv">Stage by stage</p>
+    <h2 class="rv">Eleven steps, each a real module or route</h2>
+    <p class="sec-lede rv">No black boxes. Every arrow in the diagram is a named export in <code>src/lib</code> or a handler in <code>src/app/api</code>.</p>
+
+    <div class="stages rv d1">
+      <div class="stage">
+        <div class="idx">01</div>
+        <div>
+          <h3>Coding SESSION <span class="badge">~/.claude</span></h3>
+          <p>It starts where the knowledge is born: a real Claude Code run that ends with a head full of decisions, dead-ends and mental model — the context that normally evaporates when the window closes.</p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="idx">02</div>
+        <div>
+          <h3>CAPTURE the transcript</h3>
+          <p>The raw session is read straight off disk from <code>~/.claude/projects/&lt;proj&gt;/&lt;id&gt;.jsonl</code>. CAPSULE separates USER intents, AI text and TOOL actions, harvests <code>filesTouched</code> via regex, computes duration, and keeps the <b>head (intent) + tail (latest state)</b> capped at 28k chars — where the handoff signal lives.</p>
+          <p class="mod">module · <b>capture.ts</b> — <code>listSessions(limit)</code> · <code>captureSession(path, maxChars)</code></p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="idx">03</div>
+        <div>
+          <h3>DISTILL on the local model <span class="badge">on-device</span></h3>
+          <p>A strict-JSON system prompt goes to <b>Ollama qwen2.5-coder:14b</b> at <code>localhost:11434</code> (temp 0.2, 120s timeout, no network, no API key). The transcript becomes a structured <code>HandoffCapsule</code> — intent, decisions, tried-and-rejected, current state, next steps, gotchas, mental model. Empty fields are topped up from a heuristic so a capsule is never blank. Cerebras llama-3.3-70b is an optional cloud boost only when keyed.</p>
+          <p class="mod">module · <b>cerebras.ts</b> — <code>distill(session)</code> → <code>{ capsule, engine, ms }</code></p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="idx">04</div>
+        <div>
+          <h3>SCORE the transfer, 6 dimensions</h3>
+          <p>A handoff isn't notes — it's whether understanding <i>transfers</i>. Each capsule is rated 0–100 across <b>intent clarity, decision traceability, reasoning explicitness, gotcha coverage, next-step actionability</b> and <b>mental-model transfer</b>, using a <code>richness()</code> heuristic (file refs, <code>:line</code>, numbers, "because"). The two weakest dimensions return coaching tips.</p>
+          <p class="mod">module · <b>scorer.ts</b> — <code>scoreCapsule(c)</code> → <code>HandoffScore</code></p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="idx">05</div>
+        <div>
+          <h3>AGENTIC GATE — keep or skip</h3>
+          <p>Autonomy decides whether a freshly-scored capsule is worth keeping and routing — no human in the loop. A single boolean over two signals already on the capsule:</p>
+          <p class="mod"><b>keep</b> = transferScore ≥ <code>agenticThreshold</code> (slider, default 50) &nbsp;<b>||</b>&nbsp; novelty ≥ 80</p>
+          <p>Score ≥ threshold means the handoff is drop-in good. Novelty ≥ 80 rescues a rough-but-genuinely-new finding, so unique knowledge is never discarded on a quality technicality.</p>
+          <p class="mod">module · <b>store.ts</b> — <code>agenticMode</code> · <code>agenticThreshold</code> · <code>AGENTIC_MIN/MAX</code></p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="idx">06</div>
+        <div>
+          <h3>STORE in Backboard memory <span class="badge">memory follows the entity</span></h3>
+          <p>The DISTILLED briefing is pushed to <b>Backboard</b> — the single tenant assistant <code>capsule</code> at <code>app.backboard.io/api</code> (<code>X-API-Key</code>), one thread per project (auto-created on the first write, real uuid returned + cached), <code>send_to_llm:"false"</code> (a memory op, not inference). Swap the model — Opus → Sonnet → Haiku — and every capsule survives, because context lives in memory, not the weights. Always mirrored to <code>~/.relay/capsules/*.json</code> for offline.</p>
+          <p class="mod">module · <b>backboard.ts</b> — <code>storeCapsule</code> · <code>getAssistantId</code> · <code>projectThreadKey</code></p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="idx">07</div>
+        <div>
+          <h3>PROMOTION to the enterprise skills repo — PR, not push</h3>
+          <p>A kept capsule's single <code>finding</code> is <code>routedTo[]</code> the skills it should teach — each route naming a target skill and proposing a semver <code>bump</code> (major / minor / patch). Promotion is a <b>proposed</b> version on a <code>promotion/&lt;skill&gt;</code> staging ref of <code>master</code>, <b>not</b> a direct push. <b>Agentic CI</b> then runs the A/B harness (new version vs current) on representative tasks and regression-checks prior capsules, merging the bump <b>only if the measured reward improves</b> — else it stays <code>proposed</code> or is rejected. Near-identical capsules from <code>dee</code>/<code>ven</code>/<code>saim</code> dedup by semantic signature; do/undo clashes resolve by reward + recency in a merge-ledger. The repo address is <code>capsule://skills/&lt;name&gt;</code>.</p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="idx">08</div>
+        <div>
+          <h3>SKILL VERSIONING — semver, learnedFrom</h3>
+          <p>Adoption mints a new published <code>SkillVersion</code> recording <code>learnedFrom: {capsule, finding}</code>, a <code>changelog</code>, and the measured reward — <code>tokenDeltaPerUse</code> + <code>scoreDelta</code> — pinned to <code>skillId@semver</code>. Agents that <code>usesSkills</code> the skill inherit it; their own versions are likewise <code>derivedFromCapsule</code>. Pure semver resolution, fully auditable.</p>
+          <p class="mod">module · <b>selectors.ts</b> (<code>latestVersion</code>, <code>publishedCurrent</code>) · <b>data.ts</b></p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="idx">09</div>
+        <div>
+          <h3>EXPOSED via the API surface</h3>
+          <p>Six App Router handlers expose every slice of the loop: <code>/api/sessions</code>, <code>/api/capsule</code>, <code>/api/capsules</code>, <code>/api/skills</code>, <code>/api/graph</code>, <code>/api/inherit</code>. Adoption is a metadata op — <code>POST /api/skills</code> echoes the <code>skillId@version</code> descriptor, never mutating the dataset.</p>
+          <p class="mod">routes · <b>src/app/api/*</b></p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="idx">10</div>
+        <div>
+          <h3>ADOPTED / pinned by personal repos</h3>
+          <p>A developer flips Enterprise on and their personal repo pins the <b>capsule-maxxed best version</b> of each skill. The next session starts warm — the briefing is injected before the first prompt. Adoption lands in the Zustand <code>adopted</code> overlay, optimistically and reversibly.</p>
+        </div>
+      </div>
+
+      <div class="stage reward">
+        <div class="idx">11</div>
+        <div>
+          <h3>TOKEN SAVINGS = the RL reward, fed back</h3>
+          <p>Reuse of a warm skill measurably cuts tokens — measured on the local model (A/B: <b>404 → 247 tokens, −39%</b> on AB-03; AB-01 −16%; AB-02 honestly 0). That saving is the reward signal — it's what <code>scoreDelta</code> / <code>tokenDeltaPerUse</code> record, and it's the same harness agentic CI uses to decide which versions publish. Reward closes the loop back onto stage 01: the next session is born smarter.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SEE IT (media) ===================== -->
+<section id="see">
+  <div class="wrap">
+    <p class="kicker rv">See it run</p>
+    <h2 class="rv">The loop, captured from the product</h2>
+    <p class="sec-lede rv">Recorded directly from CAPSULE at <code>localhost:3010</code>. Each clip maps to a stage above.</p>
+
+    <!-- F1 agentic gate (video) -->
+    <div class="feat rv d1" style="margin-top:48px">
+      <div class="copy">
+        <p class="tag">Stage 03–05 · capture → distill → gate</p>
+        <h3>Agentic capture: distill on-device, then the gate decides</h3>
+        <p>Pick a real <code>~/.claude</code> session and CAPSULE auto-distills it on the local model, scores the six transfer dimensions, then runs the gate — <b>Kept</b> when it clears the threshold or novelty bar, <b>Skipped</b> when it doesn't.</p>
+        <p>No human in the loop, no cloud round-trip. The capsule that survives is the one worth teaching a skill.</p>
+        <span class="route">POST /api/capsule&nbsp;&nbsp;·&nbsp;&nbsp;keep = score ≥ thr || novelty ≥ 80</span>
+      </div>
+      <div class="media">
+        <span class="live">LIVE</span>
+        <video autoplay muted loop playsinline poster="./assets/shots/10-capture-agentic.png">
+          <source src="./assets/video/vid-agentic.webm" type="video/webm" />
+        </video>
+        <div class="cap">Agentic capture — auto-distill, then Kept vs Skipped against the threshold</div>
+      </div>
+    </div>
+
+    <!-- F2 enterprise toggle (video) -->
+    <div class="feat rev rv d1">
+      <div class="copy">
+        <p class="tag">Stage 08–10 · versioning → adoption</p>
+        <h3>Flip Enterprise on — skills recolor to the best versions</h3>
+        <p>With Enterprise <b>off</b>, the panel shows project-pinned skill versions. Flip it <b>on</b> and every card jumps to the <b>capsule-maxxed</b> best version the registry has promoted — the blue toggle lit, semver bumped, <code>learnedFrom</code> a real capsule.</p>
+        <p>This is stage 10 made tangible: a personal repo adopting the enterprise registry's compounded knowledge.</p>
+        <span class="route">GET /api/skills&nbsp;&nbsp;·&nbsp;&nbsp;POST /api/skills { skillId, version }</span>
+      </div>
+      <div class="media">
+        <span class="live">LIVE</span>
+        <video autoplay muted loop playsinline poster="./assets/shots/05-skills-enterprise-on.png">
+          <source src="./assets/video/vid-enterprise-toggle.webm" type="video/webm" />
+        </video>
+        <div class="cap">Enterprise ON — cards recolor to the capsule-maxxed best versions</div>
+      </div>
+    </div>
+
+    <!-- F3 knowledge graph (video) -->
+    <div class="feat rv d1">
+      <div class="copy">
+        <p class="tag">Stage 06–08 · provenance</p>
+        <h3>The Knowledge Graph: where every skill's knowledge came from</h3>
+        <p>Open the graph and select any node to reveal full provenance — the <code>finding</code>, the skills it was <b>routed to</b>, and the technique to learn. <code>buildGraph()</code> derives a <code>learns</code> edge from each capsule to every skill it adopted into, so the lineage is always shown, never guessed.</p>
+        <span class="route">GET /api/graph&nbsp;&nbsp;·&nbsp;&nbsp;buildGraph() — nodes + learns edges</span>
+      </div>
+      <div class="media">
+        <span class="live">LIVE</span>
+        <video autoplay muted loop playsinline poster="./assets/shots/02-knowledge-graph.png">
+          <source src="./assets/video/vid-knowledge-graph.webm" type="video/webm" />
+        </video>
+        <div class="cap">Selecting a node to reveal its provenance in the graph</div>
+      </div>
+    </div>
+
+    <!-- F4 capsule glow (video) -->
+    <div class="feat rev rv d1">
+      <div class="copy">
+        <p class="tag">Stage 10 · warm start</p>
+        <h3>Capsule context ON — the next agent starts warm</h3>
+        <p>In the composer, switching the Capsule context on lights up a pulsing <b>fluorescent-yellow aura</b> — the signal that the latest capsule briefing is being injected ahead of the prompt. The agent inherits decisions already made, footguns already hit, the mental model intact.</p>
+        <span class="route">capsuleToBriefing(c) — injected before the first token</span>
+      </div>
+      <div class="media">
+        <span class="live">LIVE</span>
+        <video autoplay muted loop playsinline poster="./assets/shots/11-composer-capsule-glow.png">
+          <source src="./assets/video/vid-capsule-glow.webm" type="video/webm" />
+        </video>
+        <div class="cap">Composer Capsule ON — the pulsing yellow aura injects the latest capsule</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== GALLERY ===================== -->
+<section>
+  <div class="wrap">
+    <p class="kicker rv">Stills from the loop</p>
+    <h2 class="rv">The surfaces, frozen</h2>
+    <p class="sec-lede rv">The static panels behind each stage — versioning, A/B proof, capture and the repo-flow.</p>
+
+    <div class="gal rv d1">
+      <figure>
+        <img src="./assets/shots/06-version-history.png" alt="Version history" loading="lazy" />
+        <figcaption>Version History — every finding mints a new semver; day-grouped audit trail</figcaption>
+      </figure>
+      <figure>
+        <img src="./assets/shots/07-versions-compare-diff.png" alt="Version compare diff" loading="lazy" />
+        <figcaption>Compare — word-level diff of changelog &amp; guidance between two versions</figcaption>
+      </figure>
+      <figure>
+        <img src="./assets/shots/08-ab-trials.png" alt="A/B trials" loading="lazy" />
+        <figcaption>A/B Trials — same task, capsule recalled vs cold run: tokens &amp; steps saved</figcaption>
+      </figure>
+      <figure>
+        <img src="./assets/shots/09-capture-manual.png" alt="Manual capture" loading="lazy" />
+        <figcaption>Capture (manual) — pick a real session, distill on-device with Ollama</figcaption>
+      </figure>
+      <figure>
+        <img src="./assets/shots/15-repoflow-enterprise-vs-personal.png" alt="Repo flow" loading="lazy" />
+        <figcaption>Repo-flow — Enterprise registry vs Personal repo: how a dev pins a skill</figcaption>
+      </figure>
+      <figure>
+        <img src="./assets/shots/01-workspace-home.png" alt="Workspace" loading="lazy" />
+        <figcaption>Workspace — document editor, knowledge sidebar, agent composer</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== API SURFACE ===================== -->
+<section>
+  <div class="wrap">
+    <p class="kicker rv">HTTP surface</p>
+    <h2 class="rv">Six routes expose the loop</h2>
+    <p class="sec-lede rv">All <code>force-dynamic</code>; the two model-calling routes set <code>maxDuration = 120</code> for the local model.</p>
+
+    <div class="apis rv d1">
+      <div class="api"><span class="m post">POST</span> <code class="r">/api/capsule</code><p>capture → distill → score → store. Returns <code>{ capsule, engine, ms, score, store }</code>.</p></div>
+      <div class="api"><span class="m post">POST</span> <code class="r">/api/inherit</code><p>The money demo — cold vs warm agent for a project. Returns <code>{ hasCapsule, score, cold, warm }</code>.</p></div>
+      <div class="api"><span class="m get">GET</span> <code class="r">/api/sessions</code><p>The 15 most recent <code>~/.claude</code> sessions: id, project, path, mtime, sizeKB.</p></div>
+      <div class="api"><span class="m get">GET</span> <code class="r">/api/capsules</code><p>The seeded enterprise dataset — the bank's historical capsules.</p></div>
+      <div class="api"><span class="m get">GET</span> / <span class="m post">POST</span> <code class="r">/api/skills</code><p>Registry read; POST adopts a <code>skillId@version</code> (metadata echo, no mutation).</p></div>
+      <div class="api"><span class="m get">GET</span> <code class="r">/api/graph</code><p>Canonical nodes + derived <code>learns</code> edges — provenance topology.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== REWARD ===================== -->
+<section id="reward">
+  <div class="wrap">
+    <p class="kicker rv">Why it's reinforcement</p>
+    <h2 class="rv">The reward is real tokens, not a proxy</h2>
+    <p class="sec-lede rv" style="margin-bottom:32px">Reward selects which findings get promoted — and the promotion makes the next session cheaper still.</p>
+
+    <div class="reward-band rv d1">
+      <div>
+        <h3>Saved tokens close the loop.</h3>
+        <p>Every reuse of a warm skill is measured against a cold baseline. The token reduction <i>is</i> the reward — recorded as <code>tokenDeltaPerUse</code> and <code>scoreDelta</code> on each <code>SkillVersion</code>, compounding 16,680 → 43,032 tokens saved across weeks 2026-W25 → W26 for the real tenant.</p>
+      </div>
+      <div class="eq">
+        <div><span class="k">reward</span> = tokens(cold) − tokens(warm)</div>
+        <div><span class="k">promote</span> if reward &gt; 0 &amp; transfer ≥ thr</div>
+        <div><span class="k">agentic CI</span> publishes only if reward improves</div>
+        <div><span class="y">next session inherits → cheaper</span></div>
+        <div style="color:var(--faint)">// AB-03 · 404 → 247 · −39% (measured on Ollama)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="mono">CAPSULE · Next.js 15 App Router · React 19 · Zustand 5 · <code>cd relay &amp;&amp; npm run dev</code> → localhost:3010</p>
+    <p>Loop engine <span class="tag">capture.ts</span><span class="tag">cerebras.ts</span><span class="tag">scorer.ts</span><span class="tag">backboard.ts</span><span class="tag">selectors.ts</span><span class="tag">store.ts</span> · distilled locally on qwen2.5-coder:14b · memory in Backboard. Accurate to the working source.</p>
+    <p style="margin-top:16px;color:var(--faint)"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--yellow);vertical-align:middle;margin-right:7px"></span>Powered on-device. Memory follows the entity, never the model.</p>
+  </div>
+</footer>
+
+<script>
+  // reveal on scroll
+  const io = new IntersectionObserver((entries)=>{
+    for(const e of entries){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }
+  },{rootMargin:'0px 0px -8% 0px',threshold:0.08});
+  document.querySelectorAll('.rv:not(.in)').forEach(el=>io.observe(el));
+</script>
+
+</body>
+</html>

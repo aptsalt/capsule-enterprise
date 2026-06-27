@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAPSULE — Two ways to make a capsule</title>
+<style>
+/* ===========================================================================
+   CAPSULE 8090 — launch-site, LIGHT edition
+   White / hairline #e6e8eb / ink #1f2329 / one blue #2b6cf0 / capsule-yellow
+   #eaff00 used sparingly as the "powered" accent. Self-contained, no CDNs.
+   =========================================================================== */
+:root{
+  --bg:#ffffff;
+  --bg-soft:#fafbfc;
+  --line:#e6e8eb;
+  --line-soft:#eef0f2;
+  --ink:#1f2329;
+  --ink-2:#3a4049;
+  --mut:#6b7280;
+  --dim:#9aa1ab;
+  --blue:#2b6cf0;
+  --blue-d:#1f57cf;
+  --blue-wash:#eef4ff;
+  --blue-line:#cfe0ff;
+  --yellow:#eaff00;
+  --green:#15924f;
+  --green-wash:#edf8f1;
+  --green-line:#bfe3c8;
+  --amber:#b7791f;
+  --r-sm:9px;
+  --r-md:13px;
+  --r-lg:18px;
+  --r-xl:24px;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Consolas,Menlo,monospace;
+  --maxw:1180px;
+  --ease:cubic-bezier(.22,.68,.18,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--ink);
+  line-height:1.55;
+  font-size:16px;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+.mono{font-family:var(--mono);font-feature-settings:"tnum" 1,"zero" 1}
+a{color:inherit;text-decoration:none}
+img,video{max-width:100%;display:block}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+.eyebrow{
+  font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--blue);
+}
+.muted{color:var(--mut)}
+
+/* ---- top nav ---- */
+header.nav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(255,255,255,.82);
+  backdrop-filter:saturate(180%) blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.nav-in{display:flex;align-items:center;gap:14px;height:62px;max-width:var(--maxw);margin:0 auto;padding:0 28px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;font-size:16px}
+.brand .dot{
+  width:22px;height:22px;border-radius:7px;
+  background:linear-gradient(150deg,#1f2329,#3a4049);
+  position:relative;flex:none;
+}
+.brand .dot::after{
+  content:"";position:absolute;inset:6px;border-radius:50%;
+  background:var(--yellow);box-shadow:0 0 10px rgba(234,255,0,.55);
+}
+.brand small{font-weight:600;color:var(--dim);font-size:11px;letter-spacing:.04em;margin-left:2px}
+.nav-links{margin-left:auto;display:flex;align-items:center;gap:26px;font-size:13.5px;font-weight:600;color:var(--mut)}
+.nav-links a{transition:color .15s}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{
+  font-size:13px;font-weight:700;color:#fff;background:var(--ink);
+  padding:9px 15px;border-radius:9px;transition:background .15s,transform .15s;
+}
+.nav-cta:hover{background:#000;transform:translateY(-1px)}
+@media(max-width:760px){.nav-links a:not(.nav-cta){display:none}}
+
+/* ---- hero ---- */
+.hero{padding:96px 0 64px;text-align:center;position:relative;overflow:hidden}
+.hero::before{
+  content:"";position:absolute;inset:-40% 0 auto 0;height:560px;z-index:-1;
+  background:radial-gradient(ellipse 60% 100% at 50% 0,rgba(43,108,240,.07),transparent 70%);
+}
+.powered{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:700;letter-spacing:.04em;
+  color:var(--ink-2);background:var(--bg-soft);
+  border:1px solid var(--line);border-radius:999px;padding:6px 14px 6px 8px;
+  margin-bottom:26px;
+}
+.powered .pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--yellow);color:#1f2329;font-weight:800;
+  padding:3px 9px;border-radius:999px;font-size:11px;letter-spacing:.02em;
+}
+.powered .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:#1f2329}
+h1.hero-title{
+  font-size:clamp(40px,6.4vw,72px);line-height:1.02;letter-spacing:-.035em;
+  font-weight:850;max-width:14ch;margin:0 auto;
+}
+h1.hero-title .ink-soft{color:var(--dim)}
+.hero p.lede{
+  font-size:clamp(17px,2.1vw,21px);color:var(--mut);max-width:62ch;margin:24px auto 0;
+  line-height:1.5;
+}
+.hero-ctas{display:flex;gap:12px;justify-content:center;margin-top:36px;flex-wrap:wrap}
+.btn{
+  font-size:14.5px;font-weight:700;padding:13px 22px;border-radius:11px;
+  transition:transform .15s var(--ease),box-shadow .2s,background .15s;cursor:pointer;border:1px solid transparent;
+}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 8px 24px rgba(43,108,240,.22)}
+.btn-primary:hover{background:var(--blue-d);transform:translateY(-2px);box-shadow:0 12px 32px rgba(43,108,240,.3)}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:#d2d6dc;transform:translateY(-2px)}
+.hero-meta{display:flex;gap:30px;justify-content:center;margin-top:52px;flex-wrap:wrap}
+.hero-meta .m{text-align:left}
+.hero-meta .m b{display:block;font-size:24px;font-weight:800;letter-spacing:-.02em}
+.hero-meta .m span{font-size:12.5px;color:var(--mut)}
+
+/* ---- section scaffolding ---- */
+section{padding:80px 0;border-top:1px solid var(--line-soft)}
+.sec-head{max-width:64ch;margin:0 auto 52px;text-align:center}
+.sec-head h2{font-size:clamp(28px,3.6vw,42px);letter-spacing:-.03em;font-weight:820;line-height:1.08;margin-top:12px}
+.sec-head p{font-size:17px;color:var(--mut);margin-top:16px;line-height:1.55}
+
+/* ---- reveal ---- */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+.reveal[data-d="1"]{transition-delay:.08s}
+.reveal[data-d="2"]{transition-delay:.16s}
+.reveal[data-d="3"]{transition-delay:.24s}
+@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+/* ---- the two columns ---- */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr;gap:30px}}
+.col{
+  border:1px solid var(--line);border-radius:var(--r-xl);background:#fff;overflow:hidden;
+  box-shadow:0 1px 2px rgba(16,24,40,.03);transition:box-shadow .25s,transform .25s,border-color .25s;
+}
+.col:hover{box-shadow:0 22px 60px rgba(16,24,40,.09);transform:translateY(-3px)}
+.col-top{padding:26px 26px 20px;border-bottom:1px solid var(--line-soft)}
+.col-tag{
+  display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;padding:5px 11px;border-radius:999px;
+}
+.col-manual .col-tag{background:var(--blue-wash);color:var(--blue);border:1px solid var(--blue-line)}
+.col-agentic .col-tag{background:#1f2329;color:var(--yellow)}
+.col h3{font-size:25px;font-weight:820;letter-spacing:-.02em;margin:14px 0 8px}
+.col .sub{font-size:14.5px;color:var(--mut);line-height:1.5}
+.col-body{padding:22px 26px 26px}
+.flow-label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
+ol.steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:0}
+ol.steps li{position:relative;counter-increment:s;padding:0 0 20px 42px}
+ol.steps li::before{
+  content:counter(s);position:absolute;left:0;top:0;width:27px;height:27px;border-radius:8px;
+  display:grid;place-items:center;font-size:12.5px;font-weight:800;font-family:var(--mono);
+}
+.col-manual ol.steps li::before{background:var(--blue-wash);color:var(--blue);border:1px solid var(--blue-line)}
+.col-agentic ol.steps li::before{background:#1f2329;color:var(--yellow)}
+ol.steps li::after{
+  content:"";position:absolute;left:13px;top:30px;bottom:2px;width:2px;background:var(--line);
+}
+ol.steps li:last-child{padding-bottom:0}
+ol.steps li:last-child::after{display:none}
+ol.steps li b{display:block;font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+ol.steps li span{display:block;font-size:13.5px;color:var(--mut);margin-top:3px;line-height:1.5}
+ol.steps li code{font-family:var(--mono);font-size:12px;background:var(--bg-soft);border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:var(--ink-2)}
+
+/* media frame */
+.frame{
+  margin-top:6px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg-soft);
+  position:relative;
+}
+.frame .bar{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line-soft);background:#fff}
+.frame .bar i{width:9px;height:9px;border-radius:50%;background:#e2e5e9;display:block}
+.frame .bar i:nth-child(2){background:#e9ebef}
+.frame .bar i:nth-child(3){background:#eef0f2}
+.frame .bar .t{margin-left:6px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.frame img,.frame video{width:100%;display:block;background:#0d0f13}
+.cap{font-size:12px;color:var(--mut);padding:10px 13px;line-height:1.45;border-top:1px solid var(--line-soft);background:#fff}
+.cap b{color:var(--ink-2);font-weight:700}
+.live{position:absolute;top:48px;right:12px;z-index:2;display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.06em;color:#fff;background:rgba(31,35,41,.78);padding:4px 9px;border-radius:999px;backdrop-filter:blur(4px)}
+.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--yellow);box-shadow:0 0 8px var(--yellow);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* outcome chips */
+.outcome{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;padding-top:18px;border-top:1px dashed var(--line)}
+.chip{font-size:12px;font-weight:600;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px}
+.chip.b{border-color:var(--blue-line);background:var(--blue-wash);color:var(--blue)}
+.chip.g{border-color:var(--green-line);background:var(--green-wash);color:var(--green)}
+.chip.k{border-color:#1f2329;background:#1f2329;color:var(--yellow)}
+
+/* ---- flowchart ---- */
+.flowchart{max-width:980px;margin:0 auto;border:1px solid var(--line);border-radius:var(--r-xl);background:linear-gradient(180deg,#fff,var(--bg-soft));padding:34px 30px 26px}
+.flowchart svg{width:100%;height:auto;display:block}
+.flow-legend{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;margin-top:20px;font-size:12.5px;color:var(--mut)}
+.flow-legend span{display:inline-flex;align-items:center;gap:8px}
+.flow-legend i{width:12px;height:12px;border-radius:3px;display:block}
+
+/* ---- table ---- */
+.tbl-wrap{max-width:1000px;margin:0 auto;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+thead th{text-align:left;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:16px 20px;background:var(--bg-soft);border-bottom:1px solid var(--line)}
+thead th:first-child{width:30%}
+tbody td{padding:16px 20px;border-bottom:1px solid var(--line-soft);vertical-align:top;line-height:1.5}
+tbody tr:last-child td{border-bottom:none}
+tbody td:first-child{font-weight:700;color:var(--ink)}
+.yn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13.5px}
+.yn.man{color:var(--blue)}
+.yn.agt{color:var(--ink-2)}
+.yn b{font-weight:800}
+@media(max-width:720px){thead{display:none}table,tbody,tr,td{display:block;width:100%}tbody tr{border-bottom:1px solid var(--line);padding:10px 0}tbody td{border:none;padding:6px 20px}tbody td:first-child{font-size:16px;padding-top:14px}}
+
+/* ---- gate explainer ---- */
+.gate{display:grid;grid-template-columns:1.05fr .95fr;gap:26px;align-items:center;max-width:1040px;margin:0 auto}
+@media(max-width:860px){.gate{grid-template-columns:1fr}}
+.gate-card{border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;padding:26px}
+.meter{margin:18px 0}
+.meter .ml{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px}
+.meter .ml b{font-weight:700}
+.meter .ml .v{font-family:var(--mono);font-weight:700}
+.track{position:relative;height:9px;border-radius:999px;background:var(--bg-soft);border:1px solid var(--line)}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:999px}
+.fill.b{background:var(--blue)}
+.fill.g{background:var(--green)}
+.bar-tick{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);border-radius:2px}
+.bar-tick::after{content:attr(data-l);position:absolute;top:-19px;left:50%;transform:translateX(-50%);font-size:10px;font-family:var(--mono);color:var(--ink-2);white-space:nowrap}
+.gate-note{font-size:13.5px;color:var(--mut);line-height:1.6;margin-top:8px}
+.gate-formula{font-family:var(--mono);font-size:13px;background:#1f2329;color:#e8edf4;border-radius:11px;padding:16px 18px;line-height:1.7;margin-top:4px}
+.gate-formula .y{color:var(--yellow);font-weight:700}
+.gate-formula .gr{color:#7ee2a8}
+.gate-formula .cm{color:#6b7686}
+
+/* ---- closing loop ---- */
+.loop{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:center;max-width:1040px;margin:0 auto}
+@media(max-width:860px){.loop{grid-template-columns:1fr}}
+.loop-copy h3{font-size:26px;font-weight:820;letter-spacing:-.02em;line-height:1.12}
+.loop-copy p{font-size:15.5px;color:var(--mut);margin-top:16px;line-height:1.6}
+.loop-copy .dims{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.loop-copy .dims .d{font-size:12px;font-weight:600;color:var(--ink-2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;background:#fff}
+
+/* ---- footer ---- */
+footer{border-top:1px solid var(--line);padding:54px 0 64px;background:var(--bg-soft)}
+.foot-in{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.foot-in .brand{font-size:15px}
+.foot-meta{margin-left:auto;display:flex;gap:22px;font-size:13px;color:var(--mut)}
+.foot-note{margin-top:26px;font-size:12.5px;color:var(--dim);max-width:70ch;line-height:1.6}
+.foot-note code{font-family:var(--mono);font-size:11.5px;color:var(--mut)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-in">
+    <div class="brand"><span class="dot"></span> CAPSULE <small>8090</small></div>
+    <nav class="nav-links">
+      <a href="#flows">The two flows</a>
+      <a href="#decide">Decide</a>
+      <a href="#compare">Compare</a>
+      <a href="#gate">The gate</a>
+      <a href="#flows" class="nav-cta">Capture a session</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" style="border-top:none">
+  <div class="wrap">
+    <span class="powered reveal in">
+      Distilled on-device
+      <span class="pill">Powered by your own sessions</span>
+    </span>
+    <h1 class="hero-title reveal in">Two ways to make a <span class="ink-soft">capsule.</span></h1>
+    <p class="lede reveal in" data-d="1">
+      CAPSULE turns a finished Claude Code session into a portable Handoff Capsule — intent,
+      decisions, gotchas, next steps, and a transfer score. You can curate them by hand, or let
+      an agent distill and gate every session automatically. Same engine. Two postures.
+    </p>
+    <div class="hero-ctas reveal in" data-d="2">
+      <a class="btn btn-primary" href="#flows">See both flows</a>
+      <a class="btn btn-ghost" href="#decide">Which should I use?</a>
+    </div>
+    <div class="hero-meta reveal in" data-d="3">
+      <div class="m"><b>On-device</b><span>Ollama qwen2.5-coder · no data leaves the machine</span></div>
+      <div class="m"><b>6 dimensions</b><span>scored every capsule, from intent to mental model</span></div>
+      <div class="m"><b>≥ 50 or 80</b><span>the agentic gate: transfer bar OR a unique proposition</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- THE TWO FLOWS -->
+<section id="flows">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Manual vs Agentic</span>
+      <h2>Same capsule engine. You choose who pulls the trigger.</h2>
+      <p>Both flows read a real <span class="mono">~/.claude/projects/*.jsonl</span> transcript and distill
+        it locally into a Handoff Capsule. The difference is who decides what to keep — you, or the gate.</p>
+    </div>
+
+    <div class="cols">
+      <!-- MANUAL -->
+      <article class="col col-manual reveal" data-d="1">
+        <div class="col-top">
+          <span class="col-tag">● Manual</span>
+          <h3>You curate</h3>
+          <p class="sub">Hand-pick a session, distill it, and review the capsule yourself before it counts.
+            Full control — ideal for deliberate curation and high-signal handoffs.</p>
+        </div>
+        <div class="col-body">
+          <div class="flow-label">How it runs</div>
+          <ol class="steps">
+            <li><b>Pick a session</b><span>CAPSULE lists your real Claude sessions from <code>~/.claude/projects</code>, newest first.</span></li>
+            <li><b>Distill locally</b><span>One <code>POST /api/capsule</code> reads the transcript and distills it on-device with Ollama. No data leaves the machine.</span></li>
+            <li><b>You review &amp; keep</b><span>The capsule renders in full — score, intent, decisions, gotchas, next steps — and you decide to keep it. It's added to <b>Capsules from today</b>.</span></li>
+          </ol>
+
+          <div class="frame" style="margin-top:22px">
+            <div class="bar"><i></i><i></i><i></i><span class="t">capture · manual</span></div>
+            <img src="./assets/shots/09-capture-manual.png" alt="Manual capture — pick a real session, distill on-device with Ollama" loading="lazy">
+            <div class="cap"><b>MANUAL.</b> Pick a real <span class="mono">~/.claude</span> session; distill on-device with Ollama. You hold the keep decision.</div>
+          </div>
+
+          <div class="outcome">
+            <span class="chip b">You pick the session</span>
+            <span class="chip b">You review the capsule</span>
+            <span class="chip">Nothing kept without you</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- AGENTIC -->
+      <article class="col col-agentic reveal" data-d="2">
+        <div class="col-top">
+          <span class="col-tag">◆ Agentic · Auto</span>
+          <h3>The gate decides</h3>
+          <p class="sub">Every session is auto-distilled, auto-scored, and auto-gated. Only capsules that clear
+            the bar — or carry a unique proposition — are kept. Hands-off, and it scales across a whole team.</p>
+        </div>
+        <div class="col-body">
+          <div class="flow-label">How it runs</div>
+          <ol class="steps">
+            <li><b>Auto-distill</b><span>Each session is distilled on-device the moment it lands — no one has to press anything.</span></li>
+            <li><b>Auto-score</b><span>Six transfer dimensions are scored locally, and a <b>novelty</b> signal is derived from the strongest single dimension.</span></li>
+            <li><b>Auto-gate</b><span>Kept if <code>transferScore ≥ threshold</code> <b>OR</b> <code>novelty ≥ 80</code> — then promoted as a <b>proposed</b> version on a <code>promotion/&lt;skill&gt;</code> ref (a PR, not a push). <b>Agentic CI</b> A/B-tests new vs current and publishes only if the measured reward improves. Below the bar &rarr; dropped, never promoted.</span></li>
+          </ol>
+
+          <div class="frame" style="margin-top:22px">
+            <div class="bar"><i></i><i></i><i></i><span class="t">capture · agentic</span></div>
+            <span class="live">Auto-distilling</span>
+            <video autoplay muted loop playsinline poster="./assets/shots/10-capture-agentic.png">
+              <source src="./assets/video/vid-agentic.webm" type="video/webm">
+            </video>
+            <div class="cap"><b>AGENTIC.</b> Auto-distill on-device, then the gate decides <b>Kept vs Skipped</b> against the threshold — live.</div>
+          </div>
+
+          <div class="outcome">
+            <span class="chip k">Kept ✓ → proposed + agentic CI</span>
+            <span class="chip">Skipped — dropped, never promoted</span>
+            <span class="chip g">Scales across dee · ven · saim</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- DECISION FLOWCHART -->
+<section id="decide" style="background:var(--bg-soft)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Decision flow</span>
+      <h2>One transcript in. Here's what each posture does with it.</h2>
+      <p>The same session enters both flows. Manual ends at <em>you</em>; agentic ends at the gate.</p>
+    </div>
+
+    <div class="flowchart reveal" data-d="1">
+      <svg viewBox="0 0 920 470" role="img" aria-label="Decision flowchart: a session is distilled on-device, then either you keep it (manual) or the gate keeps or skips it (agentic).">
+        <defs>
+          <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0 0 L9 4.5 L0 9 Z" fill="#9aa1ab"/>
+          </marker>
+          <marker id="arrowG" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0 0 L9 4.5 L0 9 Z" fill="#15924f"/>
+          </marker>
+          <marker id="arrowM" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0 0 L9 4.5 L0 9 Z" fill="#2b6cf0"/>
+          </marker>
+          <style>
+            .nlab{font-family:var(--mono,monospace);font-size:12px;fill:#1f2329;font-weight:600}
+            .ntitle{font-family:Inter,sans-serif;font-size:14px;fill:#1f2329;font-weight:800}
+            .nsub{font-family:Inter,sans-serif;font-size:11px;fill:#6b7280}
+            .elab{font-family:Inter,sans-serif;font-size:11.5px;font-weight:700}
+          </style>
+        </defs>
+
+          <!-- START: session -->
+          <rect x="350" y="22" width="220" height="58" rx="12" fill="#fff" stroke="#e6e8eb"/>
+          <text x="460" y="46" text-anchor="middle" class="ntitle">A finished session</text>
+          <text x="460" y="65" text-anchor="middle" class="nsub mono">~/.claude/projects/*.jsonl</text>
+
+          <!-- DISTILL on-device -->
+          <line x1="460" y1="80" x2="460" y2="118" stroke="#9aa1ab" stroke-width="1.6" marker-end="url(#arrow)"/>
+          <rect x="320" y="120" width="280" height="62" rx="12" fill="#1f2329" stroke="#1f2329"/>
+          <text x="460" y="146" text-anchor="middle" class="ntitle" fill="#fff">Distill on-device · Ollama</text>
+          <text x="460" y="166" text-anchor="middle" class="nsub" fill="#eaff00">intent · decisions · gotchas · 6-dim score</text>
+
+          <!-- split to two postures -->
+          <path d="M460 182 L460 200 L210 200 L210 224" fill="none" stroke="#2b6cf0" stroke-width="1.6" marker-end="url(#arrowM)"/>
+          <path d="M460 182 L460 200 L710 200 L710 224" fill="none" stroke="#9aa1ab" stroke-width="1.6" marker-end="url(#arrow)"/>
+          <text x="300" y="195" text-anchor="middle" class="elab" fill="#2b6cf0">MANUAL</text>
+          <text x="620" y="195" text-anchor="middle" class="elab" fill="#1f2329">AGENTIC</text>
+
+          <!-- MANUAL branch -->
+          <rect x="92" y="226" width="236" height="60" rx="12" fill="#eef4ff" stroke="#cfe0ff"/>
+          <text x="210" y="251" text-anchor="middle" class="ntitle" fill="#2b6cf0">You review the capsule</text>
+          <text x="210" y="270" text-anchor="middle" class="nsub">full control · curation</text>
+          <line x1="210" y1="286" x2="210" y2="320" stroke="#2b6cf0" stroke-width="1.6" marker-end="url(#arrowM)"/>
+          <rect x="112" y="322" width="196" height="52" rx="12" fill="#fff" stroke="#cfe0ff"/>
+          <text x="210" y="346" text-anchor="middle" class="ntitle" fill="#2b6cf0">Kept by you</text>
+          <text x="210" y="363" text-anchor="middle" class="nsub">→ Capsules from today</text>
+
+          <!-- AGENTIC branch: decision diamond -->
+          <path d="M710 224 L800 286 L710 348 L620 286 Z" fill="#fffef0" stroke="#1f2329" stroke-width="1.4"/>
+          <text x="710" y="280" text-anchor="middle" class="nlab">score ≥ threshold?</text>
+          <text x="710" y="298" text-anchor="middle" class="nlab">OR novelty ≥ 80?</text>
+
+          <!-- gate PASS -->
+          <path d="M800 286 L860 286 L860 350 L770 350" fill="none" stroke="#15924f" stroke-width="1.6" marker-end="url(#arrowG)"/>
+          <text x="845" y="278" text-anchor="middle" class="elab" fill="#15924f">YES</text>
+          <rect x="560" y="352" width="210" height="56" rx="12" fill="#edf8f1" stroke="#bfe3c8"/>
+          <text x="665" y="376" text-anchor="middle" class="ntitle" fill="#15924f">Kept ✓ proposed</text>
+          <text x="665" y="394" text-anchor="middle" class="nsub">→ promotion/&lt;skill&gt; · agentic CI</text>
+
+          <!-- gate FAIL -->
+          <path d="M710 348 L710 430 L800 430" fill="none" stroke="#9aa1ab" stroke-width="1.6" marker-end="url(#arrow)"/>
+          <text x="690" y="400" text-anchor="middle" class="elab" fill="#9aa1ab">NO</text>
+          <rect x="802" y="404" width="110" height="52" rx="12" fill="#fff" stroke="#e6e8eb"/>
+          <text x="857" y="428" text-anchor="middle" class="ntitle" fill="#6b7280">Skipped</text>
+          <text x="857" y="445" text-anchor="middle" class="nsub">dropped</text>
+      </svg>
+
+      <div class="flow-legend">
+        <span><i style="background:#1f2329"></i> On-device distill (shared)</span>
+        <span><i style="background:#2b6cf0"></i> Manual — you decide</span>
+        <span><i style="background:#15924f"></i> Agentic — gate keeps</span>
+        <span><i style="background:#cfd3d9"></i> Agentic — gate skips</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHEN TO USE WHICH -->
+<section id="compare">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">When to use which</span>
+      <h2>Pick the posture that matches the moment.</h2>
+      <p>Manual when judgment matters and volume is low. Agentic when you want coverage without a human in every loop.</p>
+    </div>
+
+    <div class="tbl-wrap reveal" data-d="1">
+      <table>
+        <thead>
+          <tr><th>If you…</th><th><span class="yn man">● Manual</span></th><th><span class="yn agt">◆ Agentic</span></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Are curating a few high-signal handoffs</td>
+            <td><span class="yn man"><b>Best fit</b></span> — you read and keep each one</td>
+            <td>Overkill — the gate may skip nuance you'd keep</td>
+          </tr>
+          <tr>
+            <td>Want every session covered automatically</td>
+            <td>Too manual — you'd have to pick each session</td>
+            <td><span class="yn agt"><b>Best fit</b></span> — auto-distill + auto-gate, hands-off</td>
+          </tr>
+          <tr>
+            <td>Are rolling this out across a team</td>
+            <td>Doesn't scale — one person, one click at a time</td>
+            <td><span class="yn agt"><b>Best fit</b></span> — consistent bar for everyone's sessions</td>
+          </tr>
+          <tr>
+            <td>Need full control over what's kept</td>
+            <td><span class="yn man"><b>Best fit</b></span> — nothing is kept without your review</td>
+            <td>The threshold is your control, not a per-capsule choice</td>
+          </tr>
+          <tr>
+            <td>Want a consistent, objective keep-bar</td>
+            <td>Subjective — depends on who's reviewing</td>
+            <td><span class="yn agt"><b>Best fit</b></span> — same <span class="mono">≥ 50 OR novelty ≥ 80</span> rule every time</td>
+          </tr>
+          <tr>
+            <td>Are inspecting why something didn't make it</td>
+            <td>You simply chose not to keep it</td>
+            <td><span class="yn agt"><b>Best fit</b></span> — a skipped capsule stays fully inspectable, with the gate meters shown</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- THE GATE -->
+<section id="gate" style="background:var(--bg-soft)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The agentic gate</span>
+      <h2>Kept if it clears the bar — or carries a unique proposition.</h2>
+      <p>Two signals, two bars. Either one is enough to keep a capsule. That's how an ordinary-on-average
+        session with one exceptional insight still gets promoted.</p>
+    </div>
+
+    <div class="gate">
+      <div class="gate-card reveal" data-d="1">
+        <div class="meter">
+          <div class="ml"><b>Transfer score</b><span class="v" style="color:var(--blue)">72 / 50</span></div>
+          <div class="track"><span class="fill b" style="width:72%"></span><span class="bar-tick" data-l="threshold 50" style="left:50%"></span></div>
+        </div>
+        <div class="meter">
+          <div class="ml"><b>Novelty</b><span class="v" style="color:var(--green)">86 / 80</span></div>
+          <div class="track"><span class="fill g" style="width:86%"></span><span class="bar-tick" data-l="bar 80" style="left:80%"></span></div>
+        </div>
+        <p class="gate-note">Novelty isn't a separate model output — it's the capsule's <b>strongest single dimension</b>,
+          its most distinctive signal, derived from the six local scores. A capsule can be middling on transfer yet
+          spike on one axis (a rare gotcha, a crisp mental model) and still earn a keep.</p>
+      </div>
+
+      <div class="reveal" data-d="2">
+        <div class="gate-formula">
+<span class="cm"># the keep rule (default threshold = 50)</span><br>
+keep = transferScore &gt;= <span class="y">threshold</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="gr">OR</span> novelty &gt;= <span class="y">80</span><br><br>
+<span class="cm"># kept  → proposed on promotion/&lt;skill&gt;; agentic CI</span><br>
+<span class="cm">#         publishes only if measured reward improves</span><br>
+<span class="cm"># else  → dropped, never promoted</span>
+        </div>
+        <p class="gate-note" style="margin-top:18px">The threshold is yours to set with a slider (0–100, default <b>50</b>); the novelty bar is fixed
+          at <b>80</b>. When Ollama is unreachable, a local heuristic distills instead — its scores skew low, so the
+          gate flags it before you trust a skip.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING LOOP -->
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">What a kept capsule powers</span>
+      <h2>A capsule isn't an archive. It's recallable context.</h2>
+    </div>
+    <div class="loop">
+      <div class="loop-copy reveal" data-d="1">
+        <h3>Kept capsules feed straight back into the next session.</h3>
+        <p>Toggle Capsule context on, and the composer lights up with a fluorescent-yellow aura — the latest
+          capsule is injected as live context so the next run starts where the last one ended. That's the loop:
+          distill, gate, recall. Whether you curated it by hand or the gate promoted it, a kept capsule shows up
+          here, ready to use.</p>
+        <div class="dims">
+          <span class="d">Intent</span><span class="d">Traceability</span><span class="d">Reasoning</span>
+          <span class="d">Gotchas</span><span class="d">Next steps</span><span class="d">Mental model</span>
+        </div>
+      </div>
+      <div class="reveal" data-d="2">
+        <div class="frame">
+          <div class="bar"><i></i><i></i><i></i><span class="t">composer · capsule context ON</span></div>
+          <video autoplay muted loop playsinline poster="./assets/shots/11-composer-capsule-glow.png">
+            <source src="./assets/video/vid-capsule-glow.webm" type="video/webm">
+          </video>
+          <div class="cap"><b>Recall.</b> Capsule toggle ON — the composer's yellow aura injects the latest capsule into the next run.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-in">
+      <div class="brand"><span class="dot"></span> CAPSULE <small>8090 Software Factory</small></div>
+      <div class="foot-meta">
+        <span class="mono">manual · agentic</span>
+        <span class="mono">on-device distill</span>
+        <span class="mono">gate ≥ 50 / 80</span>
+      </div>
+    </div>
+    <p class="foot-note">
+      Both flows distill the same real <code>~/.claude/projects/*.jsonl</code> transcripts on-device with Ollama
+      (qwen2.5-coder), score six transfer dimensions, and store the result. Manual keeps a human in every loop;
+      agentic replaces that human with a threshold. CAPSULE is being introduced to the world.
+    </p>
+  </div>
+</footer>
+
+<script>
+// reveal-on-scroll
+(function(){
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  },{rootMargin:'0px 0px -10% 0px',threshold:.12});
+  document.querySelectorAll('.reveal:not(.in)').forEach(function(el){io.observe(el);});
+
+  // nudge autoplay on any video that didn't kick off (some browsers gate loops)
+  document.querySelectorAll('video').forEach(function(v){
+    var p=v.play(); if(p&&p.catch){p.catch(function(){});}
+  });
+})();
+</script>
+</body>
+</html>
