@@ -7,12 +7,15 @@
 > *important and novel*), and capsules compound into versioned skills. The memory substrate is
 > **Backboard**.
 >
-> **Implemented in the app.** This spec is realised in `relay/` (the shipping Next.js app,
-> `cd relay && npm run dev` → :3010). The Backboard envelope mapping below is
+> **Implemented in the app.** This spec is realised in `relay/` (GitHub `aptsalt/capsule`, `main` =
+> merge `5968a51`; `cd relay && npm run dev` → :3010). The Backboard envelope mapping below is
 > `relay/src/lib/backboard.ts`; the capsule is distilled **on-device first** by a local Ollama
-> model (`qwen2.5-coder:14b`) in `relay/src/lib/cerebras.ts` — so the *production* of a capsule
-> costs no cloud tokens and leaks no data off the machine, and the *write* of it costs no model
-> tokens at all (`send_to_llm:"false"`, §4).
+> model (`qwen2.5-coder:14b`) in `relay/src/lib/cerebras.ts` (chunked map-reduce for big sessions),
+> and scored by an **LLM-judge** (`scoreCapsuleLLM`) — so the *production* of a capsule costs no cloud
+> tokens and leaks no data off the machine, and the *write* of it costs no model tokens at all
+> (`send_to_llm:"false"`, §4). The merged **AGENT CHAT** (PR #1) is also memory-backed: every chat
+> turn lands in one Backboard thread under the same `capsule` assistant, and prior turns resurface via
+> semantic recall rather than being resent (§5a).
 
 ---
 
@@ -144,9 +147,12 @@ the durable memory clean when several people capture overlapping lessons:
   resolution is written to a **merge-ledger** so the registry's history stays auditable.
 
 This is where promotion happens: a capsule clearing the agentic gate becomes a **proposed** version
-on a `promotion/<skill>` staging ref, and **agentic CI** (the A/B harness vs the current version +
-regression-checks of prior capsules) merges it only if the measured reward improves. Full model in
-`ARCHITECTURE.md` §6b.
+on a `promotion/<skill>` staging ref, and **agentic CI** (the multi-sample A/B harness vs the current
+version + regression-checks of prior capsules) merges it only if the measured reward improves. The
+inverse pole, **PURGE/RETIRE** (`active → deprecated → archived → purged`, logged in a PURGE-LEDGER),
+retires skills that stop paying rent — but it only retires the **on-disk registry artifact**; the
+distilled briefings and threads that back each skill **stay in Backboard memory**, so durable memory
+and its provenance are never touched. Full model in `ARCHITECTURE.md` §6b, §19.
 
 ---
 
@@ -221,6 +227,23 @@ CAPSULE selects the retrieval depth per fire point:
 
 Both modes read the **same** assistant-scoped store; they differ only in retrieval effort. Lite is the
 default; Pro is invoked explicitly (deep questions) or by the nightly version-minting job.
+
+### 5a. Agent-chat memory (the in-app composer)
+
+The merged **AGENT CHAT** (`POST /api/chat`, lib `relay/src/lib/chatContext.ts`) is the third place
+memory is read and written. All chat turns share **one** Backboard thread (`CHAT_THREAD_KEY =
+"relay-chat"`) under the `capsule` assistant. On each turn:
+
+- **Read.** When *Capsule context* is on, `retrieveMemory(lastUser)` pulls the most relevant prior
+  capsules + past chat turns from Backboard and `buildSystemPrompt()` injects them (plus the latest
+  capsule briefing and any composer-attached skills) as the system prompt — so the agent answers warm.
+- **Bounded.** Only the last `MAX_CONTEXT_MSGS` turns are sent to the model; older turns are *not*
+  lost — they live in Backboard and resurface via semantic recall when relevant, keeping token cost
+  flat as a conversation grows.
+- **Observable.** `POST /api/chat/context` returns the exact prompt + recalled memory that *would* be
+  sent, without generating — the observability seam.
+- **Durable.** Each conversation is also mirrored to `~/.relay/chats/<id>.json` with an LLM-generated
+  title, so a chat session can itself later be distilled into a capsule.
 
 ### Adaptive Context Management
 After retrieval, **Adaptive Context Management** trims/summarizes the selected memories to fit the

@@ -90,7 +90,8 @@
       <div class="chips">
         <span class="chip b">Next.js 15 · App Router</span><span class="chip b">React 19</span>
         <span class="chip">TypeScript (strict)</span><span class="chip">Tailwind v4</span>
-        <span class="chip">Zustand</span><span class="chip">hand-rolled SVG force graph</span>
+        <span class="chip">Zustand</span><span class="chip">react-markdown</span>
+        <span class="chip">hand-rolled SVG force graph</span><span class="chip b">Agent Chat + Skills Composer</span>
       </div>
     </div>
     <div class="layer">
@@ -99,15 +100,19 @@
         <span class="chip mono">/api/sessions</span><span class="chip mono">/api/capsule</span>
         <span class="chip mono">/api/capsules</span><span class="chip mono">/api/skills</span>
         <span class="chip mono">/api/graph</span><span class="chip mono">/api/inherit</span>
+        <span class="chip mono b">/api/chat</span><span class="chip mono b">/api/chat/context</span>
+        <span class="chip mono b">/api/chats</span><span class="chip mono b">/api/chats/save</span>
+        <span class="chip mono v">/api/promote</span>
       </div>
     </div>
     <div class="layer energy">
-      <div class="lname">Intelligence<small>Distill + score</small></div>
+      <div class="lname">Intelligence<small>Distill + judge</small></div>
       <div class="chips">
         <span class="chip energy">⚡ LOCAL Ollama · qwen2.5-coder:14b</span>
+        <span class="chip">chunked map-reduce distill</span>
         <span class="chip b">Cerebras (optional cloud)</span>
         <span class="chip">heuristic fallback</span>
-        <span class="chip g">6-dim transfer scorer</span>
+        <span class="chip g">LLM-judge 6-dim scorer</span>
       </div>
     </div>
     <div class="layer">
@@ -121,14 +126,19 @@
     <div class="layer">
       <div class="lname">Knowledge<small>Versioned skills</small></div>
       <div class="chips">
-        <span class="chip v">enterprise skills git repo</span><span class="chip v">semver · learnedFrom</span>
-        <span class="chip">multi-dev branches (dee/ven/saim)</span><span class="chip">agentic CI</span>
+        <span class="chip v">enterprise skills git repo · 28 skills (13 real + 15 popular)</span>
+        <span class="chip v">semver · learnedFrom</span>
+        <span class="chip">local-registry → EOD PR → master</span>
+        <span class="chip">multi-dev branches (dee/ven/saim)</span>
+        <span class="chip g">multi-sample agentic CI + regression</span>
+        <span class="chip">purge/retire · PURGE-LEDGER</span>
       </div>
     </div>
     <div class="layer">
       <div class="lname">Source<small>Capture</small></div>
       <div class="chips">
         <span class="chip mono">~/.claude/projects/*.jsonl</span><span class="chip">real coding sessions</span>
+        <span class="chip b">ambient Stop-hook + capture-watcher</span>
       </div>
     </div>
     <div class="layer">
@@ -200,8 +210,12 @@ docker compose exec ollama \
     <div class="phase now">
       <div class="pt"><span class="pn">Phase 0</span><span class="nowtag">YOU ARE HERE</span><span class="when">shipped</span></div>
       <h3>Local-first (hackathon build)</h3>
-      <p>Runs fully on one machine: Ollama 14b distiller, local JSON memory, the whole RL loop. Optional live
-      Backboard + Cerebras via env keys. Docker compose for one-command boot.</p>
+      <p>Runs fully on one machine: Ollama 14b distiller (chunked map-reduce), LLM-judge scoring, the in-app
+      <b>Agent Chat + Skills Composer</b>, ambient Stop-hook capture, and the whole RL loop — capture →
+      distill → judge → gate → store → <b>local registry → end-of-day PR → enterprise master</b>, with
+      multi-sample agentic CI + regression and a purge/retire pole. Live Backboard + optional Cerebras via env
+      keys. Docker compose for one-command boot. CAPSULE has even captured its <b>own</b> build session
+      (<span class="mono">CAP-SESSION-1a6fcc9b → skill/ui-modularity@1.0.0</span>, promoted via PR #4).</p>
     </div>
     <div class="phase">
       <div class="pt"><span class="pn">Phase 1</span><span class="when">next</span></div>

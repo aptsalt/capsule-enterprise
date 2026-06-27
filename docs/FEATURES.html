@@ -154,20 +154,21 @@
     <nav>
       <a href="#big-idea"><span class="n">★</span> The big idea (the loop)</a>
     </nav>
-    <div class="grp">The 12 features</div>
+    <div class="grp">The 13 features</div>
     <nav>
       <a href="#capsule"><span class="n">1</span> Capsule</a>
       <a href="#local-model"><span class="n">2</span> Local model distillation</a>
-      <a href="#agentic"><span class="n">3</span> Agentic auto-distill</a>
+      <a href="#agentic"><span class="n">3</span> Agentic auto-distill + ambient capture</a>
       <a href="#graph"><span class="n">4</span> Knowledge Graph</a>
       <a href="#registry"><span class="n">5</span> Skills Registry</a>
       <a href="#enterprise"><span class="n">6</span> Enterprise toggle</a>
       <a href="#versions"><span class="n">7</span> Versions / History</a>
-      <a href="#ab"><span class="n">8</span> A/B Trials</a>
+      <a href="#ab"><span class="n">8</span> A/B eval (multi-sample)</a>
       <a href="#backboard"><span class="n">9</span> Backboard memory</a>
       <a href="#tokens"><span class="n">10</span> Token value</a>
-      <a href="#repos"><span class="n">11</span> Multi-dev promotion &amp; CI</a>
+      <a href="#repos"><span class="n">11</span> Multi-dev promotion, CI &amp; purge</a>
       <a href="#workspace"><span class="n">12</span> Workspace UX</a>
+      <a href="#chat"><span class="n">13</span> Agent chat + skills composer</a>
     </nav>
     <div class="grp">For the demo</div>
     <nav>
@@ -181,14 +182,14 @@
     <div class="hero" id="top">
       <div class="kicker">8090 Software Factory · CAPSULE · Content Engine</div>
       <h1>CAPSULE, every feature explained like you're new here</h1>
-      <p class="lede">CAPSULE turns every coding session into a lesson the whole company keeps. One agent solves a problem once; everyone else gets the answer for free, forever. The dataset is <b>real</b> — 8 capsules distilled from the user's actual <code>~/.claude</code> sessions by a local model. This page walks each feature in plain words — <b>what it does</b>, <b>why it's needed</b>, <b>where to find it in the app</b>, and <b>what can be improved</b>. Run it locally: <code>cd relay &amp;&amp; npm run dev</code> → <code>localhost:3010</code>.</p>
+      <p class="lede">CAPSULE is the <b>capture + feedback (RL) layer</b> for the 8090 Software Factory: it turns every coding session into a lesson the whole company keeps. One agent solves a problem once; everyone else gets the answer for free, forever. The dataset is <b>real</b> — capsules distilled from the user's actual <code>~/.claude</code> sessions by a local model, scored by an <b>LLM judge</b>, and promoted into a <b>28-skill enterprise registry</b> through CI-gated PRs. This page walks each feature in plain words — <b>what it does</b>, <b>why it's needed</b>, <b>where to find it in the app</b>, and <b>what can be improved</b>. Run it locally: <code>cd relay &amp;&amp; npm run dev</code> → <code>localhost:3010</code>.</p>
       <div class="hero-meta">
-        <span class="pill blue">8 real capsules</span>
-        <span class="pill violet">7 skills</span>
+        <span class="pill blue">9 real capsules</span>
+        <span class="pill violet">28 skills</span>
         <span class="pill green">43,032 tokens saved</span>
         <span class="pill">46 avg transfer</span>
-        <span class="pill">63% adoption</span>
-        <span class="pill">4 seats</span>
+        <span class="pill">LLM-judged scoring</span>
+        <span class="pill">self-captured ✓</span>
       </div>
       <div class="legend">
         <span><i style="background:var(--blue)"></i> What it is</span>
@@ -250,7 +251,7 @@
       <div class="feat-body">
         <div class="block what">
           <div class="lab what"><span class="dot"></span>What it is</div>
-          <p>The job of reading a session and writing the capsule is done by a model running on your own computer — <code>qwen2.5-coder:14b</code> via Ollama. The pipeline tries <b>local first</b>, then an <b>optional</b> cloud boost (Cerebras <code>llama-3.3-70b</code>, only if <code>CEREBRAS_API_KEY</code> is set), then a <b>heuristic last resort</b> so a capsule always renders — even fully offline.</p>
+          <p>The job of reading a session and writing the capsule is done by a model running on your own computer — <code>qwen2.5-coder:14b</code> via Ollama. The pipeline tries <b>local first</b>, then an <b>optional</b> cloud boost (Cerebras <code>llama-3.3-70b</code>, only if <code>CEREBRAS_API_KEY</code> is set), then a <b>heuristic last resort</b> so a capsule always renders — even fully offline. Big sessions don't get truncated: a <b>chunked map-reduce</b> reads the whole transcript in pieces and reduces them into one capsule.</p>
           <div class="ana">Like having an <b>in-house note-taker</b> instead of mailing your private meeting recordings to a stranger to summarise. The notes never leave the building.</div>
         </div>
         <div class="block why">
@@ -272,14 +273,14 @@
     <section class="feat" id="agentic">
       <div class="feat-h">
         <div class="feat-ic" style="background:#e9f7ee;color:var(--agent)">🤖</div>
-        <div><div class="num">FEATURE 03</div><h3>Agentic auto-distill + score gating</h3><div class="one">Keep the good lessons automatically — drop the noise</div></div>
+        <div><div class="num">FEATURE 03</div><h3>Agentic auto-distill + ambient capture + score gating</h3><div class="one">Keep the good lessons automatically — drop the noise, no clicks needed</div></div>
       </div>
       <div class="feat-body">
         <div class="block what">
           <div class="lab what"><span class="dot"></span>What it is</div>
-          <p>Not every session is worth remembering. CAPSULE has an <b>agentic mode</b> that decides automatically. The gate is simple: <b>keep the capsule (and let its skill update adopt without a human) when its transfer score is at or above the threshold, OR when its novelty is ≥ 80.</b> The threshold defaults to <b>50</b> and can be set anywhere from 0 to 100.</p>
+          <p>Not every session is worth remembering. CAPSULE has an <b>agentic mode</b> that decides automatically. Capture is now <b>ambient</b>: a non-blocking <b>Stop-hook</b> in <code>settings.json</code> plus <code>scripts/capture-watcher.ts</code> auto-distills every closed session — no one presses anything. Each capsule is then <b>scored by an LLM judge</b> (<code>scoreCapsuleLLM</code> for transfer, <code>noveltyLLM</code> for novelty; heuristic fallback). The gate is simple: <b>keep the capsule when its transfer score is at or above the threshold, OR when its novelty is ≥ 80.</b> The threshold defaults to <b>50</b> and can be set anywhere from 0 to 100.</p>
           <p>So a high-transfer lesson (an agent could continue cold) or a genuinely new discovery (novelty 82, 88…) is kept and routed on its own; a thin, low-novelty session is dropped instead of cluttering the registry.</p>
-          <div class="ana">Like a <b>smart spam filter for lessons</b>. Obvious keepers and brand-new findings go straight to the shelf; the forgettable ones don't waste anyone's attention.</div>
+          <div class="ana">Like a <b>smart spam filter for lessons</b> wired to a doorbell. Sessions get caught the moment they close; obvious keepers and brand-new findings go straight to the shelf; the forgettable ones don't waste anyone's attention.</div>
         </div>
         <div class="block why">
           <div class="lab why"><span class="dot"></span>Why it's needed</div>
@@ -333,7 +334,7 @@
       <div class="feat-body">
         <div class="block what">
           <div class="lab what"><span class="dot"></span>What it is</div>
-          <p>The shelf of the company's reusable skills — packaged know-how an agent picks up and applies. In this dataset there are seven, each forged from a real session: <code>Angular Upgrade</code>, <code>Command Verification</code> (two versions), <code>API Security</code>, <code>Memory Management</code>, <code>Creative Franchise Expansion</code>, <code>Automation Maintenance</code>, and <code>API Rate Limiting</code>. You choose a skill by two things: <b>how many tokens it saves per use</b>, and <b>which use-case it fits</b>. A free-text recommender suggests the right one for whatever you're working on.</p>
+          <p>The shelf of the company's reusable skills — packaged know-how an agent picks up and applies. The enterprise registry holds <b>28 skills: 13 real</b> (each forged from a real <code>~/.claude</code> session — <code>Angular Upgrade</code>, <code>Command Verification</code>, <code>API Security</code>, <code>Memory Management</code>, <code>API Rate Limiting</code>, <code>UI Modularity</code> and more) <b>+ 15 popular</b> seed skills (REST API design, OAuth2/JWT, Redis caching…). One of the real skills, <code>ui-modularity</code>, was distilled from CAPSULE's <b>own build session</b>. You choose a skill by two things: <b>how many tokens it saves per use</b>, and <b>which use-case it fits</b>. A free-text recommender suggests the right one for whatever you're working on.</p>
           <div class="ana">Like a <b>cookbook of perfected recipes</b>. You don't reinvent the sauce every dinner — you grab the recipe that already works, plus the notes on what to watch out for.</div>
         </div>
         <div class="block why">
@@ -409,17 +410,17 @@
     <section class="feat" id="ab">
       <div class="feat-h">
         <div class="feat-ic" style="background:#e9f7ee;color:var(--green)">⚖️</div>
-        <div><div class="num">FEATURE 08</div><h3>A/B Trials — Capsule vs Cold</h3><div class="one">Same task, with the capsule vs without — see the win</div></div>
+        <div><div class="num">FEATURE 08</div><h3>A/B eval — Capsule vs Cold (multi-sample)</h3><div class="one">Same task, with the capsule vs without — measured, with error bars</div></div>
       </div>
       <div class="feat-body">
         <div class="block what">
           <div class="lab what"><span class="dot"></span>What it is</div>
-          <p>A head-to-head test. The same task is run twice: once <b>with</b> the capsule's lesson recalled, once <b>cold</b> (no memory, from scratch). You see both results — tokens spent, steps taken, duration, transfer score, and whether it passed.</p>
-          <div class="ana">Like a <b>before-and-after photo</b>. Same task, two runs, side by side — so the benefit isn't a claim, it's measured.</div>
+          <p>A head-to-head test in <code>src/lib/eval.ts</code>. The same task is run <b>several times</b> each way: once <b>with</b> the capsule's lesson recalled, once <b>cold</b> (no memory, from scratch). Results come back as <b>mean ± stdev</b> with a <b>consistent-direction</b> check (every sample must point the same way) over <b>real token counts</b> — plus a regression replay of prior capsules.</p>
+          <div class="ana">Like a <b>before-and-after photo taken several times</b> so a lucky single shot can't fool you. Same task, paired runs, error bars — so the benefit isn't a claim, it's measured and repeatable.</div>
         </div>
         <div class="block why">
           <div class="lab why"><span class="dot"></span>Why it's needed</div>
-          <p>This is the proof the loop works — and these are <b>measured Ollama token counts</b>, not a story. Take <code>AB-03</code>, the API Rate Limiting task:</p>
+          <p>This is the proof the loop works — and these are <b>measured, multi-sample Ollama token counts</b>, not a story. Take <code>AB-03</code>, the API Rate Limiting task:</p>
           <div class="abx">
             <div class="abc win"><div class="hh">With capsule</div><div class="big">247</div><div class="sm">tokens · passed · transfer 37. Applied the capsule finding directly (162 output tokens).</div></div>
             <div class="abc cold"><div class="hh">Cold · no capsule</div><div class="big">404</div><div class="sm">tokens · passed · transfer 7. Re-derived the approach cold (352 output tokens).</div></div>
@@ -432,7 +433,7 @@
         </div>
         <div class="block improve">
           <div class="lab improve"><span class="dot"></span>What can be improved</div>
-          <p>The three trials carry <b>real measured</b> token deltas, but only three skills have been A/B'd so far — you can't yet A/B a freshly captured capsule on demand from the panel. Next step: wire the panel to the live runner (the agentic-CI harness) so any new capsule can be put head-to-head against a cold baseline and the result written back.</p>
+          <p>The trials carry <b>real, multi-sample measured</b> token deltas (mean ± stdev), but only a few skills have been A/B'd so far — you can't yet A/B a freshly captured capsule on demand from the panel. Next step: wire the panel to the live runner (the <code>eval.ts</code> harness that <code>promote.ts</code> gates on) so any new capsule can be put head-to-head against a cold baseline and the result written back.</p>
         </div>
       </div>
     </section>
@@ -480,9 +481,9 @@
           <div class="lab why"><span class="dot"></span>Why it's needed</div>
           <p>It turns "learning" from a vague idea into a number on a dashboard. Across this workspace the loop has saved <b>43,032 tokens</b>, and the weekly curve keeps bending upward (16,680 → 43,032). That rising line <i>is</i> the compounding effect made visible — the single metric that justifies the whole system, and the A/B token deltas behind it are measured on the local model.</p>
           <div class="mini">
-            <div class="mstat"><div class="v g">43,032</div><div class="k">tokens saved total</div></div>
-            <div class="mstat"><div class="v b">10</div><div class="k">sessions captured</div></div>
-            <div class="mstat"><div class="v v">8</div><div class="k">capsules minted</div></div>
+            <div class="mstat"><div class="v g">43,032</div><div class="k">tokens saved (computed)</div></div>
+            <div class="mstat"><div class="v b">28</div><div class="k">skills in registry</div></div>
+            <div class="mstat"><div class="v v">9</div><div class="k">capsules minted</div></div>
             <div class="mstat"><div class="v">63%</div><div class="k">adoption rate</div></div>
           </div>
         </div>
@@ -492,7 +493,7 @@
         </div>
         <div class="block improve">
           <div class="lab improve"><span class="dot"></span>What can be improved</div>
-          <p>The roll-up total is <em>derived</em> (reuses × a per-reuse estimate), but the three A/B token deltas behind it are now <b>measured</b> on the local model. Next step: meter actual token spend on capsuled vs cold runs for <em>every</em> skill (tie it to the agentic-CI runner) so the whole scoreboard — not just three trials — is grounded in real usage.</p>
+          <p>The scoreboard is <b>computed</b> by <code>src/lib/metrics.ts</code> from the real capsule data — no hand-set dashboard numbers. The non-A/B per-capsule <code>tokensSaved</code> is still a <em>derived</em> estimate (reuses × per-reuse), but the A/B token deltas behind it are now <b>measured, multi-sample</b> on the local model. Next step: meter actual token spend on capsuled vs cold runs for <em>every</em> skill (tie it to the agentic-CI runner) so the whole scoreboard — not just the eval'd skills — is grounded in real usage.</p>
         </div>
       </div>
     </section>
@@ -501,31 +502,32 @@
     <section class="feat" id="repos">
       <div class="feat-h">
         <div class="feat-ic" style="background:#eef4ff;color:var(--blue)">🗂️</div>
-        <div><div class="num">FEATURE 11</div><h3>Multi-dev registry — promotion, agentic CI, dedup &amp; conflict</h3><div class="one">Shared best vs pinned, and how a local lesson graduates to enterprise</div></div>
+        <div><div class="num">FEATURE 11</div><h3>Multi-dev registry — local→enterprise promotion, agentic CI, dedup, conflict &amp; purge</h3><div class="one">A local lesson graduates to the 28-skill enterprise registry — once a day, gated</div></div>
       </div>
       <div class="feat-body">
         <div class="block what">
           <div class="lab what"><span class="dot"></span>What it is</div>
-          <p>Skills live in a <b>repo</b> (addressed like <code>capsule://skills/angular-upgrade</code>) on <code>master</code>, shared across developers (<code>dee</code>, <code>ven</code>, <code>saim</code>). The <b>enterprise repo</b> holds the capsule-maxxed best versions; each <b>project pins</b> the versions it currently runs. A lesson graduates through a governed pipeline:</p>
+          <p>Skills live in a <b>repo</b> (addressed like <code>capsule://skills/angular-upgrade</code>) on <code>master</code> — <b>28 skills (13 real + 15 popular)</b>, shared across developers (<code>dee</code>, <code>ven</code>, <code>saim</code>). The <b>enterprise repo</b> holds the capsule-maxxed best versions; each <b>project pins</b> the versions it currently runs. A lesson graduates through a governed, <b>local-first → enterprise</b> pipeline:</p>
           <ul>
-            <li><b>Promotion (PR, not push).</b> A capsule clearing the gate (<code>transferScore ≥ threshold</code> OR <code>novelty ≥ 80</code>) is promoted as a <em>proposed</em> version on a <code>promotion/&lt;skill&gt;</code> staging ref of <code>master</code> — never a direct push.</li>
-            <li><b>Agentic CI (test before upgrade).</b> The pipeline runs the A/B harness (new vs current) and regression-checks prior capsules, merging the bump <em>only if the measured reward improves</em>; else it stays proposed or is rejected.</li>
-            <li><b>Dedup.</b> Near-identical capsules from different devs carry a semantic signature and <em>merge into one canonical capsule</em>, all authors kept.</li>
-            <li><b>Conflict.</b> "do X" vs "undo X / do Y" is a do/undo conflict resolved by reward + recency (contradictory ⇒ major, additive ⇒ minor, refinement ⇒ patch), logged in a merge-ledger.</li>
+            <li><b>Local registry first.</b> A kept capsule writes its skill bump to a <b>local registry</b> (<code>~/.capsule/local-registry</code>, branch <code>local-deepak</code>) — instant, private, no network round-trip.</li>
+            <li><b>End-of-day promote (one PR).</b> <code>scripts/eod-promote.ts</code> batches the day's bumps and opens <b>one CI-gated PR</b> into enterprise <code>master</code> — never a direct push.</li>
+            <li><b>Agentic CI (test before upgrade).</b> <code>promote.ts</code> gates on the <b>multi-sample</b> A/B eval (new vs current, mean ± stdev) and regression-checks prior capsules, merging the bump <em>only if the measured reward improves</em>; else it stays proposed or is rejected.</li>
+            <li><b>Dedup &amp; conflict.</b> Near-identical capsules merge into one canonical capsule (ML-001), all authors kept; "do X" vs "undo X / do Y" is a do/undo conflict resolved by reward + recency (ML-002), logged in the <b>MERGE-LEDGER</b>.</li>
+            <li><b>Purge / retire.</b> <code>scripts/purge-skills.ts</code> + <code>src/lib/purge.ts</code> walk a skill <code>active → deprecated → archived → purged</code>, flagging <code>ABSORBED</code>/<code>SUPERSEDED</code>/<code>UNUSED</code>/<code>LOW_VALUE</code>/<code>ORPHANED</code> into a <b>PURGE-LEDGER</b> (dry-run by default) so the shelf stays clean as it grows.</li>
           </ul>
-          <div class="ana">Like <b>the company's master cookbook with a tasting panel</b>: anyone can submit a recipe (PR), but it only enters the book after a blind taste-test (agentic CI) proves it's better — and two cooks submitting the same dish get merged into one credited entry.</div>
+          <div class="ana">Like <b>the company's master cookbook with a tasting panel and a librarian</b>: cooks draft in their own notebooks, submit once a day (PR), recipes only enter after a blind taste-test (agentic CI), duplicates get merged into one credited entry — and stale recipes get retired on the record.</div>
         </div>
         <div class="block why">
           <div class="lab why"><span class="dot"></span>Why it's needed</div>
-          <p>Teams need to move at their own pace without losing the company's best, and a shared registry must not drown in duplicate or contradictory lessons. Promotion-as-PR + agentic CI means improvements graduate <em>only</em> when measurably better; dedup and conflict resolution keep the registry one clean, authoritative source even when <code>dee</code>, <code>ven</code> and <code>saim</code> all capture overlapping work. It's the governance boundary that makes "everyone shares learning" safe at scale.</p>
+          <p>Teams need to move at their own pace without losing the company's best, and a shared registry must not drown in duplicate, contradictory, or stale lessons. Local-first keeps capture instant and private; the once-a-day CI-gated PR means improvements graduate <em>only</em> when measurably better; dedup, conflict resolution and purge keep the registry one clean, authoritative source. <b>Proof it closes the loop:</b> CAPSULE captured its <em>own</em> build session (<code>CAP-SESSION-1a6fcc9b</code>) → <code>skill/ui-modularity@1.0.0</code>, promoted into <code>master</code> via <b>PR #4</b>; <code>dee</code> promoted <code>rest-api-design@1.0.1</code> + <code>oauth2-jwt-auth@1.0.1</code>.</p>
         </div>
         <div class="block where">
           <div class="lab where"><span class="dot"></span>Where in the app</div>
-          <p><span class="where-tag">Skills panel → enterprise/project banner</span> Reads "Enterprise skill set — capsule-maxxed versions" or "This project's active skills — versions pinned in Content Engine," with an <code>ENTERPRISE · BEST</code> / <code>PROJECT · PINNED</code> badge. <span class="where-tag">REPO-FLOW.html</span> renders the full <code>master</code> + <code>dee</code>/<code>ven</code>/<code>saim</code> + <code>promotion/*</code> git history and the merge-ledger worked example.</p>
+          <p><span class="where-tag">Skills panel → enterprise/project banner</span> Reads "Enterprise skill set — capsule-maxxed versions" or "This project's active skills — versions pinned in Content Engine," with an <code>ENTERPRISE · BEST</code> / <code>PROJECT · PINNED</code> badge. <span class="where-tag">REPO-FLOW.html · MULTI-DEV.html · REGISTRY-MAP.html</span> render the full <code>master</code> + <code>dee</code>/<code>ven</code>/<code>saim</code> + <code>promotion/*</code> git history, the MERGE-LEDGER and the 28-skill map.</p>
         </div>
         <div class="block improve">
           <div class="lab improve"><span class="dot"></span>What can be improved</div>
-          <p>The promotion/CI/dedup/conflict model is designed and demonstrated in the docs + git history, but is not yet a live in-app surface: there's no merge-ledger viewer, no per-skill <code>promotion/*</code> status panel, and no per-seat rollout. Next step: surface the staging refs, the agentic-CI pass/fail, and the do/undo merge-ledger as a panel so the governance is legible and auditable in the UI.</p>
+          <p>The promotion/CI/dedup/conflict/purge model is real (scripts + ledgers + git history + landed PRs), but is not yet a live in-app surface: there's no MERGE-LEDGER / PURGE-LEDGER viewer, no per-skill <code>promotion/*</code> status panel, and no per-seat rollout. Next step: surface the staging refs, the agentic-CI pass/fail, and both ledgers as a panel so the governance is legible and auditable in the UI.</p>
         </div>
       </div>
     </section>
@@ -563,6 +565,34 @@
       </div>
     </section>
 
+    <!-- 13 AGENT CHAT + SKILLS COMPOSER -->
+    <section class="feat" id="chat">
+      <div class="feat-h">
+        <div class="feat-ic" style="background:#e9f7ee;color:var(--agent)">💬</div>
+        <div><div class="num">FEATURE 13</div><h3>Agent chat + skills composer</h3><div class="one">Chat with a local agent that remembers — and load enterprise skills into context</div></div>
+      </div>
+      <div class="feat-body">
+        <div class="block what">
+          <div class="lab what"><span class="dot"></span>What it is</div>
+          <p>An in-app <b>agent chat</b>: you talk to a <b>local-Ollama agent</b> that has <b>Backboard memory</b>, so the conversation carries everything the workspace has learned. Alongside it is a <b>skills composer</b> — pick enterprise skills from the 28-skill registry and <b>load them into the chat context</b> so the agent answers with that proven know-how in hand. Replies render as rich Markdown (<code>react-markdown</code>) and whole chats can be saved and reloaded.</p>
+          <p>It's wired to real routes: <code>/api/chat</code> (the turn), <code>/api/chat/context</code> (assemble memory + loaded skills), <code>/api/chats</code> and <code>/api/chats/save</code> (list + persist). The plumbing lives in <code>src/lib/chatContext.ts</code>, <code>chats.ts</code> and <code>skillCatalog.ts</code>. Shipped in <b>PR #1 (merged)</b>.</p>
+          <div class="ana">Like a <b>teammate who has read the whole company wiki</b> — and lets you hand them the exact playbooks for today's problem before they answer.</div>
+        </div>
+        <div class="block why">
+          <div class="lab why"><span class="dot"></span>Why it's needed</div>
+          <p>Capsules and skills are only valuable if they flow back into the next piece of work. The chat is the <b>recall surface</b> that closes the loop the other way: instead of starting cold, you converse with an agent that already holds the team's Backboard memory and can pull in any enterprise skill on demand. Local Ollama keeps it private and free, so asking is never metered.</p>
+        </div>
+        <div class="block where">
+          <div class="lab where"><span class="dot"></span>Where in the app</div>
+          <p><span class="where-tag">Right rail → Chat</span> The agent chat lives in <b>RightPanel</b>. <span class="where-tag">Composer → skills picker</span> loads enterprise skills into the chat context before you send. <span class="where-tag">Chats → save / reload</span> persists a conversation via <code>/api/chats/save</code>.</p>
+        </div>
+        <div class="block improve">
+          <div class="lab improve"><span class="dot"></span>What can be improved</div>
+          <p>Today the agent reads Backboard memory and loaded skills, but it doesn't yet <b>write</b> a capsule back from a chat turn, and the skill picker is a flat list rather than the use-case recommender. Next steps: let a useful chat exchange mint a capsule directly, rank the composer's skill suggestions by the active topic, and stream tokens as they arrive.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- DEMO -->
     <section class="demo" id="demo">
       <h2>▶ How to demo it — 5 steps</h2>
@@ -580,7 +610,7 @@
         </li>
         <li>
           <b>Open Skills and flip the Enterprise toggle.</b>
-          <span>Show the seven skills with token savings and the compounding sparkline. Flip ENTERPRISE — the banner switches from PROJECT · PINNED to ENTERPRISE · BEST, serving the capsule-maxxed versions to everyone.</span>
+          <span>Show the 28 registry skills with token savings and the compounding sparkline. Flip ENTERPRISE — the banner switches from PROJECT · PINNED to ENTERPRISE · BEST, serving the capsule-maxxed versions to everyone.</span>
           <span class="where">Document header → Skills icon → ENTERPRISE switch</span>
         </li>
         <li>
@@ -597,9 +627,9 @@
     </section>
 
     <div class="foot">
-      <b>CAPSULE</b> — Content Engine · 8090 Software Factory · CAPSULE module, 4 seats. Numbers come straight from the real dataset
-      (<span class="mono">src/lib/data.ts</span>), distilled from the user's own <span class="mono">~/.claude</span> sessions: 8 capsules (CAP-R001…R008), 7 skills, 43,032 tokens saved, 46 average transfer, 63% adoption, 10 sessions captured, 3 A/B trials with measured Ollama token deltas.
-      Behaviour described from <span class="mono">src/lib/{cerebras,scorer,backboard,store}.ts</span> and <span class="mono">src/components/*</span>.
+      <b>CAPSULE</b> — the capture + feedback (RL) layer for the 8090 Software Factory. Real Next.js app (GitHub <span class="mono">aptsalt/capsule</span>, main = merge <span class="mono">5968a51</span>) + public enterprise skills registry (<span class="mono">aptsalt/capsule-enterprise-skills</span>, master, 28 skills). Numbers come from the real dataset
+      (<span class="mono">src/lib/data.ts</span>) + computed metrics (<span class="mono">src/lib/metrics.ts</span>), distilled from the user's own <span class="mono">~/.claude</span> sessions: capsules CAP-R001…R008 + self-captured CAP-SESSION-1a6fcc9b, 28 skills (13 real + 15 popular), 43,032 tokens saved (computed), 46 average transfer, multi-sample A/B eval with measured Ollama token deltas.
+      Scoring is LLM-judged (<span class="mono">scoreCapsuleLLM</span> + <span class="mono">noveltyLLM</span>); behaviour described from <span class="mono">src/lib/{distill,eval,metrics,purge,chatContext,backboard,store}.ts</span>, <span class="mono">scripts/{capture-watcher,eod-promote,purge-skills}.ts</span> and <span class="mono">src/components/*</span>.
       Self-contained · inline CSS · no external assets · 8090 light theme.
     </div>
 

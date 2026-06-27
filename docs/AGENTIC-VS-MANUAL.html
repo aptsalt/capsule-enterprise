@@ -353,9 +353,9 @@ footer{border-top:1px solid var(--line);padding:54px 0 64px;background:var(--bg-
         <div class="col-body">
           <div class="flow-label">How it runs</div>
           <ol class="steps">
-            <li><b>Auto-distill</b><span>Each session is distilled on-device the moment it lands — no one has to press anything.</span></li>
-            <li><b>Auto-score</b><span>Six transfer dimensions are scored locally, and a <b>novelty</b> signal is derived from the strongest single dimension.</span></li>
-            <li><b>Auto-gate</b><span>Kept if <code>transferScore ≥ threshold</code> <b>OR</b> <code>novelty ≥ 80</code> — then promoted as a <b>proposed</b> version on a <code>promotion/&lt;skill&gt;</code> ref (a PR, not a push). <b>Agentic CI</b> A/B-tests new vs current and publishes only if the measured reward improves. Below the bar &rarr; dropped, never promoted.</span></li>
+            <li><b>Ambient auto-distill</b><span>A non-blocking <b>Stop-hook</b> (<code>settings.json</code>) + <code>scripts/capture-watcher.ts</code> distil every closed session on-device — no one has to press anything.</span></li>
+            <li><b>LLM-judge auto-score</b><span>An <b>LLM judge</b> scores six transfer dimensions (<code>scoreCapsuleLLM</code>) and a <b>novelty</b> signal (<code>noveltyLLM</code>) — not an authored heuristic. Heuristic fallback if Ollama is down.</span></li>
+            <li><b>Auto-gate &rarr; local &rarr; EOD PR</b><span>Kept if <code>transferScore ≥ threshold</code> <b>OR</b> <code>novelty ≥ 80</code> — the bump writes to a <b>local registry</b> (<code>local-deepak</code>); end-of-day, <code>eod-promote.ts</code> opens <b>one CI-gated PR</b>. <b>Agentic CI</b> runs a <b>multi-sample</b> A/B (mean ± stdev) and publishes only if the measured reward improves. Below the bar &rarr; dropped, never promoted.</span></li>
           </ol>
 
           <div class="frame" style="margin-top:22px">
@@ -534,23 +534,25 @@ footer{border-top:1px solid var(--line);padding:54px 0 64px;background:var(--bg-
           <div class="ml"><b>Novelty</b><span class="v" style="color:var(--green)">86 / 80</span></div>
           <div class="track"><span class="fill g" style="width:86%"></span><span class="bar-tick" data-l="bar 80" style="left:80%"></span></div>
         </div>
-        <p class="gate-note">Novelty isn't a separate model output — it's the capsule's <b>strongest single dimension</b>,
-          its most distinctive signal, derived from the six local scores. A capsule can be middling on transfer yet
-          spike on one axis (a rare gotcha, a crisp mental model) and still earn a keep.</p>
+        <p class="gate-note">Both signals are <b>LLM-judged</b> on-device: <code>scoreCapsuleLLM</code> rates the six transfer
+          dimensions and <code>noveltyLLM</code> judges how distinctive the finding is — an honest LLM-judged proxy, not an
+          authored heuristic. A capsule can be middling on transfer yet spike on novelty (a rare gotcha, a crisp mental
+          model) and still earn a keep.</p>
       </div>
 
       <div class="reveal" data-d="2">
         <div class="gate-formula">
+<span class="cm"># scores are LLM-judged (scoreCapsuleLLM + noveltyLLM)</span><br>
 <span class="cm"># the keep rule (default threshold = 50)</span><br>
 keep = transferScore &gt;= <span class="y">threshold</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="gr">OR</span> novelty &gt;= <span class="y">80</span><br><br>
-<span class="cm"># kept  → proposed on promotion/&lt;skill&gt;; agentic CI</span><br>
-<span class="cm">#         publishes only if measured reward improves</span><br>
+<span class="cm"># kept  → local-deepak → EOD one CI-gated PR</span><br>
+<span class="cm">#         multi-sample A/B publishes if reward improves</span><br>
 <span class="cm"># else  → dropped, never promoted</span>
         </div>
         <p class="gate-note" style="margin-top:18px">The threshold is yours to set with a slider (0–100, default <b>50</b>); the novelty bar is fixed
-          at <b>80</b>. When Ollama is unreachable, a local heuristic distills instead — its scores skew low, so the
-          gate flags it before you trust a skip.</p>
+          at <b>80</b>. When Ollama is unreachable, a local <b>heuristic fallback</b> distills and scores instead — its
+          scores skew low, so the gate flags it before you trust a skip.</p>
       </div>
     </div>
   </div>
@@ -600,8 +602,10 @@ keep = transferScore &gt;= <span class="y">threshold</span><br>
     </div>
     <p class="foot-note">
       Both flows distill the same real <code>~/.claude/projects/*.jsonl</code> transcripts on-device with Ollama
-      (qwen2.5-coder), score six transfer dimensions, and store the result. Manual keeps a human in every loop;
-      agentic replaces that human with a threshold. CAPSULE is being introduced to the world.
+      (qwen2.5-coder, chunked map-reduce), <b>LLM-judge</b> six transfer dimensions + novelty, and store the result to
+      live Backboard. Manual keeps a human in every loop; agentic captures ambiently (Stop-hook + watcher), gates on a
+      threshold, and promotes via a local registry &rarr; end-of-day CI-gated PR with a <b>multi-sample</b> A/B. CAPSULE
+      is the capture + feedback (RL) layer for the 8090 Software Factory.
     </p>
   </div>
 </footer>

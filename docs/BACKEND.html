@@ -170,9 +170,10 @@
     </p>
     <div class="meta-row">
       <span class="chip"><b>Runtime</b> · Next.js App Router</span>
-      <span class="chip"><b>Distiller</b> · ollama qwen2.5-coder:14b</span>
+      <span class="chip"><b>Distiller</b> · ollama qwen2.5-coder:14b · chunked</span>
+      <span class="chip"><b>Score</b> · LLM-judge (heuristic fallback)</span>
       <span class="chip"><b>Memory</b> · Backboard (live · X-API-Key)</span>
-      <span class="chip"><b>Store</b> · Zustand overlay</span>
+      <span class="chip"><b>Chat</b> · Agent Chat + Skills Composer</span>
       <span class="chip"><b>Tenant</b> · CAPSULE / Content Engine</span>
     </div>
   </div>
@@ -183,26 +184,33 @@
     <h2>What the backend is responsible for</h2>
     <p>
       The whole backend lives in two folders: <code>src/lib/*.ts</code> (the engine) and
-      <code>src/app/api/*</code> (six App Router route handlers that expose it). There is no
+      <code>src/app/api/*</code> (eleven App Router route handlers that expose it — including the
+      merged <strong>Agent Chat</strong> routes and live <code>/api/promote</code>). There is no
       database server — capsules are written to <code>~/.relay/capsules</code> on disk and,
       when a key is present, pushed to <strong>Backboard</strong> as durable memory. The
-      canonical dataset (the CAPSULE / Content Engine tenant, its 7 skills, 2 agents, A/B trials
-      and metrics) is a typed, immutable module, <code>src/lib/data.ts</code> — distilled from the
-      user's real <code>~/.claude</code> sessions, not hand-authored.
+      canonical dataset (the CAPSULE / Content Engine tenant, its 7 skills, 2 agents, A/B trials)
+      is a typed module, <code>src/lib/data.ts</code> — distilled from the user's real
+      <code>~/.claude</code> sessions, not hand-authored; its roll-up <code>metrics</code> are
+      <strong>computed</strong> by <code>computeMetrics(data)</code> (<code>src/lib/metrics.ts</code>),
+      never hand-set.
     </p>
     <div class="stats">
-      <div class="stat"><div class="n">6</div><div class="l">API routes</div></div>
-      <div class="stat"><div class="n">8</div><div class="l">lib modules</div></div>
-      <div class="stat"><div class="n">6-dim</div><div class="l">transfer score</div></div>
-      <div class="stat"><div class="n">3</div><div class="l">distill engines (local→cloud→heuristic)</div></div>
+      <div class="stat"><div class="n">11</div><div class="l">API routes</div></div>
+      <div class="stat"><div class="n">19</div><div class="l">lib modules</div></div>
+      <div class="stat"><div class="n">6-dim</div><div class="l">LLM-judge transfer score</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">distill engines (local→cloud→heuristic) + chunked</div></div>
     </div>
     <p class="sub">
       The dataset itself is <strong>real</strong>: the eight <code>CAP-R001…R008</code> capsules and
       the 7-skill registry that power the panels were distilled from the user&rsquo;s actual
-      <code>~/.claude</code> sessions by the local model. <strong>Measured</strong>: transferScore,
-      the A/B token deltas, thread_ids, createdAt, model. <strong>Derived</strong>: novelty/importance,
-      reuses, scoreDelta/adoptedBy, and the requirements scaffolding. New live captures
-      (<code>POST /api/capsule</code>) land in a Zustand <em>overlay</em>; the dataset stays immutable.
+      <code>~/.claude</code> sessions by the local model. <strong>Measured</strong>: the A/B token
+      deltas, thread_ids, createdAt, model. <strong>LLM-judged</strong>: transferScore / novelty (a
+      local model rating the capsule — not a trained reward). <strong>Derived</strong>:
+      importance, reuses, scoreDelta/adoptedBy, the requirements scaffolding, and the computed
+      dashboard roll-up. New live captures (<code>POST /api/capsule</code>) land in a Zustand
+      <em>overlay</em>; the dataset stays immutable. The separate on-disk enterprise registry
+      (<code>aptsalt/capsule-enterprise-skills</code>, <code>master</code>) indexes
+      <strong>28 skills</strong> (13 real + 15 popular).
     </p>
   </section>
 
@@ -322,8 +330,8 @@
 
     <ol class="steps">
       <li><b>Capture</b> — <code>captureSession(path)</code> reads the <code>.jsonl</code>, counts messages/tools, extracts <code>filesTouched</code> via regex, and compresses to a head+tail transcript capped at 28k chars (where the handoff signal lives).</li>
-      <li><b>Distill (local)</b> — <code>distill(raw)</code> sends a strict-JSON system prompt to <strong>Ollama qwen2.5-coder:14b</strong> with a 120s timeout. Output is parsed into intent / decisions / tried-and-rejected / current-state / next-steps / gotchas / mental-model / open-questions.</li>
-      <li><b>Score</b> — <code>scoreCapsule(capsule)</code> rates six transfer dimensions 0–100, picks the two weakest for coaching tips, and renders a verdict.</li>
+      <li><b>Distill (local)</b> — <code>distill(raw)</code> sends a strict-JSON system prompt to <strong>Ollama qwen2.5-coder:14b</strong> with a 120s timeout. Output is parsed into intent / decisions / tried-and-rejected / current-state / next-steps / gotchas / mental-model / open-questions. Oversized sessions self-route to <code>distillChunked()</code> — a <strong>map-reduce</strong> (distill each ~24k-char chunk, then merge) so a whole long session is captured, not truncated.</li>
+      <li><b>Score (LLM-judge)</b> — <code>scoreCapsuleLLM(capsule)</code> asks the local model to rate six transfer dimensions 0–100 (a model <em>judging</em> the handoff, not a trained reward), with <code>noveltyLLM</code> for non-obviousness; both fall back to the fast offline heuristic <code>scoreCapsule()</code> when Ollama is down.</li>
       <li><b>Store</b> — <code>storeCapsule(capsule)</code> writes to Backboard memory (one thread per project) and always mirrors to local JSON so the demo works offline.</li>
       <li><b>Surface</b> — the route returns <code>{capsule, engine, ms, score, store}</code>; the client prepends it to the Zustand <code>capturedCapsules</code> overlay and opens the Capture panel.</li>
     </ol>
@@ -333,7 +341,7 @@
   <section>
     <p class="kicker">HTTP surface</p>
     <h2>API routes</h2>
-    <p>Six handlers under <code>src/app/api</code>. All are <code>dynamic = "force-dynamic"</code>; the two model-calling routes set <code>maxDuration = 120</code> to accommodate the local model.</p>
+    <p>Eleven handlers under <code>src/app/api</code>. All are <code>dynamic = "force-dynamic"</code>; model-calling routes raise <code>maxDuration</code> for the local model (<code>/api/capsule</code> 120s, <code>/api/chat</code> 300s).</p>
 
     <table class="tbl">
       <thead>
@@ -373,6 +381,26 @@
           <td class="sub" style="font-size:12px">—</td>
           <td class="mono" style="font-size:12px">{ graph: { nodes, links } }<br><span class="sub">canonical + derived learns edges</span></td>
         </tr>
+        <tr>
+          <td><span class="method post">POST</span> <code>/api/chat</code><br><span class="sub" style="font-size:12px">Agent Chat — streamed, capsule + skills + recalled memory injected</span></td>
+          <td class="mono" style="font-size:12px">{ messages, capsuleOn?,<br>&nbsp;&nbsp;skills? }</td>
+          <td class="mono" style="font-size:12px">text/plain stream<br><span class="sub">maxDuration 300</span></td>
+        </tr>
+        <tr>
+          <td><span class="method post">POST</span> <code>/api/chat/context</code><br><span class="sub" style="font-size:12px">observability — what would be sent, no generation</span></td>
+          <td class="mono" style="font-size:12px">{ messages, capsuleOn?,<br>&nbsp;&nbsp;skills? }</td>
+          <td class="mono" style="font-size:12px">{ systemPrompt, recalled }</td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span> <code>/api/chats</code><br><span class="method post">POST</span> <code>/api/chats/save</code></td>
+          <td class="mono" style="font-size:12px">GET —<br>POST { id, messages, title? }</td>
+          <td class="mono" style="font-size:12px">durable chat sessions<br><span class="sub">~/.relay/chats/*.json · LLM titles</span></td>
+        </tr>
+        <tr>
+          <td><span class="method post">POST</span> <code>/api/promote</code><br><span class="sub" style="font-size:12px">LIVE promotion — real A/B + git commit/push</span></td>
+          <td class="mono" style="font-size:12px">{ capsuleId | skillId }</td>
+          <td class="mono" style="font-size:12px">staged promotion/&lt;skill&gt;/<br><span class="sub">proposed, not auto-published</span></td>
+        </tr>
       </tbody>
     </table>
 
@@ -390,7 +418,7 @@
     <div class="mod">
       <div class="mod-head"><span class="f">capture.ts</span><span class="r">read &amp; compress</span></div>
       <div class="mod-body">
-        <p>Reads a Claude Code session transcript from <code>~/.claude/projects/&lt;proj&gt;/&lt;id&gt;.jsonl</code> and extracts the raw material for distillation. Walks each JSONL line, separating <code>USER</code> intents, <code>AI</code> text, and <code>TOOL[name]</code> actions; harvests <code>filesTouched</code> via a path regex (excluding <code>node_modules</code>); computes duration from first/last timestamps; and keeps the <strong>head (intent) + tail (latest state)</strong> when over 28k chars.</p>
+        <p>Reads a Claude Code session transcript from <code>~/.claude/projects/&lt;proj&gt;/&lt;id&gt;.jsonl</code> and extracts the raw material for distillation. Walks each JSONL line, separating <code>USER</code> intents, <code>AI</code> text, and <code>TOOL[name]</code> actions; harvests <code>filesTouched</code> via a path regex (excluding <code>node_modules</code>); computes duration from first/last timestamps; and keeps the <strong>head (intent) + tail (latest state)</strong> when over 28k chars. Capture also runs <strong>ambient</strong>: a non-blocking <strong>Stop-hook</strong> in <code>~/.claude/settings.json</code> enqueues every closed session (<code>scripts/capture-enqueue.js</code>) and <code>scripts/capture-watcher.ts</code> auto-distills it headless — no app open.</p>
         <p class="exports">exports · <b>listSessions(limit)</b> · <b>captureSession(path, maxChars)</b> · types <b>RawSession</b>, <b>SessionMeta</b></p>
       </div>
     </div>
@@ -398,16 +426,48 @@
     <div class="mod">
       <div class="mod-head"><span class="f">cerebras.ts</span><span class="r">distill — the local model engine</span></div>
       <div class="mod-body">
-        <p>Despite the filename, the <strong>primary engine is local Ollama</strong>. <code>distill(session)</code> turns a transcript into a structured <code>HandoffCapsule</code> using a strict-JSON system prompt, then backfills any empty fields from the heuristic so a capsule is never blank. Returns <code>{ capsule, engine, ms }</code> where <code>engine</code> is stamped with the model that actually ran.</p>
-        <p class="exports">exports · <b>distill(session)</b> → { capsule, engine, ms }</p>
+        <p>Despite the filename, the <strong>primary engine is local Ollama</strong>. <code>distill(session)</code> turns a transcript into a structured <code>HandoffCapsule</code> using a strict-JSON system prompt, then backfills any empty fields from the heuristic so a capsule is never blank. Oversized sessions self-route to <code>distillChunked()</code> — a <strong>map-reduce</strong> (MAP each ~24k-char chunk → partial capsule, REDUCE → one), engine label <code>(chunked Nx)</code>. Returns <code>{ capsule, engine, ms }</code> stamped with the model that ran.</p>
+        <p class="exports">exports · <b>distill(session)</b> · <b>distillChunked(session)</b> · <b>OLLAMA_MODEL</b> · <b>ollamaHealth()</b></p>
       </div>
     </div>
 
     <div class="mod">
-      <div class="mod-head"><span class="f">scorer.ts</span><span class="r">6-dimension transfer score</span></div>
+      <div class="mod-head"><span class="f">scorer.ts</span><span class="r">LLM-judge transfer score (heuristic fallback)</span></div>
       <div class="mod-body">
-        <p>A handoff isn&rsquo;t notes — it&rsquo;s whether understanding <em>transfers</em>. <code>scoreCapsule(c)</code> rates six cognitive dimensions 0–100 using a <code>richness()</code> heuristic (length + specificity: file refs, <code>:line</code>, numbers, backticks, &ldquo;because&rdquo;), averages them into an overall, and emits a verdict plus coaching tips for the two weakest dimensions.</p>
-        <p class="exports">exports · <b>scoreCapsule(c)</b> → HandoffScore · dimensions: intent_clarity, decision_traceability, reasoning_explicitness, gotcha_coverage, next_step_actionability, mental_model_transfer</p>
+        <p>A handoff isn&rsquo;t notes — it&rsquo;s whether understanding <em>transfers</em>. The primary path is an <strong>LLM-judge</strong>: <code>scoreCapsuleLLM(c)</code> asks the local Ollama model to rate the six cognitive dimensions 0–100 (a model <em>judging</em> a capsule, <em>not</em> a trained reward), with <code>noveltyLLM(c)</code> for how non-obvious the finding is. Both degrade to the fast, fully-offline heuristic <code>scoreCapsule(c)</code> (a <code>richness()</code> measure of file refs, <code>:line</code>, numbers, &ldquo;because&rdquo;) when the model is unavailable.</p>
+        <p class="exports">exports · <b>scoreCapsuleLLM(c)</b> · <b>noveltyLLM(c)</b> · <b>scoreCapsule(c)</b> → HandoffScore · dimensions: intent_clarity, decision_traceability, reasoning_explicitness, gotcha_coverage, next_step_actionability, mental_model_transfer</p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">chatContext.ts · chats.ts · skillCatalog.ts</span><span class="r">Agent Chat + Skills Composer (PR #1)</span></div>
+      <div class="mod-body">
+        <p>The merged in-app agent chat. <code>chatContext.ts</code> is the single source of truth for what the agent &ldquo;knows&rdquo; on a turn — <code>buildSystemPrompt()</code> injects the latest capsule briefing, composer-attached skills, and recalled Backboard memory; all turns share one thread (<code>CHAT_THREAD_KEY</code>), capped at <code>MAX_CONTEXT_MSGS</code>. <code>chats.ts</code> is the durable per-session store (<code>~/.relay/chats/&lt;id&gt;.json</code>) with <code>generateChatTitle()</code>. <code>skillCatalog.ts</code> is the composer&rsquo;s <em>Skills ▾</em> menu, mirroring the factory categories.</p>
+        <p class="exports">exports · <b>buildSystemPrompt</b> · <b>latestCapsule</b> · <b>capsuleBriefing</b> · <b>chatMemoryRecord</b> · <b>saveChat</b> · <b>generateChatTitle</b> · <b>SKILL_CATALOG</b></p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">eval.ts</span><span class="r">multi-sample agentic CI</span></div>
+      <div class="mod-body">
+        <p>The real eval harness that gates promotion. <code>runAbTrial()</code> runs a <strong>multi-sample paired A/B</strong> on the local model (N runs, WITH capsule vs WITHOUT/cold), capturing real <code>prompt_eval+eval</code> token totals and reporting <strong>mean ± stdev</strong> plus whether the per-run delta&rsquo;s sign is <strong>consistent across all N</strong> (an honest direction signal, explicitly not a p-value). <code>regressionCheck()</code> is an LLM-judge replay of the prior capsules a skill serves. Every number is tagged MEASURED / DERIVED / LLM-JUDGED.</p>
+        <p class="exports">exports · <b>runAbTrial(opts)</b> · <b>regressionCheck</b> · <b>repTask</b></p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">promote.ts · local-registry.ts</span><span class="r">LOCAL → end-of-day → ENTERPRISE</span></div>
+      <div class="mod-body">
+        <p>Promotion is two-tier. During the day <code>bumpSkillLocal()</code> writes each earned upgrade into the developer&rsquo;s <strong>local registry</strong> (<code>~/.capsule/local-registry</code>, branch <code>local-deepak</code>) — real local git commit, marked LOCAL, <strong>not pushed</strong>. At day&rsquo;s end <code>promoteEndOfDay()</code> (<code>scripts/eod-promote.ts</code>) pushes the branch and opens <strong>one CI-gated PR</strong> <code>local-deepak → master</code> against the enterprise registry. <code>promote.ts</code> (used by <code>/api/promote</code>) runs the real Ollama A/B and stages a <code>promotion/&lt;skill&gt;</code> PR — proposed, never auto-published.</p>
+        <p class="exports">exports · <b>bumpSkillLocal</b> · <b>promoteEndOfDay</b> · <b>runOllama</b> · <b>applyBump</b> · <b>SKILLS_REPO</b></p>
+      </div>
+    </div>
+
+    <div class="mod">
+      <div class="mod-head"><span class="f">purge.ts · metrics.ts</span><span class="r">retirement pole · computed roll-up</span></div>
+      <div class="mod-body">
+        <p><code>purge.ts</code> is the counter-pole to promotion: <code>active → deprecated → archived → purged</code>, scanning the on-disk registry and flagging skills <strong>ABSORBED / SUPERSEDED / UNUSED / LOW_VALUE / ORPHANED</strong>. <strong>Dry-run by default</strong>, every transition appended to a <strong>PURGE-LEDGER.md</strong>; <code>archiveSkill</code> moves (recoverable) rather than deletes; <strong>Backboard provenance is never touched</strong>. <code>metrics.ts</code> &mdash; <code>computeMetrics(data)</code> derives every dashboard number (tokensSavedTotal, avgTransfer, adoptionRate, compounding) from the real capsules/skills, so the roll-up can never drift.</p>
+        <p class="exports">exports · <b>scanRegistry</b> · <b>deprecateSkill</b> · <b>archiveSkill</b> · <b>purgeArchived</b> · <b>PURGE_LEDGER</b> · <b>computeMetrics(data)</b></p>
       </div>
     </div>
 
@@ -430,8 +490,8 @@
     <div class="mod">
       <div class="mod-head"><span class="f">data.ts</span><span class="r">canonical immutable dataset</span></div>
       <div class="mod-body">
-        <p>The real enterprise world: <strong>CAPSULE / Content Engine</strong> — requirements, work orders, 8 capsules (<code>CAP-R001…R008</code>) distilled from real sessions, 7 skills with semver version histories (8 versions forged, <code>learnedFrom</code> real capsules), 2 agents, models, MCPs, the knowledge graph, 3 A/B trials with <strong>measured</strong> Ollama token deltas, and roll-up metrics (<code>tokensSavedTotal 43,032</code>, <code>avgTransfer 46</code>, <code>adoptionRate 63</code>). Never mutated at runtime.</p>
-        <p class="exports">exports · <b>data: Dataset</b></p>
+        <p>The real enterprise world: <strong>CAPSULE / Content Engine</strong> — requirements, work orders, 8 capsules (<code>CAP-R001…R008</code>) distilled from real sessions, 7 skills with semver version histories (8 versions forged, <code>learnedFrom</code> real capsules), 2 agents, models, MCPs, the knowledge graph, 3 A/B trials with <strong>measured</strong> Ollama token deltas. The roll-up <code>metrics</code> are appended by <code>computeMetrics(base)</code> at module load (<code>tokensSavedTotal 43,032</code>, <code>avgTransfer 46</code>, <code>adoptionRate 63</code>) — computed, not hand-set. Never mutated at runtime.</p>
+        <p class="exports">exports · <b>data: Dataset</b> &nbsp;(= <code>{ ...base, metrics: computeMetrics(base) }</code>)</p>
       </div>
     </div>
 
@@ -481,6 +541,7 @@
     </div>
 
     <pre><span class="c">// cerebras.ts — distill() resolution order</span>
+<span class="k">if</span> (oversized(transcript)) <span class="k">return</span> distillChunked(session) <span class="c">// 0 · big session → map-reduce</span>
 <span class="k">const</span> r = (<span class="k">await</span> viaOllama(transcript))           <span class="c">// 1 · LOCAL, primary</span>
   || (process.env.CEREBRAS_API_KEY
         ? <span class="k">await</span> viaCerebras(transcript) : <span class="k">null</span>)   <span class="c">// 2 · cloud, only if key set</span>
@@ -575,7 +636,7 @@
       <div class="stat"><div class="n">63%</div><div class="l">adoption rate</div></div>
       <div class="stat"><div class="n">8 / 7</div><div class="l">capsules / skills evolved</div></div>
     </div>
-    <p class="sub">Tenant: <span class="mono">CAPSULE · Content Engine · assistant "capsule" · Backboard Memory Pro · 4 seats</span>. The compounding curve climbs 16,680 → 43,032 tokens saved across weeks 2026-W25 → W26. <code>avgTransfer 46</code> = mean of the 8 measured transfer scores.</p>
+    <p class="sub">Tenant: <span class="mono">CAPSULE · Content Engine · assistant "capsule" · Backboard Memory Pro · 4 seats</span>. The compounding curve climbs 16,680 → 43,032 tokens saved across weeks 2026-W25 → W26. All four numbers are <strong>computed</strong> by <code>computeMetrics(data)</code> from the real entities — <code>avgTransfer 46</code> = mean of the 8 LLM-judged transfer scores, <code>tokensSavedTotal</code> = Σ reuses × tokensSavedPerReuse.</p>
   </section>
 
   <!-- AGENTIC GATING -->
@@ -650,7 +711,7 @@
 
   <footer>
     <p class="mono">CAPSULE · Next.js 15 App Router · React 19 · Tailwind v4 · Zustand 5 · <code>cd relay &amp;&amp; npm run dev</code> → localhost:3010</p>
-    <p>Backend: <span class="tag">src/lib/*.ts</span><span class="tag">src/app/api/*</span> · distilled locally on qwen2.5-coder:14b · memory in Backboard. Accurate to the working source.</p>
+    <p>Backend: <span class="tag">src/lib/*.ts</span><span class="tag">src/app/api/*</span> · distilled locally on qwen2.5-coder:14b (chunked) · LLM-judge scoring · Agent Chat + Skills Composer · multi-sample agentic CI · local→EOD→enterprise promotion + purge · memory in Backboard. GitHub <span class="tag">aptsalt/capsule @ 5968a51</span>. It captured its own build session (<span class="tag">CAP-SESSION-1a6fcc9b → ui-modularity@1.0.0</span>, PR #4). Accurate to the working source.</p>
   </footer>
 
 </div>

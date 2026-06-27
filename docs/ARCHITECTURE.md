@@ -3,11 +3,17 @@
 > The CAPTURE + FEEDBACK (reinforcement) layer for the enterprise Software Factory.
 > Engineering + judge reference. Companion docs: `MEMORY-MODEL.md` (Backboard memory layer).
 >
-> **Implementation status.** CAPSULE is a **real Next.js App-Router app** at `relay/`
-> (`cd relay && npm run dev` → http://localhost:3010). `factory.html` is the original design
-> prototype it was ported from. The canonical mock dataset is `relay/src/lib/data.ts` (typed by
-> `relay/src/lib/types.ts`) — all schema fields and numbers below resolve to it. Live capture/
-> distillation runs **on-device first** on a local Ollama model (`qwen2.5-coder:14b`); see §14.
+> **Implementation status.** CAPSULE is a **real Next.js App-Router app** (GitHub `aptsalt/capsule`,
+> `main` = merge `5968a51`; locally `relay/`, `cd relay && npm run dev` → http://localhost:3010).
+> `factory.html` is the original design prototype it was ported from. The canonical dataset is
+> `relay/src/lib/data.ts` — **real**, distilled from the user's actual `~/.claude` sessions, typed by
+> `relay/src/lib/types.ts`; the dashboard roll-up is **computed** from it by `computeMetrics`
+> (`relay/src/lib/metrics.ts`), never hand-set. Live capture/distillation runs **on-device first** on a
+> local Ollama model (`qwen2.5-coder:14b`), chunked map-reduce for big sessions, and scoring is an
+> **LLM-judge** (`scoreCapsuleLLM`) with a heuristic fallback; see §14–§15. A merged feature (PR #1)
+> adds an in-app **AGENT CHAT** + **skills composer** (§14a). Skills promote through a **LOCAL
+> registry → end-of-day PR → ENTERPRISE master** path; the public enterprise registry is
+> `aptsalt/capsule-enterprise-skills` (`master`, **28 skills** = 13 real + 15 popular).
 
 ---
 
@@ -87,10 +93,15 @@ The workspace (`relay/src/lib/data.ts`) is the **CAPSULE** enterprise, project *
 tenant assistant `capsule`, on **Memory Pro**, 4 seats. The dataset is **real**: 8 capsules
 (`CAP-R001…R008`) were distilled from the user's actual `~/.claude` sessions by the local Ollama
 model `qwen2.5-coder:14b`, and have compounded into **7 versioned enterprise skills** (8 versions
-forged), saving **43,032 tokens** to date. **Honesty line:** `transferScore`, the A/B token deltas,
-`thread_id`s, `createdAt`, and the session `model` are **measured**; `novelty`/`importance`,
-`reuses`, non-A/B `tokensSavedPerReuse`, `scoreDelta`/`adoptedBy`, and the requirements/work-order
-scaffolding are **derived**. Only the **distilled briefings** are written to live Backboard memory.
+forged), saving **43,032 tokens** to date. Those roll-up numbers (`tokensSavedTotal 43,032`,
+`avgTransfer 46`, `adoptionRate 63`, `sessionsCaptured 8`) are **computed** by
+`computeMetrics(data)` from the real entities — never hand-set, so they cannot drift. **Honesty
+line:** `transferScore` (LLM-judge), the A/B token deltas, `thread_id`s, `createdAt`, and the session
+`model` are **measured**; `novelty`/`importance`, `reuses`, non-A/B `tokensSavedPerReuse`,
+`scoreDelta`/`adoptedBy`, and the requirements/work-order scaffolding are **derived**. Only the
+**distilled briefings** are written to live Backboard memory. **Self-capture proof:** CAPSULE
+captured its own build session (`CAP-SESSION-1a6fcc9b`) → `skill/ui-modularity@1.0.0`, promoted into
+enterprise `master` (PR #4); `dee` promoted `rest-api-design@1.0.1` + `oauth2-jwt-auth@1.0.1`.
 
 ---
 
@@ -112,13 +123,17 @@ CAPSULE is a six-stage reinforcement loop. The reward signal is **tokens** — n
 2. **DISTILL.** Each session transcript is distilled into a structured capsule. Distillation runs
    **on the LOCAL model first** — Ollama `qwen2.5-coder:14b`, on-device, private, free, offline-
    capable — so capture is cheap enough to run on *every* session with no per-token cloud cost and
-   no data egress. The nightly job (Memory Pro, multi-hop) reads the day's capsules, deduplicates
-   against existing skill memory, and decides what is genuinely new versus a refinement of known
-   guidance. Cerebras is an **optional cloud boost** (only when `CEREBRAS_API_KEY` is set) when you
-   want wafer-scale speed for the cross-tenant nightly job; a heuristic is the last-resort backfill.
-   Full engine pipeline in §15.
-3. **SCORE.** Each capsule carries `novelty`, `importance`, and `transferScore` (how well its
-   learning generalizes to other projects). These rank what is worth minting and what should decay.
+   no data egress. Oversized sessions (beyond the model's working context) are distilled with a
+   **CHUNKED map-reduce**: each chunk is distilled to a partial capsule (MAP), then merged into one
+   (REDUCE), so a whole long session is captured rather than truncated (engine label `(chunked Nx)`).
+   The nightly job (Memory Pro, multi-hop) reads the day's capsules, deduplicates against existing
+   skill memory, and decides what is genuinely new versus a refinement of known guidance. Cerebras is
+   an **optional cloud boost** (only when `CEREBRAS_API_KEY` is set). Full engine pipeline in §15.
+3. **SCORE.** Each capsule is scored by an **LLM-JUDGE** (`scoreCapsuleLLM`, local Ollama) across six
+   transfer dimensions — a model *rating* the handoff, not a trained reward — with `noveltyLLM` for
+   how non-obvious the finding is; both fall back to the fast offline heuristic (`scoreCapsule`) when
+   the model is unavailable. `transferScore`, `novelty`, and `importance` rank what is worth minting
+   and what should decay.
 4. **VERSION.** A qualifying capsule **mints a new semantic version** of a skill/agent
    (`capsule.producedVersion`, e.g. `skill/angular-upgrade@1.0.0`). Patch/minor/major rules in §5.
 5. **ADOPT.** At model-selection and MCP-selection time the user is shown the value of the new
@@ -313,11 +328,12 @@ Token usage is shown **everywhere** so adoption is self-justifying — no mandat
   the capsule instead of re-deriving the knowledge.
 - **Per-version** — `tokenDeltaPerUse` (negative = saved) and `scoreDelta` (transfer-score lift)
   are surfaced at selection time so the user can self-justify adopting latest vs keeping a pin.
-- **Roll-up** (`DATA.metrics`): `tokensSavedTotal: 43032`, `sessionsCaptured: 10`, `capsules: 8`,
-  `skillsEvolved: 7`, `avgTransfer: 46`, `adoptionRate: 63`, plus a weekly `compounding[]` curve
-  (2026-W25 16,680 → 2026-W26 43,032) that *visibly bends upward* — the picture of an enterprise that
-  is learning. `avgTransfer` is the mean of the eight **measured** capsule transfer scores
-  ((40+29+37+57+55+54+47+50)/8 ≈ 46).
+- **Roll-up** (`data.metrics`, **computed** by `computeMetrics(data)` in `src/lib/metrics.ts` — never
+  hand-authored, so it can't drift from the entities): `tokensSavedTotal: 43032`,
+  `sessionsCaptured: 8`, `capsules: 8`, `skillsEvolved: 7`, `avgTransfer: 46`, `adoptionRate: 63`,
+  plus a weekly `compounding[]` curve (2026-W25 16,680 → 2026-W26 43,032) that *visibly bends upward* —
+  the picture of an enterprise that is learning. `avgTransfer` is the mean of the eight capsule
+  transfer scores; `tokensSavedTotal` is Σ `reuses × tokensSavedPerReuse`.
 
 The token delta is simultaneously the **user's ROI display** and the **system's RL reward**. One
 number does both jobs.
@@ -469,6 +485,26 @@ the composer's *Skills ▾ / Recommended ▾* buttons. All UI state flows throug
 | `/api/skills` | GET / POST | GET the enterprise skill registry; POST `{ skillId, version }` simulates **adopting** a version — a metadata op echoed back, never a dataset mutation. |
 | `/api/graph` | GET | the connected knowledge graph (`selectors.buildGraph` — canonical nodes/links plus deduped capsule→skill `learns` edges). |
 | `/api/inherit` | POST | **the money demo** — same question to a fresh agent **cold vs capsule-warmed**; returns `{ hasCapsule, score, cold, warm }`. Uses Cerebras if keyed, else the local Ollama model. |
+| `/api/chat` | POST | the **AGENT CHAT** — streams a reply from local Ollama; when `capsuleOn`, injects the latest capsule briefing + attached skills + recalled Backboard memory as the system prompt (§14a). `maxDuration = 300`. |
+| `/api/chat/context` | POST | **observability seam** — returns the exact system prompt + recalled memory that *would* be sent for a turn, without generating. |
+| `/api/chats` | GET | list durable chat sessions (`~/.relay/chats/<id>.json`), each with an LLM-generated title. |
+| `/api/chats/save` | POST | upsert a chat session (`{ id, messages, title? }`); title minted once, preserved on later saves. |
+| `/api/promote` | POST | **LIVE promotion** — runs a real local-Ollama A/B (agentic CI), writes `promotion/<skill>/` staging artifacts + merge-ledger, real `git commit` + `git push` to the enterprise registry (proposed, not auto-published). |
+
+### 14a. Agent Chat + Skills Composer (PR #1, merged)
+
+An in-app **AGENT CHAT** (UI in `RightPanel`, rendered with `react-markdown`) lets the developer chat
+with a **local-Ollama agent** that has **Backboard MEMORY**, plus a **SKILLS COMPOSER** to load
+enterprise skills into the chat context. The point is warm-start: when *Capsule context* is on, the
+agent answers oriented, not cold.
+
+- **Routes:** `/api/chat`, `/api/chat/context`, `/api/chats`, `/api/chats/save`.
+- **Libs:** `src/lib/chatContext.ts` (single source of truth for what the agent "knows" on a turn —
+  `buildSystemPrompt`, `latestCapsule`, `capsuleBriefing`, a single `CHAT_THREAD_KEY` Backboard
+  thread, `MAX_CONTEXT_MSGS` cap), `src/lib/chats.ts` (durable per-session store + `generateChatTitle`),
+  `src/lib/skillCatalog.ts` (the composer's *Skills ▾* menu, mirroring the factory categories).
+- **Memory:** all chat turns land in one Backboard thread under the `capsule` assistant; older turns
+  resurface via semantic recall (`retrieveMemory`) instead of being resent — token cost stays bounded.
 
 ---
 
@@ -477,10 +513,17 @@ the composer's *Skills ▾ / Recommended ▾* buttons. All UI state flows throug
 `distill(session)` turns a raw transcript into a `HandoffCapsule`. The engine order is **local first**:
 
 ```
-distill():
-  1. viaOllama(transcript)            // PRIMARY — local, on-device, qwen2.5-coder:14b
-  2. viaCerebras(transcript)          // OPTIONAL — only if process.env.CEREBRAS_API_KEY
-  3. heuristic(session)               // LAST RESORT — regex backfill, always renders
+distill(session):
+  if transcript is oversized → distillChunked(session)   // CHUNKED map-reduce (see below)
+  else:
+    1. viaOllama(transcript)          // PRIMARY — local, on-device, qwen2.5-coder:14b
+    2. viaCerebras(transcript)        // OPTIONAL — only if process.env.CEREBRAS_API_KEY
+    3. heuristic(session)             // LAST RESORT — regex backfill, always renders
+
+distillChunked(session):              // for sessions beyond the single-pass budget
+  chunkTranscript(transcript)         // split on line boundaries, ~24k chars/chunk
+  MAP   each chunk → partial capsule (ollamaDistill)
+  REDUCE partials → one capsule       // local-merge; label "ollama:<model> (local, chunked Nx)"
 ```
 
 - **`viaOllama` (primary).** `POST http://localhost:11434/api/chat` with
@@ -500,9 +543,57 @@ Env overrides: `RELAY_OLLAMA_MODEL` (default `qwen2.5-coder:14b`), `OLLAMA_URL`
 
 The capture path that feeds this: `capture.captureSession()` reads a Claude Code `.jsonl`, extracts
 user intents + assistant text + tool actions (head + tail kept, middle trimmed to ~28k chars where
-the handoff signal lives), and yields a `RawSession`. `scorer.scoreCapsule()` then rates the capsule
-on six handoff dimensions (intent clarity, decision traceability, reasoning explicitness, gotcha
-coverage, next-step actionability, mental-model transfer).
+the handoff signal lives), and yields a `RawSession`. Scoring is then an **LLM-JUDGE**:
+`scorer.scoreCapsuleLLM()` asks the local model to rate the capsule on the six handoff dimensions
+(intent clarity, decision traceability, reasoning explicitness, gotcha coverage, next-step
+actionability, mental-model transfer), with `noveltyLLM()` for non-obviousness; both degrade to the
+fast offline heuristic `scoreCapsule()` if Ollama is down.
+
+## 17. Ambient capture (non-blocking)
+
+Capture does not require opening the app. A **Stop-hook** in `~/.claude/settings.json` enqueues every
+closed Claude Code session (`scripts/capture-enqueue.js`, fire-and-forget), and
+`scripts/capture-watcher.ts` auto-distills the queued sessions in the background — so the day's
+learning accumulates with zero friction. The same `distill → score → gate` pipeline runs headless.
+
+## 18. Agentic CI — the eval harness (`relay/src/lib/eval.ts`)
+
+`eval.ts` is the **real** eval harness that gates promotion. It replaces the single-sample A/B with a
+**multi-sample paired A/B** on the local model: for each of N runs it makes a paired measurement —
+**WITH** capsule/skill guidance vs **WITHOUT** (cold) — capturing the *real* `prompt_eval + eval`
+token totals per arm, and reports **mean ± stdev** plus whether the per-run delta's sign is
+**consistent across all N runs** (an honest direction-consistency signal, explicitly *not* a t-test
+or p-value). It also runs a **regression check** (`regressionCheck`, an LLM-judge verdict) that
+replays the prior capsules a skill already serves. `promote.ts` gates a version bump on this: a
+proposed version publishes **only if the measured reward improves and no regression** — CI-for-skills.
+Honesty labels are first-class: every number is tagged MEASURED, DERIVED, or LLM-JUDGED.
+
+## 19. Purge / retire + PURGE-LEDGER (`scripts/purge-skills.ts`, `relay/src/lib/purge.ts`)
+
+PROMOTE forges versions; without a counter-pole the registry would grow forever and accrue dead
+skills. **PURGE** is that pole: `active → deprecated → archived → purged`. It scans the on-disk
+enterprise registry (`registry.json`, `skills/<id>/`, `MERGE-LEDGER.md`, `promotion/`) and proposes
+*removing* skills that have stopped paying rent, flagging each by reason —
+**ABSORBED / SUPERSEDED / UNUSED / LOW_VALUE / ORPHANED**. It mirrors promotion governance exactly:
+**dry-run by default** (`{ apply }`), every transition appended to a **PURGE-LEDGER.md**,
+`archiveSkill` *moves* (recoverable) rather than deletes, and **Backboard provenance is never
+touched** — only the on-disk artifact retires. Honesty: token value is a MEASURED proxy, dedup/
+supersede come from the ledger, age/adoption are derived; nothing here is LLM-judged.
+
+## 20. LOCAL registry → END-OF-DAY → ENTERPRISE (`relay/src/lib/local-registry.ts`, `scripts/eod-promote.ts`)
+
+Promotion is a two-tier path so a developer's day of learning accrues privately before it touches the
+shared registry:
+
+- **During the day (local-only).** The RL pipeline writes every earned skill upgrade into the
+  developer's **LOCAL registry** (`~/.capsule/local-registry`, branch `local-deepak`) via
+  `bumpSkillLocal` — bumps `skills/<id>/SKILL.md`, prepends a CHANGELOG entry citing the source
+  capsule, and makes a **real local git commit**. It does **not** push; commits are marked LOCAL and
+  "pending end-of-day promotion."
+- **At day's end.** `promoteEndOfDay` (`scripts/eod-promote.ts`, cron / Task Scheduler) pushes
+  `local-deepak` and opens/updates **one CI-gated PR** `local-deepak → master` against the ENTERPRISE
+  registry (`aptsalt/capsule-enterprise-skills`). Merging that PR is what actually publishes the day's
+  upgrades. `/api/promote` is the on-demand equivalent that stages the same `promotion/<skill>` PR.
 
 ---
 

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAPSULE — Skills Registry Map (master · dee · ven · saim)</title>
+<style>
+  :root{--bg:#fff;--ink:#1f2329;--ink2:#3c4149;--mut:#6b7280;--dim:#9aa0a6;--line:#e6e8eb;--line2:#eceef0;
+    --blue:#2b6cf0;--bluebg:#eaf1fe;--green:#16a34a;--greenbg:#e9f7ee;--violet:#7c3aed;--violetbg:#f1e9fe;
+    --amber:#b45309;--amberbg:#fef3e2;--teal:#0d9488;--tealbg:#e7f7f4;--energy:#b6ff00;
+    --mono:ui-monospace,"SF Mono",Consolas,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Inter",-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:50px 26px 120px}
+  .badge{display:inline-block;font:700 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--blue);background:var(--bluebg);padding:5px 11px;border-radius:7px}
+  h1{font-size:2.1rem;letter-spacing:-.02em;margin:14px 0 6px}
+  .sub{color:var(--mut);font-size:1.05rem;max-width:760px}
+  .accentbar{height:3px;width:54px;background:var(--energy);border-radius:2px;margin:16px 0 0}
+  h2{font-size:1.2rem;margin:42px 0 12px;padding-top:22px;border-top:1px solid var(--line)}
+  p{color:var(--ink2)}
+  .mono{font-family:var(--mono)}
+  code{font:12.5px var(--mono);background:#f6f7f9;border:1px solid var(--line2);padding:1px 6px;border-radius:5px;color:#27408b}
+  .mcard{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:#fff;margin:14px 0}
+  .mhead{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+  .mhead .n{font:800 28px var(--mono);letter-spacing:-.02em}
+  .mhead .l{font-weight:700;font-size:14px}
+  .group{margin-top:14px}
+  .group .gh{font:700 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+  .group .gh .ct{font-size:11px;color:var(--mut)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font:600 12px var(--mono);padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:#f6f7f9;color:var(--ink2)}
+  .chip.real{background:var(--greenbg);border-color:#c8ead4;color:var(--green)}
+  .chip.pop{background:var(--bluebg);border-color:#cfe0fe;color:var(--blue)}
+  .branches{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px 0}
+  @media(max-width:820px){.branches{grid-template-columns:1fr}}
+  .bcard{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#fff;border-top:4px solid}
+  .bcard.dee{border-top-color:var(--blue)} .bcard.ven{border-top-color:var(--teal)} .bcard.saim{border-top-color:var(--amber)}
+  .bcard h3{margin:0 0 2px;font-size:1.05rem;display:flex;align-items:center;gap:8px}
+  .bcard .who{font:700 10px var(--mono);text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:5px}
+  .dee .who{background:var(--bluebg);color:var(--blue)} .ven .who{background:var(--tealbg);color:var(--teal)} .saim .who{background:var(--amberbg);color:var(--amber)}
+  .bcard .role{font-size:12px;color:var(--mut);margin:2px 0 12px}
+  .bcard ul{list-style:none;margin:0;padding:0}
+  .bcard li{font:600 12.5px var(--mono);padding:6px 0;border-top:1px solid var(--line2);display:flex;align-items:center;gap:8px}
+  .bcard li:first-child{border-top:0}
+  .bcard li .v{margin-left:auto;font-size:11px;color:var(--dim)}
+  .bcard li .up{margin-left:auto;font:700 10px var(--mono);background:var(--energy);color:#1f2329;padding:2px 6px;border-radius:5px}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dee .dot{background:var(--blue)} .ven .dot{background:var(--teal)} .saim .dot{background:var(--amber)}
+  .note{border:1px solid #f3dcb6;background:#fffaf2;border-radius:12px;padding:13px 15px;margin:14px 0;font-size:13.5px;color:#7a4a08}
+  .note b{color:var(--amber)}
+  .flow{border:1px solid var(--line);border-radius:12px;background:#f6f7f9;padding:13px 15px;font:12.5px var(--mono);color:var(--mut);white-space:pre-wrap;line-height:1.6}
+  .flow b{color:var(--ink)}
+  .foot{margin-top:46px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:.88rem}
+  a{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="badge">CAPSULE · enterprise-skills</span>
+  <h1>Skills registry map</h1>
+  <p class="sub">One enterprise registry on <code>master</code> (28 skills), and three developer repos
+  (<code>dee</code>, <code>ven</code>, <code>saim</code>) that each <b>pin a unique set of 5</b> from it — the
+  enterprise-vs-personal flow, made concrete in git and reflected in <code>registry.json</code>. Skills land here
+  via the end-of-day promote: a session distils to a local registry, and <code>scripts/eod-promote.ts</code> opens
+  one CI-gated PR into <code>master</code>.</p>
+  <div class="accentbar"></div>
+
+  <h2>① Enterprise registry — <span class="mono">master</span></h2>
+  <div class="mcard">
+    <div class="mhead"><span class="n">28</span><span class="l">skills · 13 real + 15 popular</span></div>
+    <div class="group">
+      <div class="gh">Real — distilled from real <code>~/.claude</code> sessions <span class="ct">· 13</span></div>
+      <div class="chips">
+        <span class="chip real">angular-upgrade</span><span class="chip real">api-rate-limiting</span>
+        <span class="chip real">api-security</span><span class="chip real">automation-maintenance</span>
+        <span class="chip real">ci-flake-quarantine</span><span class="chip real">command-verification</span>
+        <span class="chip real">creative-franchise-expansion</span><span class="chip real">db-migration-safety</span>
+        <span class="chip real">docker-build-caching</span><span class="chip real">memory-management</span>
+        <span class="chip real">secret-rotation</span><span class="chip real">websocket-reconnection</span>
+        <span class="chip real">ui-modularity</span>
+      </div>
+    </div>
+    <div class="group">
+      <div class="gh">Popular — top-15 added &amp; distributed <span class="ct">· 15 · 5+5+5 below</span></div>
+      <div class="chips">
+        <span class="chip pop">rest-api-design</span><span class="chip pop">oauth2-jwt-auth</span>
+        <span class="chip pop">idempotency-keys</span><span class="chip pop">cursor-pagination</span>
+        <span class="chip pop">redis-caching</span><span class="chip pop">docker-containerization</span>
+        <span class="chip pop">kubernetes-orchestration</span><span class="chip pop">ci-cd-pipelines</span>
+        <span class="chip pop">structured-logging</span><span class="chip pop">observability-tracing</span>
+        <span class="chip pop">database-indexing</span><span class="chip pop">input-validation</span>
+        <span class="chip pop">retry-with-backoff</span><span class="chip pop">async-concurrency</span>
+        <span class="chip pop">test-automation</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>② Developer repos — unique distribution of the 15 popular skills</h2>
+  <p>Each dev branch is <b>master + a clean <code>my-project/</code></b> pinning a <b>disjoint 5</b>
+  (5 + 5 + 5 = 15, no overlap). The personal repo never carries the enterprise catalog twice — just its pins.</p>
+  <div class="branches">
+    <div class="bcard dee">
+      <h3><span class="dot"></span>dee <span class="who">branch · PR #3</span></h3>
+      <div class="role">Backend / API</div>
+      <ul>
+        <li><span class="dot"></span>rest-api-design <span class="up">▲ 1.0.1</span></li>
+        <li><span class="dot"></span>oauth2-jwt-auth <span class="up">▲ 1.0.1</span></li>
+        <li><span class="dot"></span>idempotency-keys <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>cursor-pagination <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>redis-caching <span class="v">1.0.0</span></li>
+      </ul>
+    </div>
+    <div class="bcard ven">
+      <h3><span class="dot"></span>ven <span class="who">branch</span></h3>
+      <div class="role">Infra / DevOps</div>
+      <ul>
+        <li><span class="dot"></span>docker-containerization <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>kubernetes-orchestration <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>ci-cd-pipelines <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>structured-logging <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>observability-tracing <span class="v">1.0.0</span></li>
+      </ul>
+    </div>
+    <div class="bcard saim">
+      <h3><span class="dot"></span>saim <span class="who">branch · PR #2</span></h3>
+      <div class="role">Data / Quality</div>
+      <ul>
+        <li><span class="dot"></span>database-indexing <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>input-validation <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>retry-with-backoff <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>async-concurrency <span class="v">1.0.0</span></li>
+        <li><span class="dot"></span>test-automation <span class="v">1.0.0</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note"><b>Landed promotions.</b> <code>dee</code>'s two real upgrades —
+  <code>rest-api-design@1.0.1</code> and <code>oauth2-jwt-auth@1.0.1</code>, each <code>learnedFrom</code> a real
+  <code>~/.claude</code> session distilled locally (Ollama) with Backboard provenance — were <b>promoted into
+  enterprise <code>master</code> via PR #3</b> through the agentic-CI gate. CAPSULE also captured <b>its own build
+  session</b> (<code>CAP-SESSION-1a6fcc9b</code>) → <code>skill/ui-modularity@1.0.0</code>, promoted via <b>PR #4</b>
+  — the 13th real skill, and proof the loop closes on itself. The other 3 dee skills (and all of ven/saim) stay at
+  <code>1.0.0</code> until a matching session is captured. <code>saim</code>'s <b>PR #2</b> carries the do/undo
+  conflict capsule <code>CAP-S001</code> (ML-002); <code>ven</code> carries the dedup capsule <code>CAP-V001</code>
+  (ML-001).</div>
+
+  <h2>③ How to read the GitHub diff</h2>
+  <div class="flow"><b>master</b>  = the enterprise catalog (28 skills · registry.json · MERGE-LEDGER · PROMOTION · promotion/)
+   │
+   ├── <b>dee</b>   = master + my-project (pins 5) + 2 real upgrades  → PR #3 promoted to master
+   ├── <b>ven</b>   = master + my-project (pins 5) + CAP-V001 (dedup ML-001)
+   ├── <b>saim</b>  = master + my-project (pins 5) + CAP-S001 (do/undo conflict ML-002)  → PR #2
+   └── <b>self</b>  = CAP-SESSION-1a6fcc9b → ui-modularity@1.0.0  → PR #4 promoted to master
+
+compare/&lt;branch&gt; on GitHub  =  exactly what that developer diverged from enterprise
+                              (their my-project + any session-driven skill upgrades)</div>
+  <p style="margin-top:12px">Repo: <a href="https://github.com/aptsalt/capsule-enterprise-skills">github.com/aptsalt/capsule-enterprise-skills</a>
+  — flip branches (<code>master</code> / <code>dee</code> / <code>ven</code> / <code>saim</code>), or open
+  <code>compare/&lt;branch&gt;</code> for the clean personal-vs-enterprise diff.</p>
+
+  <div class="foot">CAPSULE · skills registry map · derived from registry.json (28 skills · 13 real + 15 popular) · 3 developer repos · 5+5+5 unique distribution · self-captured ui-modularity promoted (PR #4)</div>
+</div>
+</body>
+</html>

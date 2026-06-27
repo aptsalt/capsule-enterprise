@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAPSULE → Enterprise Pipeline</title>
+<style>
+  :root{
+    --bg:#f6f7f5;
+    --paper:#ffffff;
+    --ink:#11140f;
+    --ink2:#3a4034;
+    --mut:#6c7464;
+    --dim:#9aa191;
+    --line:#e6e8e1;
+    --line2:#eef0ea;
+    --accent:#b6ff00;          /* fluorescent energy */
+    --accent-ink:#3f5b00;
+    --accent-soft:#f0ffd0;
+    --blue:#2f6df0;
+    --green:#1f9d57;
+    --green-bg:#eafaf0;
+    --amber:#c98a00;
+    --red:#d6435b;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(900px 480px at 88% -8%, #b6ff0022, transparent 60%),
+      radial-gradient(700px 360px at -6% 4%, #b6ff0014, transparent 55%);
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 96px}
+  a{color:var(--accent-ink);text-decoration:none}
+  code,.mono{font-family:var(--mono)}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;border:1px solid var(--line);border-radius:20px;
+    background:linear-gradient(180deg,#ffffff,#fbfdf6);
+    padding:30px 32px 28px;overflow:hidden;
+    box-shadow:0 1px 0 #ffffff inset,0 18px 50px -28px #1a210033;
+  }
+  .hero::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:6px;
+    background:linear-gradient(180deg,var(--accent),#8fce00);
+  }
+  .kick{
+    display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--accent-ink);
+    background:var(--accent-soft);border:1px solid #dcf3a6;border-radius:999px;
+    padding:5px 11px;margin-bottom:14px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 3px #b6ff0033,0 0 10px #b6ff00aa}
+  h1{font-size:33px;line-height:1.08;letter-spacing:-.02em;margin:2px 0 10px;font-weight:830}
+  .lede{font-size:15.5px;color:var(--ink2);max-width:760px;margin:0}
+  .lede b{color:var(--ink)}
+  .herometa{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .pill{font-size:11.5px;font-weight:650;color:var(--ink2);background:#fff;
+    border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+  .pill b{color:var(--accent-ink)}
+
+  /* ---------- section ---------- */
+  h2{font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--mut);
+    margin:46px 0 14px;font-weight:740}
+  .sub{color:var(--mut);font-size:13.5px;margin:-6px 0 18px}
+
+  /* ---------- flow diagram ---------- */
+  .flow{
+    border:1px solid var(--line);border-radius:18px;background:var(--paper);
+    padding:22px;box-shadow:0 12px 40px -30px #1a2100;
+    overflow-x:auto;
+  }
+  .flowrow{display:flex;align-items:stretch;gap:10px;min-width:880px}
+  .node{
+    flex:1;min-width:118px;border:1px solid var(--line);border-radius:13px;
+    background:linear-gradient(180deg,#fff,#fafbf6);padding:13px 13px 12px;position:relative;
+  }
+  .node .n{font-size:10px;font-weight:800;color:var(--accent-ink);letter-spacing:.05em}
+  .node .t{font-size:13px;font-weight:740;margin-top:3px;letter-spacing:-.01em}
+  .node .d{font-size:11px;color:var(--mut);margin-top:5px;line-height:1.4}
+  .node.gate{border-color:#cfe9a0;background:linear-gradient(180deg,#fbffef,#f4ffd6);
+    box-shadow:0 0 0 1px #d8f1ac inset,0 8px 24px -16px #7fae00}
+  .node.gate .n{color:#5c7c00}
+  .arrow{display:flex;align-items:center;color:var(--dim);font-size:19px;flex:0 0 auto}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;font-size:11.5px;color:var(--mut)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  /* ---------- stage cards ---------- */
+  .stage{
+    border:1px solid var(--line);border-radius:18px;background:var(--paper);
+    padding:24px 24px 22px;margin-top:18px;position:relative;
+    box-shadow:0 14px 44px -34px #1a2100;
+  }
+  .stage-h{display:flex;align-items:flex-start;gap:14px}
+  .num{
+    flex:0 0 auto;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+    font-size:18px;font-weight:840;color:var(--accent-ink);
+    background:var(--accent-soft);border:1px solid #dcf3a6;
+  }
+  .stage.gatecard .num{background:linear-gradient(180deg,var(--accent),#9fde04);color:#23330a;border-color:#9fde04;
+    box-shadow:0 0 0 4px #b6ff0026,0 0 18px -2px #b6ff00aa}
+  .stage-h h3{margin:0;font-size:19px;letter-spacing:-.015em;font-weight:790}
+  .stage-h .meta{font-size:12px;color:var(--mut);margin-top:3px}
+  .tag{display:inline-block;font-size:10.5px;font-weight:750;letter-spacing:.04em;
+    padding:3px 8px;border-radius:7px;border:1px solid var(--line);color:var(--ink2);background:#fafbf6;margin-left:8px}
+  .tag.live{color:var(--accent-ink);background:var(--accent-soft);border-color:#dcf3a6}
+  .tag.measured{color:var(--blue);background:#eef4ff;border-color:#d4e2ff}
+  .body{margin-top:14px}
+  .body p{margin:0 0 11px;color:var(--ink2)}
+  .body p b{color:var(--ink)}
+
+  ul.clean{margin:6px 0 12px;padding-left:0;list-style:none}
+  ul.clean li{position:relative;padding-left:20px;margin:6px 0;color:var(--ink2);font-size:14px}
+  ul.clean li::before{content:"";position:absolute;left:3px;top:8px;width:7px;height:7px;
+    border-radius:2px;background:var(--accent);box-shadow:0 0 0 2px #b6ff0033}
+
+  /* ---------- code blocks ---------- */
+  figure.code{margin:14px 0;border:1px solid #e7eadf;border-radius:12px;overflow:hidden;background:#fcfdf8}
+  figcaption{
+    display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;
+    color:var(--mut);background:#f3f6ea;border-bottom:1px solid #e7eadf;padding:7px 13px;
+  }
+  figcaption .ref{margin-left:auto;color:var(--accent-ink);font-weight:700}
+  figcaption .fdot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px #b6ff00}
+  pre{margin:0;padding:14px 15px;overflow-x:auto;font-family:var(--mono);font-size:12.3px;line-height:1.62;color:#1c2417}
+  pre .c{color:#8a9277;font-style:italic}            /* comment */
+  pre .k{color:#7a3ea8}                               /* keyword */
+  pre .s{color:#2f7d3f}                               /* string */
+  pre .f{color:#1f5fc0}                               /* fn/ident */
+  pre .n{color:#b06a00}                               /* number */
+  pre .hl{background:#ecffbf;border-radius:3px;padding:0 2px;box-shadow:0 0 0 1px #d6f59a}
+
+  /* ---------- callout ---------- */
+  .call{border:1px solid #dcf3a6;background:linear-gradient(180deg,#fbffef,#f5ffd9);
+    border-radius:12px;padding:13px 15px;margin:14px 0;font-size:13.5px;color:var(--ink2)}
+  .call b{color:var(--accent-ink)}
+  .call.warn{border-color:#f0e0a8;background:linear-gradient(180deg,#fffdf2,#fdf6e3)}
+  .call.warn b{color:var(--amber)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;background:#fff;
+    border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .tbl th,.tbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line2)}
+  .tbl th{background:#f6f8ee;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);font-weight:720}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl td.win{color:var(--accent-ink);font-weight:740}
+  .tbl td .neg{color:var(--green);font-weight:700}
+  .tbl .mono{font-size:12.5px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  .mini{border:1px solid var(--line);border-radius:12px;background:#fcfdf8;padding:14px 15px}
+  .mini h4{margin:0 0 7px;font-size:13.5px;font-weight:760}
+  .mini code{font-size:11.5px;background:#f0f3e6;border-radius:5px;padding:1px 5px}
+
+  /* invariants */
+  ol.inv{counter-reset:i;list-style:none;margin:10px 0 0;padding:0}
+  ol.inv li{counter-increment:i;position:relative;padding:11px 14px 11px 48px;margin:9px 0;
+    border:1px solid var(--line);border-radius:12px;background:#fff;font-size:14px;color:var(--ink2)}
+  ol.inv li::before{content:counter(i);position:absolute;left:13px;top:50%;transform:translateY(-50%);
+    width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:820;
+    color:var(--accent-ink);background:var(--accent-soft);border:1px solid #dcf3a6}
+  ol.inv li b{color:var(--ink)}
+
+  footer{margin-top:54px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}
+  footer b{color:var(--mut)}
+  .seq{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 2px}
+  .seq a{font-size:11.5px;font-weight:650;color:var(--ink2);background:#fff;border:1px solid var(--line);
+    border-radius:8px;padding:5px 10px}
+  .seq a:hover{border-color:var(--accent);color:var(--accent-ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <span class="kick"><span class="dot"></span> CAPSULE · 8090 Software Factory</span>
+    <h1>capsule&nbsp;→&nbsp;enterprise pipeline</h1>
+    <p class="lede">
+      How one real Claude Code session becomes a <b>versioned, governed enterprise skill</b>.
+      Six stages: a local distill, an <b>agentic gate</b>, semantic routing into semver skills,
+      a write to live Backboard memory, a <b>promotion-as-PR</b> staging step, and a
+      <b>merge</b> that dedups re-discoveries and supersedes contradictions — every decision
+      backed by <b>measured</b> token evidence, never opinion.
+    </p>
+    <div class="herometa">
+      <span class="pill">distiller · <b>Ollama qwen2.5-coder:14b · chunked map-reduce</b></span>
+      <span class="pill">score · <b>LLM-judge (heuristic fallback)</b></span>
+      <span class="pill">gate · <b>transfer ≥ θ OR novelty ≥ 80</b></span>
+      <span class="pill">memory · <b>Backboard (send_to_llm:false)</b></span>
+      <span class="pill">CI · <b>multi-sample A/B + regression</b></span>
+      <span class="pill">audit · <b>MERGE-LEDGER + PURGE-LEDGER</b></span>
+    </div>
+    <div class="seq">
+      <a href="#s1">1 · Capture</a><a href="#s2">2 · Agentic Gate</a><a href="#s3">3 · Route</a>
+      <a href="#s4">4 · Store</a><a href="#s5">5 · Promotion</a><a href="#s6">6 · Merge</a>
+      <a href="#inv">Ledger invariants</a>
+    </div>
+  </header>
+
+  <!-- ============ FLOW DIAGRAM ============ -->
+  <h2>The flow, end to end</h2>
+  <p class="sub">A finding travels left to right. Stages 1–4 are on-device + live memory; 5–6 are the governed, multi-dev registry.</p>
+  <div class="flow">
+    <div class="flowrow">
+      <div class="node"><div class="n">STAGE 1</div><div class="t">Capture</div><div class="d">session → local distill → 6-dim score</div></div>
+      <div class="arrow">→</div>
+      <div class="node gate"><div class="n">STAGE 2 · GATE</div><div class="t">Agentic keep</div><div class="d">transfer ≥ θ <b>OR</b> novelty ≥ 80</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">STAGE 3</div><div class="t">Route</div><div class="d">finding → skill + semver bump</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">STAGE 4</div><div class="t">Store</div><div class="d">Backboard memory · send_to_llm:false</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">STAGE 5</div><div class="t">Promotion (PR)</div><div class="d">PROPOSED-x.y.z + agentic CI</div></div>
+      <div class="arrow">→</div>
+      <div class="node gate"><div class="n">STAGE 6 · MERGE</div><div class="t">Dedup / Supersede</div><div class="d">ledger · reward gates publish</div></div>
+    </div>
+    <div class="legend">
+      <span><span class="sw" style="background:#fafbf6;border:1px solid var(--line)"></span> on-device / live</span>
+      <span><span class="sw" style="background:#f4ffd6;border:1px solid #cfe9a0"></span> agentic decision point</span>
+      <span><span class="sw" style="background:#eef4ff;border:1px solid #d4e2ff"></span> measured A/B reward</span>
+    </div>
+  </div>
+
+  <!-- ============ STAGE 1 ============ -->
+  <section class="stage" id="s1">
+    <div class="stage-h">
+      <div class="num">1</div>
+      <div>
+        <h3>Capture → distill (local Ollama) → score <span class="tag measured">MEASURED score</span></h3>
+        <div class="meta">CapturePanel.tsx · /api/sessions → /api/capsule · build-real-dataset.ts L181–L191</div>
+      </div>
+    </div>
+    <div class="body">
+      <p>The panel lists <b>real</b> <code>~/.claude/projects/*.jsonl</code> sessions, the user picks one,
+      and <code>POST /api/capsule</code> distills it <b>on-device</b> with Ollama
+      <code>qwen2.5-coder:14b</code> — "no data leaves this machine." Oversized sessions self-route through a
+      <b>chunked map-reduce</b> distiller (<code>distillChunked</code>) so a whole long session is captured,
+      not truncated. The distilled capsule is then scored by an <b>LLM-judge</b>
+      (<code>scoreCapsuleLLM</code> — a local model <i>rating</i> the handoff, not a trained reward) across
+      six cognitive dimensions, with a heuristic fallback when Ollama is down; the overall is the
+      <b>transferScore</b>. Capture also runs <b>ambient</b>: a non-blocking Stop-hook +
+      <code>capture-watcher.ts</code> auto-distill closed sessions with no panel open.</p>
+
+      <figure class="code">
+        <figcaption><span class="fdot"></span> relay/src/components/panels/CapturePanel.tsx <span class="ref">L218–L230</span></figcaption>
+<pre><span class="k">const</span> capture = useCallback(<span class="k">async</span> (session: SessionMeta) => {
+  setDistillingPath(session.path);
+  <span class="k">const</span> res = <span class="k">await</span> <span class="f">fetch</span>(<span class="s">"/api/capsule"</span>, {
+    method: <span class="s">"POST"</span>,
+    body: JSON.<span class="f">stringify</span>({ path: session.path }), <span class="c">// distills LOCALLY via Ollama</span>
+  });
+  <span class="k">const</span> j = (<span class="k">await</span> res.<span class="f">json</span>()) <span class="k">as</span> CapsuleResponse;
+  <span class="k">const</span> captured = <span class="f">toCaptured</span>(j); <span class="c">// overall transfer + 6 per-dim scores</span></pre>
+      </figure>
+
+      <p>Server-side, the dataset builder runs the same contract headless — capturing the transcript,
+      distilling, then scoring:</p>
+      <figure class="code">
+        <figcaption><span class="fdot"></span> relay/scripts/build-real-dataset.ts <span class="ref">L187–L191</span></figcaption>
+<pre>log(<span class="s">`[${tag}] distilling locally (${MODEL}) ...`</span>);
+<span class="k">const</span> { capsule: hc, engine, ms } = <span class="k">await</span> <span class="f">distill</span>(raw);
+<span class="k">const</span> score = <span class="f">scoreCapsule</span>(hc);
+<span class="k">const</span> transferScore = score.overall; <span class="c">// MEASURED by the scorer</span></pre>
+      </figure>
+      <p>It then asks the local model for the <b>single most important reusable finding</b> — one
+      concrete sentence (<code>build-real-dataset.ts L196–L202</code>) — which becomes the unit that
+      everything downstream routes, versions, and A/B-tests.</p>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 2 — GATE ============ -->
+  <section class="stage gatecard" id="s2">
+    <div class="stage-h">
+      <div class="num">2</div>
+      <div>
+        <h3>The agentic gate <span class="tag live">KEEP / SKIP</span></h3>
+        <div class="meta">CapturePanel.tsx L146 (bar) · L237–L249 (decision)</div>
+      </div>
+    </div>
+    <div class="body">
+      <p>This is the decision point. In agentic mode every session is auto-distilled, then
+      <b>gated</b>. A capsule is <b>kept</b> (promoted to the enterprise repo) only if it clears the
+      transfer threshold <b>or</b> carries a uniquely strong proposition — <b>novelty ≥ 80</b>.
+      Skipped capsules are dropped, never added to the overlay.</p>
+
+      <figure class="code">
+        <figcaption><span class="fdot"></span> CapturePanel.tsx · the fixed novelty bar <span class="ref">L146</span></figcaption>
+<pre><span class="c">// Agentic gate: kept if overall transfer clears the (user-set) threshold,</span>
+<span class="c">// OR if its novelty clears a fixed high bar — a uniquely strong proposition.</span>
+<span class="k">const</span> <span class="hl">NOVELTY_BAR = <span class="n">80</span></span>;</pre>
+      </figure>
+
+      <figure class="code">
+        <figcaption><span class="fdot"></span> CapturePanel.tsx · the gate itself <span class="ref">L237–L249</span></figcaption>
+<pre><span class="k">const</span> novelty = <span class="f">noveltyOf</span>(captured); <span class="c">// strongest single dimension</span>
+<span class="k">const</span> <span class="hl">kept =
+  captured.transferScore &gt;= agenticThreshold || novelty &gt;= NOVELTY_BAR</span>;
+setLastEngine(captured.engine);
+<span class="k">if</span> (kept) <span class="f">addCapsule</span>(captured); <span class="c">// promote to enterprise repo</span>
+setDecision({ captured, novelty, kept });
+<span class="f">showToast</span>(kept
+  ? <span class="s">`✓ Kept · promoted to enterprise repo (${score} ≥ ${threshold})`</span>
+  : <span class="s">`Skipped · score ${score} &lt; ${threshold} · no unique proposition`</span>);</pre>
+      </figure>
+
+      <div class="call"><b>Novelty, honestly.</b> The <code>/api/capsule</code> response has no first-class
+      "novelty" field, so <code>noveltyOf()</code> (L156–L160) derives it as the capsule's
+      <b>strongest single dimension</b> — its most distinctive signal. A capsule can be ordinary on
+      average yet exceptional on one axis (a rare gotcha, a crisp mental model); that single spike is
+      what lets it clear the gate below the transfer bar. Demo heuristic over local output, not a
+      model-reported metric.</div>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 3 — ROUTE ============ -->
+  <section class="stage" id="s3">
+    <div class="stage-h">
+      <div class="num">3</div>
+      <div>
+        <h3>Route finding → skill + semver <span class="tag">classification</span></h3>
+        <div class="meta">build-real-dataset.ts L267–L284 (classify) · L130 (applyBump) · L280 (new = major)</div>
+      </div>
+    </div>
+    <div class="body">
+      <p>Each kept finding is classified by the local model against the <b>existing</b> skill library.
+      If it clearly belongs to a skill it <b>reuses that exact skillId</b> and picks
+      <code>minor</code>/<code>patch</code>; otherwise it invents a new kebab skillId and uses
+      <code>major</code>.</p>
+
+      <figure class="code">
+        <figcaption><span class="fdot"></span> build-real-dataset.ts · routing classifier <span class="ref">L267–L272</span></figcaption>
+<pre><span class="k">const</span> cres = <span class="k">await</span> <span class="f">ollamaChat</span>(
+  <span class="s">"You curate a library of reusable enterprise engineering SKILLS. ...</span>
+<span class="s">   return STRICT JSON {skillId, skillName, bump, changelog}. If the lesson</span>
+<span class="s">   clearly belongs to an existing skill REUSE its exact skillId and pick</span>
+<span class="s">   minor/patch; otherwise invent a new kebab skillId and use major."</span>,
+  <span class="s">`Lesson: ${cap._finding}\nProject: ${cap._project}\n\nExisting skills:\n${existing}`</span>,
+  <span class="k">true</span>, <span class="n">200</span>);</pre>
+      </figure>
+
+      <figure class="code">
+        <figcaption><span class="fdot"></span> build-real-dataset.ts · a brand-new skill is always major <span class="ref">L279–L284</span></figcaption>
+<pre><span class="k">if</span> (!skillsMap.<span class="f">has</span>(sid)) {
+  <span class="hl">bump = <span class="s">"major"</span></span>; <span class="c">// first version of a brand-new skill</span>
+  skillsMap.<span class="f">set</span>(sid, { id: sid, name, description: cap._finding.<span class="f">slice</span>(<span class="n">0</span>,<span class="n">160</span>), bumps: [] });
+}
+skillsMap.<span class="f">get</span>(sid)!.bumps.<span class="f">push</span>({ cap, bump, changelog });
+log(<span class="s">`[${cap.id}] routed -&gt; skill/${sid} (${name}) ${bump}`</span>);</pre>
+      </figure>
+
+      <figure class="code">
+        <figcaption><span class="fdot"></span> build-real-dataset.ts · applyBump — the semver mechanic <span class="ref">L130–L135</span></figcaption>
+<pre><span class="k">function</span> <span class="f">applyBump</span>(version: <span class="k">string</span>, bump: Bump): <span class="k">string</span> {
+  <span class="k">const</span> [maj, min, pat] = version.<span class="f">split</span>(<span class="s">"."</span>).<span class="f">map</span>((x) => <span class="f">parseInt</span>(x, <span class="n">10</span>) || <span class="n">0</span>);
+  <span class="k">if</span> (bump === <span class="s">"major"</span>) <span class="k">return</span> <span class="s">`${maj + 1}.0.0`</span>;
+  <span class="k">if</span> (bump === <span class="s">"minor"</span>) <span class="k">return</span> <span class="s">`${maj}.${min + 1}.0`</span>;
+  <span class="k">return</span> <span class="s">`${maj}.${min}.${pat + 1}`</span>;
+}</pre>
+      </figure>
+      <p>Version timelines are built per skill, sorted by real capsule <code>createdAt</code>
+      (L290–L312). A version whose source capsule scored <code>transferScore &lt; 45</code> is staged as
+      <code>proposed</code> rather than <code>published</code> (L298) — the registry never auto-trusts
+      a thin handoff.</p>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 4 — STORE ============ -->
+  <section class="stage" id="s4">
+    <div class="stage-h">
+      <div class="num">4</div>
+      <div>
+        <h3>Store to live Backboard <span class="tag measured">MEASURED thread_ids</span></h3>
+        <div class="meta">build-real-dataset.ts L446–L470 · capsuleMemoryBriefing / storeCapsuleMemory</div>
+      </div>
+    </div>
+    <div class="body">
+      <p>Only the <b>distilled briefing</b> — never raw transcripts — is persisted to the real
+      Backboard memory hub, and stored with <code>send_to_llm:false</code> so it lands as durable
+      tenant memory rather than being replayed into a model context. Real <code>thread_id</code>s come
+      back and are pinned onto the capsule; failures degrade gracefully to a local thread.</p>
+
+      <figure class="code">
+        <figcaption><span class="fdot"></span> build-real-dataset.ts · persist the briefing, capture thread_id <span class="ref">L457–L465</span></figcaption>
+<pre><span class="k">const</span> briefing = <span class="f">capsuleMemoryBriefing</span>(hc);
+<span class="k">const</span> res = <span class="k">await</span> <span class="f">storeCapsuleMemory</span>(<span class="s">`capsule-${cap._project}`</span>.<span class="f">replace</span>(/[^\w.-]/g, <span class="s">"_"</span>), briefing);
+<span class="k">if</span> (res.ok &amp;&amp; res.thread_id) {
+  <span class="hl">cap.threadId = res.thread_id</span>; <span class="c">// REAL Backboard thread — MEASURED provenance</span>
+  log(<span class="s">`[${cap.id}] stored to Backboard thread=${res.thread_id}`</span>);
+} <span class="k">else</span> {
+  cap.threadId = <span class="s">`local-${cap.session}`</span>; <span class="c">// graceful local fallback</span>
+}</pre>
+      </figure>
+      <div class="call"><b>Why <code>send_to_llm:false</code>.</b> Memory follows the <b>tenant</b>, not the
+      model. The briefing is a durable, queryable artifact in Backboard (Memory Pro) — it powers
+      dedup's semantic-cosine matching in Stage 6, but it is not auto-injected into prompts.</div>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 5 — PROMOTION ============ -->
+  <section class="stage" id="s5">
+    <div class="stage-h">
+      <div class="num">5</div>
+      <div>
+        <h3>Promotion as a PR <span class="tag live">staging ref</span></h3>
+        <div class="meta">PROMOTION.md · promotion/&lt;skill&gt;/PROPOSED-x.y.z + CI-x.y.z</div>
+      </div>
+    </div>
+    <div class="body">
+      <p>Clearing the gate does <b>not</b> push to <code>master</code> head. It <b>proposes</b> a
+      version on a <code>promotion/&lt;skill&gt;</code> staging ref — the equivalent of a PR. No
+      developer and no agent force-pushes a new version. The head only moves when the proposed version
+      <b>passes agentic CI</b> and review merges it.</p>
+
+      <div class="grid2">
+        <div class="mini">
+          <h4>What gets staged</h4>
+          <p style="margin:0;font-size:13px;color:var(--ink2)">
+            <code>promotion/&lt;skill&gt;/PROPOSED-&lt;version&gt;.SKILL.md</code> — the candidate skill body<br><br>
+            <code>promotion/&lt;skill&gt;/CI-&lt;version&gt;.md</code> — the agentic-CI report
+          </p>
+        </div>
+        <div class="mini">
+          <h4>Agentic CI — test before upgrade</h4>
+          <ul class="clean" style="margin:0">
+            <li><b>Multi-sample A/B</b> (<code>src/lib/eval.ts</code>): N paired runs, new vs current, on the local model — reports <b>mean ± stdev</b> + direction-consistency across all N (honest, not a p-value), real <code>prompt_eval+eval</code> token counts</li>
+            <li><b>Regression check:</b> LLM-judge replay of prior capsules the skill serves — must not break learned behavior</li>
+          </ul>
+        </div>
+      </div>
+
+      <figure class="code">
+        <figcaption><span class="fdot"></span> PROMOTION.md · gate → propose → CI → merge/hold/reject <span class="ref">§1</span></figcaption>
+<pre>capsule (clears gate)
+      │  propose
+      ▼
+<span class="hl">promotion/&lt;skill&gt;/PROPOSED-x.y.z</span>   ← staged candidate
+      │  agentic CI: A/B harness + regression check
+      ├── reward improves  + review OK ──▶ merge → bump on master head (published)
+      ├── reward improves, contradiction ─▶ HUMAN REVIEW required → merge or reject
+      └── reward flat/worse ─────────────▶ held `proposed` or `rejected` (no publish)</pre>
+      </figure>
+
+      <div class="call"><b>Merge rule (CI-for-skills).</b> A version is published <b>only if measured
+      reward improves</b> (tokens down / pass-rate up / transfer up) <b>and</b> no regressions.
+      Otherwise it stays <code>proposed</code> or is <code>rejected</code>. A version upgrade must
+      <i>earn</i> its place with evidence — exactly like code passing tests.</div>
+
+      <div class="call warn"><b>On-demand LIVE promotion.</b> <code>/api/promote</code> makes
+      stages 5–6 execute for real on demand — a genuine <b>git commit + push</b> that writes the
+      <code>promotion/&lt;skill&gt;/</code> staging artifacts (and, on a passing merge, advances
+      <code>master</code> head). The same governance applies: it stages a PR, it does not bypass the
+      gate or the ledger.</div>
+
+      <div class="call"><b>LOCAL → END-OF-DAY → ENTERPRISE.</b> During the day every earned upgrade is
+      committed to the developer's <b>local registry</b> (<code>~/.capsule/local-registry</code>, branch
+      <code>local-deepak</code>) via <code>bumpSkillLocal</code> — real local commit, <b>not pushed</b>.
+      The EOD job (<code>scripts/eod-promote.ts</code>) pushes the branch and opens <b>one CI-gated PR</b>
+      <code>local-deepak → master</code> against the enterprise registry; merging it publishes the day's
+      learning. A <b>purge/retire</b> pole (<code>active → deprecated → archived → purged</code>, logged in
+      a <b>PURGE-LEDGER</b>) keeps the 28-skill registry from growing dead weight — Backboard provenance is
+      never touched.</div>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 6 — MERGE ============ -->
+  <section class="stage gatecard" id="s6">
+    <div class="stage-h">
+      <div class="num">6</div>
+      <div>
+        <h3>Merge — dedup + do/undo conflict <span class="tag measured">MEASURED A/B</span></h3>
+        <div class="meta">PROMOTION.md §3–§4 · MERGE-LEDGER.md ML-001 / ML-002</div>
+      </div>
+    </div>
+    <div class="body">
+      <p>When multiple developers (<code>dee</code>, <code>ven</code>, <code>saim</code>, …) contribute
+      capsules against the same skill, the pipeline reconciles them into one canonical registry on
+      <code>master</code>. Two real cases are recorded in the append-only ledger.</p>
+
+      <div class="grid2">
+        <div class="mini">
+          <h4>ML-001 · DEDUP <span style="color:var(--mut);font-weight:600;font-size:11px">ven ⨝ dee</span></h4>
+          <p style="margin:0;font-size:13px;color:var(--ink2)">
+            <code>command-verification</code> · both carry the signature
+            <span class="mono" style="font-size:11px">cmd-verify::inspect-actual-state-over-inference</span>.
+            Semantic-memory cosine <b style="color:var(--accent-ink)">0.94</b> (≥ 0.90 dedup threshold) →
+            <b>merge into ONE canonical capsule</b>, no new version forged, provenance keeps
+            <b>both authors</b>.</p>
+        </div>
+        <div class="mini">
+          <h4>ML-002 · CONFLICT <span style="color:var(--mut);font-weight:600;font-size:11px">saim do/undo</span></h4>
+          <p style="margin:0;font-size:13px;color:var(--ink2)">
+            <code>api-rate-limiting</code> · 1.0.0 says <i>add client retry/backoff on 429s</i>;
+            CAP-S001 says <i>remove retries — fail fast + honor <code>Retry-After</code></i>.
+            Contradiction → never a silent minor. Novelty <b>84</b> clears the gate →
+            <b>supersede 2.0.0 (major)</b>, <code>proposed</code>, escalated to human review.</p>
+        </div>
+      </div>
+
+      <p style="margin-top:16px"><b>The real A/B that decided ML-002</b> — new <code>2.0.0</code> vs current
+      <code>1.0.0</code> on representative gateway tasks + regression check:</p>
+      <table class="tbl">
+        <thead><tr><th>Signal</th><th>current 1.0.0</th><th>proposed 2.0.0</th><th>Δ</th></tr></thead>
+        <tbody>
+          <tr><td>Pass rate</td><td class="mono">6 / 10</td><td class="mono win">9 / 10</td><td class="win">+30pp</td></tr>
+          <tr><td>Tokens / task <span style="color:var(--dim)">(measured proxy)</span></td><td class="mono">404</td><td class="mono win">263</td><td><span class="neg">−35%</span></td></tr>
+          <tr><td>429 amplification</td><td>retry storms</td><td class="win">none</td><td class="win">resolved</td></tr>
+          <tr><td>Regression (other capsules)</td><td>—</td><td class="win">no regressions</td><td class="win">pass</td></tr>
+        </tbody>
+      </table>
+      <p>Tie-break: measured reward improves on <b>every axis</b> <b>and</b> CAP-S001 is more recent
+      (2026-06-27 &gt; 2026-06-19) — both favor the new guidance. Because it is a contradiction it still
+      <b>escalates to human review</b> before publish; on reject it stays <code>1.0.0</code> and
+      CAP-S001 is archived <code>rejected</code> with evidence retained.</p>
+    </div>
+  </section>
+
+  <!-- ============ INVARIANTS ============ -->
+  <h2 id="inv">Ledger invariants</h2>
+  <p class="sub">The four rules the MERGE-LEDGER guarantees, no matter how many developers contribute.</p>
+  <ol class="inv">
+    <li><b>One canonical capsule per finding.</b> Dedup collapses re-discoveries; provenance keeps every author.</li>
+    <li><b>No silent contradiction.</b> A <code>do/undo</code> can never be a minor/patch — it is supersede or reject, and it escalates.</li>
+    <li><b>Reward gates publish.</b> A proposed version merges to <code>master</code> head only if the A/B harness shows improved reward <i>and</i> prior-capsule regressions pass.</li>
+    <li><b>Append-only.</b> Entries are never edited in place; corrections are new entries (MERGE-LEDGER + PURGE-LEDGER).</li>
+    <li><b>It runs on itself.</b> CAPSULE captured its own build session (<code>CAP-SESSION-1a6fcc9b</code>) → <code>skill/ui-modularity@1.0.0</code>, promoted into enterprise <code>master</code> via PR #4 — the loop, proven end to end on its own code.</li>
+  </ol>
+
+  <footer>
+    <b>Sources of record:</b>
+    relay/src/components/panels/CapturePanel.tsx (gate) ·
+    relay/scripts/build-real-dataset.ts (route + A/B) ·
+    capsule/enterprise-skills/PROMOTION.md (governance) ·
+    capsule/enterprise-skills/MERGE-LEDGER.md (audit). <br>
+    MEASURED: transferScore, A/B token counts (Ollama prompt_eval + eval), Backboard thread_ids, session createdAt, parsed model.
+    DERIVED: novelty / importance, reuses, non-A/B token savings, scaffolding.
+  </footer>
+
+</div>
+</body>
+</html>

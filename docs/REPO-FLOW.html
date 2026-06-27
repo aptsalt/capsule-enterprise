@@ -84,11 +84,13 @@
 
   <header class="top">
     <p class="kicker">CAPSULE · Content Engine · 8090 Software Factory</p>
-    <h1>From coding session to enterprise skill — promotion, agentic CI, and how personal repos pin it</h1>
-    <p class="lede">Every session compresses into a <strong>capsule</strong>. An RL gate scores it; a clearing capsule is
-    <strong>proposed</strong> on a <code>promotion/&lt;skill&gt;</code> staging ref of <code>master</code> — a PR, not a push.
-    <strong>Agentic CI</strong> A/B-tests the new version vs current and merges the <strong>semver</strong> bump only if the
-    measured reward improves. Personal repos (developers <code>dee</code>, <code>ven</code>, <code>saim</code>) pull and
+    <h1>From coding session to enterprise skill — local registry, end-of-day promotion, and agentic CI</h1>
+    <p class="lede">Every session compresses into a <strong>capsule</strong> — distilled and <strong>LLM-judged</strong> on a
+    local model. A clearing capsule writes its bump to a <strong>local registry</strong> (<code>local-deepak</code>); the
+    <strong>end-of-day promote</strong> opens <strong>one CI-gated PR</strong> on a <code>promotion/&lt;skill&gt;</code> ref of
+    <code>master</code> — a PR, not a push. <strong>Agentic CI</strong> runs a <strong>multi-sample</strong> A/B (mean ± stdev)
+    of new vs current and merges the <strong>semver</strong> bump only if the measured reward improves. The enterprise registry
+    holds <strong>28 skills</strong>; personal repos (<code>dee</code>, <code>ven</code>, <code>saim</code>) pull and
     <strong>pin</strong> specific versions — and are told when the registry has moved ahead.</p>
   </header>
 
@@ -101,18 +103,18 @@
       </div>
       <div class="step">
         <div class="lbl"><span class="n">2</span>Refinery</div>
-        <div><h3>Capsule Refinery compresses it</h3><p>The session becomes a <strong>capsule</strong> stored in Backboard — one novel <span class="m">finding</span> plus its mental model, gotchas, and decisions.</p></div>
+        <div><h3>Capsule Refinery compresses it</h3><p>The session becomes a <strong>capsule</strong> (chunked map-reduce over the whole transcript) stored in Backboard — one novel <span class="m">finding</span> plus its mental model, gotchas, and decisions. <strong>LLM-judged</strong> for transfer + novelty (<span class="m">scoreCapsuleLLM</span>, <span class="m">noveltyLLM</span>).</p></div>
       </div>
       <div class="step">
-        <div class="lbl"><span class="n">3</span>Gate &amp; propose</div>
+        <div class="lbl"><span class="n">3</span>Local &rarr; EOD PR</div>
         <div>
-          <h3>The agentic gate proposes a version</h3>
-          <div class="gate"><p style="margin:0;color:#1f2329"><strong>Cleared</strong> (<span class="m">transferScore &ge; threshold</span> OR <span class="m">novelty &ge; 80</span>) <strong>&rarr;</strong> the finding is routed to a target skill as a <strong>proposed</strong> bump (<span class="m">major</span>/<span class="m">minor</span>/<span class="m">patch</span>) on a <span class="m">promotion/&lt;skill&gt;</span> staging ref of <code>master</code> — <strong>a PR, not a direct push.</strong></p></div>
+          <h3>Local registry, then one end-of-day PR</h3>
+          <div class="gate"><p style="margin:0;color:#1f2329"><strong>Cleared</strong> (<span class="m">transferScore &ge; threshold</span> OR <span class="m">novelty &ge; 80</span>) <strong>&rarr;</strong> the bump lands first in the <strong>local registry</strong> (<span class="m">~/.capsule/local-registry</span>, branch <span class="m">local-deepak</span>). End-of-day, <span class="m">scripts/eod-promote.ts</span> batches the day into <strong>one CI-gated PR</strong> on a <span class="m">promotion/&lt;skill&gt;</span> ref of <code>master</code> — <strong>a PR, not a direct push.</strong></p></div>
         </div>
       </div>
       <div class="step">
         <div class="lbl"><span class="n">4</span>Agentic CI</div>
-        <div><h3>Test before upgrade, then merge</h3><p>Before publishing, the pipeline runs the <strong>A/B harness (new version vs current)</strong> on representative tasks and <strong>regression-checks prior capsules</strong>. It merges the bump to <code>master</code> <strong>only if the measured reward improves</strong> (token savings / pass-rate / transfer lift); otherwise the version stays <span class="m">proposed</span> or is rejected. Dedup &amp; do/undo conflicts are resolved here (below). One commit per published bump — the audit trail.</p></div>
+        <div><h3>Test before upgrade, then merge</h3><p>Before publishing, <span class="m">promote.ts</span> runs the <strong>multi-sample A/B harness</strong> (<span class="m">src/lib/eval.ts</span> — new vs current, <strong>mean ± stdev</strong>, consistent-direction, real token counts) and <strong>regression-checks prior capsules</strong>. It merges the bump to <code>master</code> <strong>only if the measured reward improves</strong>; otherwise the version stays <span class="m">proposed</span> or is rejected. Dedup &amp; do/undo conflicts are resolved here (below). One commit per published bump — the audit trail.</p></div>
       </div>
       <div class="step">
         <div class="lbl"><span class="n">5</span>Consume</div>
@@ -133,22 +135,24 @@
           <li><span class="id">skill/command-verification</span><span class="ver">2.0.0 <span class="pill ok">published</span></span></li>
           <li><span class="id">skill/api-security</span><span class="ver">1.0.0 <span class="pill ok">published</span></span></li>
           <li><span class="id">skill/memory-management</span><span class="ver">1.0.0 <span class="pill ok">published</span></span></li>
-          <li><span class="id">skill/creative-franchise-expansion</span><span class="ver">1.0.0 <span class="pill up">proposed</span></span></li>
-          <li><span class="id">skill/automation-maintenance</span><span class="ver">1.0.0 <span class="pill up">proposed</span></span></li>
-          <li><span class="id">skill/api-rate-limiting</span><span class="ver">1.0.0 <span class="pill up">proposed</span></span></li>
+          <li><span class="id">skill/creative-franchise-expansion</span><span class="ver">1.0.0 <span class="pill ok">published</span></span></li>
+          <li><span class="id">skill/automation-maintenance</span><span class="ver">1.0.0 <span class="pill ok">published</span></span></li>
+          <li><span class="id">skill/api-rate-limiting</span><span class="ver">1.0.0 <span class="pill ok">published</span></span></li>
+          <li><span class="id">skill/ui-modularity</span><span class="ver">1.0.0 <span class="pill ok">published · self</span></span></li>
         </ul>
-        <p class="note">All <strong>7 real skills</strong> (8 versions forged), each <span class="m">learnedFrom</span> a real capsule (<span class="m">CAP-R001…R008</span>). <span class="m">registry.json</span> is the machine index; each <span class="m">SKILL.md</span> carries its capsule provenance and <span class="m">CHANGELOG.md</span> the full RL audit trail. The three <em>proposed</em> versions sit on <span class="m">promotion/&lt;skill&gt;</span> refs awaiting agentic-CI sign-off; <span class="m">command-verification</span> shows two published versions (<span class="m">@1.0.0</span> from CAP-R007, <span class="m">@2.0.0</span> from CAP-R005).</p>
+        <p class="note">The shown skills are the originally-distilled <strong>real</strong> ones, each <span class="m">learnedFrom</span> a real capsule (<span class="m">CAP-R001…R008</span>) — part of the larger <strong>28-skill enterprise registry (13 real + 15 popular)</strong>. The 13th real skill, <span class="m">ui-modularity@1.0.0</span>, was distilled from CAPSULE's <strong>own build session</strong> (<span class="m">CAP-SESSION-1a6fcc9b</span>) and promoted via <strong>PR #4</strong>. <span class="m">registry.json</span> is the machine index; each <span class="m">SKILL.md</span> carries its capsule provenance and <span class="m">CHANGELOG.md</span> the full RL audit trail.</p>
       </div>
       <div class="card">
         <p class="tag">pinned · reproducible · partial · 3 developers</p>
         <h3>Personal repos (dee · ven · saim)</h3>
         <span class="branch">branches: dee / ven / saim · my-project/</span>
         <ul class="k">
-          <li><span class="id">command-verification <span class="dee" style="font-size:11px">dee</span></span><span class="ver">1.0.0 <span class="pill up">update &rarr; 2.0.0</span></span></li>
-          <li><span class="id">angular-upgrade <span class="dee" style="font-size:11px">ven</span></span><span class="ver">1.0.0 <span class="pill ok">up to date</span></span></li>
-          <li><span class="id">memory-management <span class="dee" style="font-size:11px">saim</span></span><span class="ver">1.0.0 <span class="pill ok">up to date</span></span></li>
+          <li><span class="id">rest-api-design <span class="dee" style="font-size:11px">dee</span></span><span class="ver">1.0.1 <span class="pill up">promoted &rarr; master</span></span></li>
+          <li><span class="id">oauth2-jwt-auth <span class="dee" style="font-size:11px">dee</span></span><span class="ver">1.0.1 <span class="pill up">promoted &rarr; master</span></span></li>
+          <li><span class="id">docker-containerization <span class="dee" style="font-size:11px">ven</span></span><span class="ver">1.0.0 <span class="pill ok">up to date</span></span></li>
+          <li><span class="id">database-indexing <span class="dee" style="font-size:11px">saim</span></span><span class="ver">1.0.0 <span class="pill ok">up to date</span></span></li>
         </ul>
-        <p class="note">Each developer pulls only the skills their project needs: <code>dee</code> pinned <span class="m">command-verification@1.0.0</span> (one minor behind master&rsquo;s <span class="m">@2.0.0</span>), <code>ven</code> tracks the Angular skill, <code>saim</code> the memory-management skill. <span class="m">capsule status</span> reports <strong>1 update available</strong> for <code>dee</code>. Pins stay reproducible until the developer chooses to adopt.</p>
+        <p class="note">Each developer pins a <strong>disjoint 5</strong> of the 15 popular skills for their role: <code>dee</code> the Backend/API pack, <code>ven</code> Infra/DevOps, <code>saim</code> Data/Quality. <code>dee</code> distilled <strong>2 real session-driven upgrades</strong> (<span class="m">rest-api-design@1.0.1</span> + <span class="m">oauth2-jwt-auth@1.0.1</span>) and <strong>promoted them to <code>master</code> via PR #3</strong>; the rest stay pinned and reproducible until a matching session is captured.</p>
       </div>
     </div>
   </section>
@@ -156,14 +160,15 @@
   <section>
     <h2>Updates available — the divergence</h2>
     <table>
-      <thead><tr><th>Skill</th><th class="mono">Pinned</th><th class="mono">Master</th><th>Bump</th><th>Learned from (real capsule)</th></tr></thead>
+      <thead><tr><th>Skill</th><th class="mono">Pinned</th><th class="mono">Master</th><th>Bump</th><th>Promotion (real)</th></tr></thead>
       <tbody>
-        <tr><td class="mono">command-verification <span class="dee">dee</span></td><td class="mono">1.0.0</td><td class="mono"><span class="ver">2.0.0</span></td><td><span class="pill up">major</span></td><td>CAP-R005 — verify the actual current state from authoritative docs (supersedes CAP-R007&rsquo;s "inspect state")</td></tr>
-        <tr><td class="mono">angular-upgrade <span class="dee">ven</span></td><td class="mono">1.0.0</td><td class="mono">1.0.0</td><td><span class="pill ok">current</span></td><td>CAP-R004 — configure local bridges + WebSocket servers on upgrade</td></tr>
-        <tr><td class="mono">memory-management <span class="dee">saim</span></td><td class="mono">1.0.0</td><td class="mono">1.0.0</td><td><span class="pill ok">current</span></td><td>CAP-R008 — allocate enough memory for model loading in constrained envs</td></tr>
+        <tr><td class="mono">rest-api-design <span class="dee">dee</span></td><td class="mono">1.0.0</td><td class="mono"><span class="ver">1.0.1</span></td><td><span class="pill up">patch · PR #3</span></td><td>dee's real session upgrade — distilled locally, promoted to master through agentic CI</td></tr>
+        <tr><td class="mono">oauth2-jwt-auth <span class="dee">dee</span></td><td class="mono">1.0.0</td><td class="mono"><span class="ver">1.0.1</span></td><td><span class="pill up">patch · PR #3</span></td><td>dee's real session upgrade — distilled locally, promoted to master through agentic CI</td></tr>
+        <tr><td class="mono">ui-modularity <span class="dee">self</span></td><td class="mono">—</td><td class="mono"><span class="ver">1.0.0</span></td><td><span class="pill up">new · PR #4</span></td><td>CAP-SESSION-1a6fcc9b — CAPSULE's own build session, self-captured and promoted</td></tr>
+        <tr><td class="mono">api-rate-limiting <span class="dee">saim</span></td><td class="mono">1.0.0</td><td class="mono">1.0.0</td><td><span class="pill ok">proposed 2.0.0</span></td><td>CAP-S001 — do/undo conflict (ML-002), held proposed pending human review</td></tr>
       </tbody>
     </table>
-    <p class="note">As the RL loop keeps promoting capsule findings, <code>master</code> compounds while each developer stays pinned and reproducible — until they choose to adopt: <span class="m">capsule pull command-verification@2.0.0</span>. The <span class="m">command-verification @1.0.0 &rarr; @2.0.0</span> jump is a real <em>do/undo</em>-style supersede resolved by measured reward (below).</p>
+    <p class="note">As the RL loop keeps promoting capsule findings, <code>master</code> compounds while each developer stays pinned and reproducible — until they choose to adopt: <span class="m">capsule pull rest-api-design@1.0.1</span>. The <span class="m">api-rate-limiting @1.0.0 &rarr; 2.0.0</span> proposal is a real <em>do/undo</em> conflict (ML-002) resolved by measured reward, held proposed pending review (below).</p>
   </section>
 
   <section>
@@ -177,7 +182,7 @@
       <div class="card">
         <p class="tag">agentic CI · test before upgrade</p>
         <h3>CI-for-skills</h3>
-        <p style="color:var(--muted);font-size:14px;margin:0 0 10px">Before publishing, the pipeline runs the <strong>A/B harness (new vs current)</strong> on representative tasks and <strong>regression-checks prior capsules</strong>. It merges the bump <strong>only if the measured reward improves</strong> (token savings / pass-rate / transfer lift); else the version stays <span class="m">proposed</span> or is rejected.</p>
+        <p style="color:var(--muted);font-size:14px;margin:0 0 10px">Before publishing, <span class="m">promote.ts</span> runs the <strong>multi-sample A/B harness</strong> (<span class="m">eval.ts</span> — new vs current, <strong>mean ± stdev</strong>, consistent-direction) on representative tasks and <strong>regression-checks prior capsules</strong>. It merges the bump <strong>only if the measured reward improves</strong>; else the version stays <span class="m">proposed</span> or is rejected.</p>
       </div>
       <div class="card">
         <p class="tag">dedup · one canonical capsule</p>
@@ -190,27 +195,31 @@
         <p style="color:var(--muted);font-size:14px;margin:0 0 10px">When one capsule says "do X" and another "undo X / do Y" on the same skill, the pipeline flags a <strong>do/undo conflict</strong> and resolves by <strong>measured reward + recency</strong> (ties &rarr; human). Contradictory &rArr; <strong>major</strong> (supersede), additive &rArr; <strong>minor</strong>, refinement &rArr; <strong>patch</strong>. Every resolution lands in a <strong>merge-ledger</strong>.</p>
       </div>
     </div>
-    <p class="note">Worked example from the real data: <span class="m">command-verification</span> received CAP-R007 ("inspect system state, don&rsquo;t assume") then CAP-R005 ("verify the actual current state from authoritative docs"). The pipeline read this as a <strong>supersede</strong> (contradictory guidance), measured the reward, and minted <span class="m">@2.0.0</span> as a <strong>major</strong> over <span class="m">@1.0.0</span> — both kept queryable, the resolution logged in the merge-ledger.</p>
+    <p class="note">Two worked examples from the real data, both in the MERGE-LEDGER. <strong>Dedup (ML-001):</strong> <span class="m">command-verification</span> was re-discovered by <code>ven</code> (CAP-V001) after <code>dee</code> (CAP-R007) — near-identical signatures merged into one canonical capsule, both authors credited, no new version. <strong>Conflict (ML-002):</strong> <span class="m">api-rate-limiting</span> got "add client retries" (CAP-R003) then <code>saim</code>'s "remove retries, fail fast + honor Retry-After" (CAP-S001) — a do/undo contradiction, resolved by measured reward to a proposed <span class="m">2.0.0</span> major, escalated for human review.</p>
   </section>
 
   <section>
     <h2>Actual git history</h2>
-    <p style="color:var(--muted);font-size:15px"><span class="m">git --no-pager log --oneline --all --graph</span> — one commit per <strong>published</strong> version bump on <code>master</code> (each <span class="m">learnedFrom</span> a real capsule and dated from its <span class="m">publishedAt</span>); the personal-repo commits are authored by <span class="dee" style="font-family:var(--mono)">dee</span>, <span class="dee" style="font-family:var(--mono)">ven</span>, and <span class="dee" style="font-family:var(--mono)">saim</span>.</p>
-    <pre class="graph"><span class="dee">* a91f3c2</span> <span class="dee">(saim) feat(my-project): pull &amp; pin memory-management@1.0.0 (CAP-R008)</span>
-<span class="dee">* 7b20e4d</span> <span class="dee">(ven) feat(my-project): pull &amp; pin angular-upgrade@1.0.0 (CAP-R004)</span>
-<span class="dee">* 4c8aa61</span> <span class="dee">(dee) chore(my-project): capsule status — 1 update available (command-verification 2.0.0)</span>
-<span class="dee">* 1f7d903</span> <span class="dee">(dee) feat(my-project): pull &amp; pin command-verification@1.0.0 (CAP-R007)</span>
-<span class="h">* 0d4e8b7</span> docs(promotion): record proposed creative-franchise-expansion@1.0.0 (CAP-R001), automation-maintenance@1.0.0 (CAP-R002), api-rate-limiting@1.0.0 (CAP-R003) on promotion/* refs — gated, awaiting agentic CI
-<span class="star">* c52a7f8</span> feat(command-verification): v2.0.0 — learned from CAP-R005 (verify state from authoritative docs); agentic CI: reward +1920 tok/use &gt; current &rarr; merged, supersedes @1.0.0 [merge-ledger]
-<span class="star">* e8b1d40</span> feat(memory-management): v1.0.0 — learned from CAP-R008 (allocate enough memory for model loading in constrained envs)
-<span class="star">* 3a6c019</span> feat(api-security): v1.0.0 — learned from CAP-R006 (use valid auth credentials; avoid repeated 401s)
-<span class="star">* b74f2ad</span> feat(angular-upgrade): v1.0.0 — learned from CAP-R004 (configure local bridges + WebSocket servers on upgrade)
-<span class="star">* 9d1c5e6</span> feat(command-verification): v1.0.0 — learned from CAP-R007 (inspect system state directly, don't assume)
+    <p style="color:var(--muted);font-size:15px"><span class="m">git --no-pager log --oneline --all --graph --decorate</span> from the real <code>capsule-enterprise-skills</code> repo — <code>master</code> now carries <strong>28 skills</strong> with PRs <span class="m">#1–#4</span> merged. The personal-repo commits are authored by <span class="dee" style="font-family:var(--mono)">dee</span>, <span class="dee" style="font-family:var(--mono)">ven</span>, and <span class="dee" style="font-family:var(--mono)">saim</span>; <code>local-deepak</code> is the local self-capture branch.</p>
+    <pre class="graph"><span class="star">* eb471fa</span> <span class="h">(HEAD -&gt; master, origin/master)</span> chore(registry): regenerate after ui-modularity promotion (28 skills)
+<span class="star">* 56a7908</span> feat: promote skill/ui-modularity@1.0.0 from session capsule (PR #4)
+<span class="dee">* f70f37f</span> <span class="dee">(local-deepak) feat(local): ui-modularity 1.0.0 from CAP-SESSION-1a6fcc9b</span>
+<span class="star">* dfd093d</span> Merge pull request #2 from aptsalt/saim
+<span class="dee">* 52e9cf5</span> <span class="dee">(saim) feat(saim): personal pins + do/undo conflict capsule CAP-S001 (clean PR #2)</span>
+<span class="star">* 21d2061</span> Merge pull request #3 from aptsalt/dee
+<span class="dee">* f5b1126</span> <span class="dee">(dee) feat(dee): personal pins + 2 real session-driven skill upgrades</span>
+<span class="dee">* 59607d3</span> <span class="dee">(ven) chore(ven): rebuild personal repo on enterprise master</span>
+<span class="star">* 7faad9a</span> feat(skills): add 5 enterprise skills — db-migration-safety, docker-build-caching, ci-flake-quarantine, secret-rotation, websocket-reconnection
+<span class="star">* 8519243</span> feat: add 15 popular enterprise skills to the registry
+<span class="star">* 075ecc3</span> Merge pull request #1 from aptsalt/ven
+<span class="dee">* 7423a00</span> <span class="dee">(ven) docs: DEDUP — CAP-V001 merged into canonical command-verification (ven+dee co-credited)</span>
+<span class="star">* b116a06</span> docs(governance): MERGE-LEDGER + PROMOTION + agentic-CI gate; ML-001 dedup, ML-002 conflict
+<span class="star">* 7e0424f</span> feat: regenerate enterprise skills from real distilled sessions (CAPSULE)
 <span class="star">* ee9c662</span> chore: scaffold enterprise CAPSULE skills registry (README + layout)</pre>
-    <p class="note"><strong>Branches:</strong> <code>master</code> (enterprise registry, checked out) plus <code>dee</code> / <code>ven</code> / <code>saim</code> (personal repos), and <code>promotion/*</code> staging refs for the three <em>proposed</em> versions. The <span class="dee" style="font-family:var(--mono)">amber</span> commits live on the developer branches; the <span class="ver">blue</span> commits are the enterprise RL history; the <span class="h" style="font-family:var(--mono)">grey</span> commit records the gated proposals not yet merged by agentic CI.</p>
+    <p class="note"><strong>Branches:</strong> <code>master</code> (enterprise registry, checked out), <code>dee</code> / <code>ven</code> / <code>saim</code> (personal repos), <code>local-deepak</code> (local self-capture), and <code>promotion/*</code> staging refs. PR <span class="m">#1</span> = ven dedup (ML-001), <span class="m">#2</span> = saim do/undo conflict (ML-002), <span class="m">#3</span> = dee's 2 real upgrades (<span class="m">rest-api-design@1.0.1</span> + <span class="m">oauth2-jwt-auth@1.0.1</span>), <span class="m">#4</span> = self-captured <span class="m">ui-modularity@1.0.0</span>. The <span class="dee" style="font-family:var(--mono)">amber</span> commits are developer/local branches; the <span class="ver">blue</span> commits are the enterprise RL history.</p>
   </section>
 
-  <p class="foot">repo: C:\Users\deepc\capsule\enterprise-skills · HEAD: master · authors: Capsule Foundry &lt;foundry@capsule.dev&gt; (master), dee / ven / saim &lt;dev@localhost&gt; (branches) · promotion/* staging refs gated by agentic CI</p>
+  <p class="foot">repo: aptsalt/capsule-enterprise-skills · HEAD: master @ eb471fa · 28 skills (13 real + 15 popular) · branches: dee / ven / saim / local-deepak · PRs #1–#4 merged · promotion/* gated by multi-sample agentic CI · purge lifecycle via scripts/purge-skills.ts → PURGE-LEDGER</p>
 
 </div>
 </body>

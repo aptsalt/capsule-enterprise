@@ -391,8 +391,8 @@
     </div>
 
     <div class="stats rv d1" style="margin-top:40px">
-      <div class="stat"><div class="n">6</div><div class="l">API routes expose the loop</div></div>
-      <div class="stat"><div class="n">6<span class="u">-dim</span></div><div class="l">transfer score</div></div>
+      <div class="stat"><div class="n">11</div><div class="l">API routes expose the loop</div></div>
+      <div class="stat"><div class="n">6<span class="u">-dim</span></div><div class="l">LLM-judge transfer score</div></div>
       <div class="stat"><div class="n">43,032</div><div class="l">tokens saved (real tenant)</div></div>
       <div class="stat"><div class="n">−39<span class="u">%</span></div><div class="l">tokens, warm vs cold (AB-03, measured)</div></div>
     </div>
@@ -428,17 +428,17 @@
         <div class="idx">03</div>
         <div>
           <h3>DISTILL on the local model <span class="badge">on-device</span></h3>
-          <p>A strict-JSON system prompt goes to <b>Ollama qwen2.5-coder:14b</b> at <code>localhost:11434</code> (temp 0.2, 120s timeout, no network, no API key). The transcript becomes a structured <code>HandoffCapsule</code> — intent, decisions, tried-and-rejected, current state, next steps, gotchas, mental model. Empty fields are topped up from a heuristic so a capsule is never blank. Cerebras llama-3.3-70b is an optional cloud boost only when keyed.</p>
-          <p class="mod">module · <b>cerebras.ts</b> — <code>distill(session)</code> → <code>{ capsule, engine, ms }</code></p>
+          <p>A strict-JSON system prompt goes to <b>Ollama qwen2.5-coder:14b</b> at <code>localhost:11434</code> (temp 0.2, 120s timeout, no network, no API key). The transcript becomes a structured <code>HandoffCapsule</code> — intent, decisions, tried-and-rejected, current state, next steps, gotchas, mental model. Oversized sessions self-route through a <b>chunked map-reduce</b> (<code>distillChunked</code>: MAP each chunk → partial, REDUCE → one) so a whole long session is captured, not truncated. Empty fields are topped up from a heuristic; Cerebras llama-3.3-70b is an optional cloud boost only when keyed. Capture also runs <b>ambient</b> — a non-blocking Stop-hook + <code>capture-watcher.ts</code> auto-distill closed sessions.</p>
+          <p class="mod">module · <b>cerebras.ts</b> — <code>distill(session)</code> · <code>distillChunked(session)</code> → <code>{ capsule, engine, ms }</code></p>
         </div>
       </div>
 
       <div class="stage">
         <div class="idx">04</div>
         <div>
-          <h3>SCORE the transfer, 6 dimensions</h3>
-          <p>A handoff isn't notes — it's whether understanding <i>transfers</i>. Each capsule is rated 0–100 across <b>intent clarity, decision traceability, reasoning explicitness, gotcha coverage, next-step actionability</b> and <b>mental-model transfer</b>, using a <code>richness()</code> heuristic (file refs, <code>:line</code>, numbers, "because"). The two weakest dimensions return coaching tips.</p>
-          <p class="mod">module · <b>scorer.ts</b> — <code>scoreCapsule(c)</code> → <code>HandoffScore</code></p>
+          <h3>SCORE the transfer — LLM-judge, 6 dimensions</h3>
+          <p>A handoff isn't notes — it's whether understanding <i>transfers</i>. The primary path is an <b>LLM-judge</b>: <code>scoreCapsuleLLM(c)</code> has the local model <i>rate</i> the capsule 0–100 across <b>intent clarity, decision traceability, reasoning explicitness, gotcha coverage, next-step actionability</b> and <b>mental-model transfer</b> (a model judging a capsule — <i>not</i> a trained reward), with <code>noveltyLLM</code> for non-obviousness. Both fall back to the fast offline heuristic <code>scoreCapsule(c)</code> (a <code>richness()</code> measure) when Ollama is down.</p>
+          <p class="mod">module · <b>scorer.ts</b> — <code>scoreCapsuleLLM(c)</code> · <code>noveltyLLM(c)</code> · <code>scoreCapsule(c)</code> → <code>HandoffScore</code></p>
         </div>
       </div>
 
@@ -466,7 +466,7 @@
         <div class="idx">07</div>
         <div>
           <h3>PROMOTION to the enterprise skills repo — PR, not push</h3>
-          <p>A kept capsule's single <code>finding</code> is <code>routedTo[]</code> the skills it should teach — each route naming a target skill and proposing a semver <code>bump</code> (major / minor / patch). Promotion is a <b>proposed</b> version on a <code>promotion/&lt;skill&gt;</code> staging ref of <code>master</code>, <b>not</b> a direct push. <b>Agentic CI</b> then runs the A/B harness (new version vs current) on representative tasks and regression-checks prior capsules, merging the bump <b>only if the measured reward improves</b> — else it stays <code>proposed</code> or is rejected. Near-identical capsules from <code>dee</code>/<code>ven</code>/<code>saim</code> dedup by semantic signature; do/undo clashes resolve by reward + recency in a merge-ledger. The repo address is <code>capsule://skills/&lt;name&gt;</code>.</p>
+          <p>A kept capsule's single <code>finding</code> is <code>routedTo[]</code> the skills it should teach — each route naming a target skill and proposing a semver <code>bump</code> (major / minor / patch). Promotion is two-tier: during the day the upgrade is committed to the developer's <b>local registry</b> (<code>~/.capsule/local-registry</code>, branch <code>local-deepak</code>, <b>not pushed</b>); the <b>end-of-day job</b> (<code>eod-promote.ts</code>) opens <b>one CI-gated PR</b> <code>local-deepak → master</code> against the enterprise registry (<b>28 skills</b>). <b>Agentic CI</b> (<code>eval.ts</code>) runs a <b>multi-sample A/B</b> (new vs current, mean ± stdev + direction-consistency) and an LLM-judge regression check, merging the bump <b>only if the measured reward improves</b>. Near-identical capsules from <code>dee</code>/<code>ven</code>/<code>saim</code> dedup by semantic signature; do/undo clashes resolve by reward + recency in a merge-ledger; dead skills retire via the <b>purge</b> pole (PURGE-LEDGER). The repo address is <code>capsule://skills/&lt;name&gt;</code>.</p>
         </div>
       </div>
 
@@ -483,7 +483,7 @@
         <div class="idx">09</div>
         <div>
           <h3>EXPOSED via the API surface</h3>
-          <p>Six App Router handlers expose every slice of the loop: <code>/api/sessions</code>, <code>/api/capsule</code>, <code>/api/capsules</code>, <code>/api/skills</code>, <code>/api/graph</code>, <code>/api/inherit</code>. Adoption is a metadata op — <code>POST /api/skills</code> echoes the <code>skillId@version</code> descriptor, never mutating the dataset.</p>
+          <p>Eleven App Router handlers expose every slice of the loop: <code>/api/sessions</code>, <code>/api/capsule</code>, <code>/api/capsules</code>, <code>/api/skills</code>, <code>/api/graph</code>, <code>/api/inherit</code>, the Agent Chat routes <code>/api/chat</code>, <code>/api/chat/context</code>, <code>/api/chats[/save]</code>, and live <code>/api/promote</code>. Adoption is a metadata op — <code>POST /api/skills</code> echoes the <code>skillId@version</code> descriptor, never mutating the dataset.</p>
           <p class="mod">routes · <b>src/app/api/*</b></p>
         </div>
       </div>
@@ -491,8 +491,8 @@
       <div class="stage">
         <div class="idx">10</div>
         <div>
-          <h3>ADOPTED / pinned by personal repos</h3>
-          <p>A developer flips Enterprise on and their personal repo pins the <b>capsule-maxxed best version</b> of each skill. The next session starts warm — the briefing is injected before the first prompt. Adoption lands in the Zustand <code>adopted</code> overlay, optimistically and reversibly.</p>
+          <h3>ADOPTED / pinned by personal repos · Agent Chat warm-start</h3>
+          <p>A developer flips Enterprise on and their personal repo pins the <b>capsule-maxxed best version</b> of each skill. The next session starts warm — the briefing is injected before the first prompt. The merged in-app <b>Agent Chat + Skills Composer</b> (PR #1) makes this tangible: chat with a local-Ollama agent that has Backboard memory, attach enterprise skills via the <i>Skills ▾</i> composer, and with <i>Capsule context</i> on the latest briefing + recalled memory are injected so it answers oriented. Adoption lands in the Zustand <code>adopted</code> overlay, optimistically and reversibly.</p>
         </div>
       </div>
 
@@ -626,16 +626,20 @@
 <section>
   <div class="wrap">
     <p class="kicker rv">HTTP surface</p>
-    <h2 class="rv">Six routes expose the loop</h2>
-    <p class="sec-lede rv">All <code>force-dynamic</code>; the two model-calling routes set <code>maxDuration = 120</code> for the local model.</p>
+    <h2 class="rv">Eleven routes expose the loop</h2>
+    <p class="sec-lede rv">All <code>force-dynamic</code>; model-calling routes raise <code>maxDuration</code> (<code>/api/capsule</code> 120s, <code>/api/chat</code> 300s).</p>
 
     <div class="apis rv d1">
-      <div class="api"><span class="m post">POST</span> <code class="r">/api/capsule</code><p>capture → distill → score → store. Returns <code>{ capsule, engine, ms, score, store }</code>.</p></div>
+      <div class="api"><span class="m post">POST</span> <code class="r">/api/capsule</code><p>capture → distill (chunked) → LLM-judge → store. Returns <code>{ capsule, engine, ms, score, store }</code>.</p></div>
       <div class="api"><span class="m post">POST</span> <code class="r">/api/inherit</code><p>The money demo — cold vs warm agent for a project. Returns <code>{ hasCapsule, score, cold, warm }</code>.</p></div>
+      <div class="api"><span class="m post">POST</span> <code class="r">/api/chat</code><p>Agent Chat — streamed; capsule briefing + attached skills + recalled Backboard memory injected.</p></div>
+      <div class="api"><span class="m post">POST</span> <code class="r">/api/chat/context</code><p>Observability — the exact system prompt + recalled memory that <i>would</i> be sent, no generation.</p></div>
       <div class="api"><span class="m get">GET</span> <code class="r">/api/sessions</code><p>The 15 most recent <code>~/.claude</code> sessions: id, project, path, mtime, sizeKB.</p></div>
-      <div class="api"><span class="m get">GET</span> <code class="r">/api/capsules</code><p>The seeded enterprise dataset — the bank's historical capsules.</p></div>
+      <div class="api"><span class="m get">GET</span> <code class="r">/api/capsules</code><p>The tenant's captured capsules.</p></div>
       <div class="api"><span class="m get">GET</span> / <span class="m post">POST</span> <code class="r">/api/skills</code><p>Registry read; POST adopts a <code>skillId@version</code> (metadata echo, no mutation).</p></div>
       <div class="api"><span class="m get">GET</span> <code class="r">/api/graph</code><p>Canonical nodes + derived <code>learns</code> edges — provenance topology.</p></div>
+      <div class="api"><span class="m get">GET</span> / <span class="m post">POST</span> <code class="r">/api/chats[/save]</code><p>Durable chat sessions (<code>~/.relay/chats/*.json</code>), each LLM-titled.</p></div>
+      <div class="api"><span class="m post">POST</span> <code class="r">/api/promote</code><p>Live promotion — real Ollama A/B + git commit/push of <code>promotion/&lt;skill&gt;/</code> (proposed, not auto-published).</p></div>
     </div>
   </div>
 </section>
@@ -666,7 +670,7 @@
 <footer>
   <div class="wrap">
     <p class="mono">CAPSULE · Next.js 15 App Router · React 19 · Zustand 5 · <code>cd relay &amp;&amp; npm run dev</code> → localhost:3010</p>
-    <p>Loop engine <span class="tag">capture.ts</span><span class="tag">cerebras.ts</span><span class="tag">scorer.ts</span><span class="tag">backboard.ts</span><span class="tag">selectors.ts</span><span class="tag">store.ts</span> · distilled locally on qwen2.5-coder:14b · memory in Backboard. Accurate to the working source.</p>
+    <p>Loop engine <span class="tag">capture.ts</span><span class="tag">cerebras.ts</span><span class="tag">scorer.ts</span><span class="tag">chatContext.ts</span><span class="tag">eval.ts</span><span class="tag">promote.ts</span><span class="tag">local-registry.ts</span><span class="tag">purge.ts</span><span class="tag">backboard.ts</span> · distilled locally on qwen2.5-coder:14b (chunked) · LLM-judge scoring · Agent Chat + Skills Composer · memory in Backboard. GitHub <span class="tag">aptsalt/capsule @ 5968a51</span>. It even captured its own build session (<span class="tag">CAP-SESSION-1a6fcc9b → ui-modularity@1.0.0</span>, PR #4). Accurate to the working source.</p>
     <p style="margin-top:16px;color:var(--faint)"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--yellow);vertical-align:middle;margin-right:7px"></span>Powered on-device. Memory follows the entity, never the model.</p>
   </div>
 </footer>

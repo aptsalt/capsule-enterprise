@@ -135,10 +135,12 @@
   <header class="top">
     <p class="kicker">CAPSULE · Enterprise Skills Registry · 8090 Software Factory</p>
     <h1>The multi-developer enterprise model</h1>
-    <p class="lede">Many developers learn in their own repos. CAPSULE turns a passing capsule into a
-    <strong>proposed</strong> skill version, <strong>tests it before upgrade</strong> with an agentic A/B + regression
-    harness, and reconciles <strong>overlapping</strong> and <strong>contradictory</strong> capsules into one canonical
-    registry — auditable down to the commit.</p>
+    <p class="lede">Many developers learn in their own repos. CAPSULE writes each passing capsule's skill bump to a
+    <strong>local registry</strong> first, then the <strong>end-of-day promote</strong> opens <strong>one CI-gated
+    PR</strong> into the 28-skill enterprise <code>master</code>. The agentic CI <strong>tests before upgrade</strong>
+    with a <strong>multi-sample</strong> A/B + regression harness, and reconciles <strong>overlapping</strong> and
+    <strong>contradictory</strong> capsules into one canonical registry — auditable down to the commit (PRs #1–#4
+    merged, including CAPSULE's own self-captured <code>ui-modularity</code>).</p>
   </header>
 
   <!-- THREE PLAIN ANSWERS -->
@@ -148,15 +150,16 @@
       <div class="qcard">
         <p class="q">1 · How it reaches the enterprise repo</p>
         <p class="a">A capsule that clears the gate (<span class="m">transferScore ≥ threshold</span> <b>OR</b>
-        <span class="m">novelty ≥ 80</span>) is <b>proposed</b>, not pushed. It is staged as a PR on a
-        <span class="m">promotion/&lt;skill&gt;</span> ref of <b>master</b>. The head of <code>master</code> only moves
-        when review merges it.</p>
+        <span class="m">novelty ≥ 80</span>) writes its bump to a <b>local registry</b> (<span class="m">local-deepak</span>),
+        then <span class="m">eod-promote.ts</span> opens <b>one CI-gated PR</b> on <b>master</b>. The head of
+        <code>master</code> only moves when review merges it.</p>
       </div>
       <div class="qcard">
         <p class="q">2 · How it's tested before upgrade</p>
-        <p class="a"><b>Agentic CI</b> runs an <b>A/B harness</b> — new version vs current published — on representative
-        tasks, plus a <b>regression replay</b> of prior capsules. The bump publishes <b>only if measured reward improves</b>
-        (tokens down · pass-rate up · transfer up) with no regressions. CI-for-skills.</p>
+        <p class="a"><b>Agentic CI</b> (<span class="m">eval.ts</span> → <span class="m">promote.ts</span>) runs a
+        <b>multi-sample A/B harness</b> — new vs current, <b>mean ± stdev</b> with a consistent-direction check on real
+        token counts — plus a <b>regression replay</b>. The bump publishes <b>only if measured reward improves</b> with no
+        regressions. CI-for-skills.</p>
       </div>
       <div class="qcard">
         <p class="q">3 · Same / contradictory capsules</p>
@@ -187,10 +190,12 @@
         <strong>proposes</strong>.</p></div>
       </div>
       <div class="step">
-        <div class="lbl"><span class="n">3</span>propose</div>
-        <div><h3>Staged on <span class="m">promotion/&lt;skill&gt;</span></h3>
-        <p>Writes <span class="m">PROPOSED-&lt;version&gt;.SKILL.md</span> + a <span class="m">CI-&lt;version&gt;.md</span>
-        report to the staging ref. This is the PR. Master head is untouched.</p></div>
+        <div class="lbl"><span class="n">3</span>local → EOD PR</div>
+        <div><h3>Local registry, then one PR at end of day</h3>
+        <p>The bump lands first in the <b>local registry</b> (<span class="m">~/.capsule/local-registry</span>, branch
+        <span class="m">local-deepak</span>). End-of-day, <span class="m">scripts/eod-promote.ts</span> batches the day's
+        bumps into <b>one CI-gated PR</b> on <span class="m">promotion/&lt;skill&gt;</span> → master. Master head is untouched
+        until merge.</p></div>
       </div>
       <div class="step">
         <div class="lbl"><span class="n">4</span>agentic CI</div>
@@ -206,10 +211,13 @@
 
     <pre class="flow" style="margin-top:22px">
    capsule <span class="mut">(clears gate)</span>
-        │  <span class="b">propose</span>
+        │  <span class="b">write bump → local-deepak</span>
+        ▼
+   <span class="b">~/.capsule/local-registry</span>   <span class="mut">← instant, private, no network</span>
+        │  <span class="g">eod-promote.ts: batch the day → ONE CI-gated PR</span>
         ▼
    <span class="b">promotion/&lt;skill&gt;/PROPOSED-x.y.z</span>   <span class="mut">← staged candidate (a PR, not a push)</span>
-        │  <span class="g">agentic CI: A/B harness + regression check</span>
+        │  <span class="g">agentic CI: multi-sample A/B (mean ± stdev) + regression check</span>
         ├── reward improves + review OK ───▶ <span class="pub">merge → bump master head (PUBLISHED)</span>
         ├── reward improves, contradiction ─▶ <span class="b">HUMAN REVIEW</span> → merge or reject
         └── reward flat / worse ────────────▶ <span class="rej">held `proposed` or `rejected` (no publish)</span></pre>
@@ -220,8 +228,9 @@
     <h2><span class="num">02</span>Agentic CI — testing before the upgrade</h2>
     <p class="h2sub">A version upgrade must <strong>earn</strong> its place with measured evidence, exactly like code passing
     tests. Below is the <strong>real</strong> CI report that gated <span class="m">api-rate-limiting@2.0.0</span> (saim's
-    <span class="m">CAP-S001</span>) — A/B on 10 representative gateway tasks plus a prior-capsule regression replay,
-    measured on the local model with real token counts.</p>
+    <span class="m">CAP-S001</span>) — a <strong>multi-sample</strong> A/B (<span class="m">src/lib/eval.ts</span>) over 10
+    representative gateway tasks, reported as <strong>mean ± stdev</strong> with a consistent-direction check, plus a
+    prior-capsule regression replay — all on the local model with real token counts.</p>
 
     <div class="cols" style="grid-template-columns:1fr 1fr; align-items:start">
       <div class="card">
@@ -356,33 +365,40 @@ skill/command-verification
 
     <div class="branchmap">
       <pre class="graph">
-<span class="head">master</span> <span class="mut">— enterprise registry (latest published version of every skill)</span>
+<span class="head">master</span> <span class="mut">— enterprise registry · 28 skills (13 real + 15 popular)</span>
   │
-  ├─● <span class="ref">master@b116a06</span>  governance: MERGE-LEDGER + PROMOTION + agentic-CI gate
-  │                  records <span class="mut">ML-001 (dedup ven+dee)</span> · <span class="mut">ML-002 (conflict saim)</span>
+  ├─● <span class="ref">master@eb471fa</span>  regenerate after <span class="head">ui-modularity</span> promotion (28 skills)
+  │     ● <span class="ref">56a7908</span>  promote skill/ui-modularity@1.0.0 from session capsule  <span class="mut">(PR #4)</span>
+  │     ● governance: MERGE-LEDGER + PROMOTION + agentic-CI gate
+  │        records <span class="mut">ML-001 (dedup ven+dee)</span> · <span class="mut">ML-002 (conflict saim)</span>
   │
-  ├───────────────► <span class="saim">saim</span>  <span class="mut">personal branch</span>
-  │                   ● pins 3 enterprise skills + contributes <span class="saim">CAP-S001</span>
+  ├───────────────► <span class="ref">local-deepak</span>  <span class="mut">local registry (self-capture)</span>
+  │                   ● <span class="ref">f70f37f</span> ui-modularity 1.0.0 from <span class="head">CAP-SESSION-1a6fcc9b</span>
+  │                        └▶ EOD promote → <span class="mut">PR #4 merged to master</span>
+  │
+  ├───────────────► <span class="saim">saim</span>  <span class="mut">personal branch · Data/Quality pack</span>
+  │                   ● pins 5 popular skills + contributes <span class="saim">CAP-S001</span>  <span class="mut">(PR #2)</span>
   │                   ● CONFLICT do/undo → <span class="saim">SUPERSEDE 2.0.0 (escalated)</span>
   │                        └▶ staged on promotion/api-rate-limiting  <span class="mut">(proposed)</span>
   │
-  ├───────────────► <span class="ven">ven</span>   <span class="mut">personal branch</span>
-  │                   ● pins 3 enterprise skills + contributes <span class="ven">CAP-V001</span>
+  ├───────────────► <span class="ven">ven</span>   <span class="mut">personal branch · Infra/DevOps pack</span>
+  │                   ● pins 5 popular skills + contributes <span class="ven">CAP-V001</span>  <span class="mut">(PR #1)</span>
   │                   ● DEDUP → merged into canonical command-verification
   │                        └▶ <span class="ven">ven + dee co-credited</span>, no new version
   │
   ●  <span class="ref">7e0424f</span> regenerate enterprise skills from real distilled sessions
   │
-  └───────────────► <span class="dee">dee</span>   <span class="mut">personal branch</span>
-                      ● pull &amp; pin 3 skills (payment-idempotency@2.0.0, iso20022-mapper@1.2.0, pci-redaction@1.2.0)
-                      ● status: <span class="dee">2 updates available</span> as master moved ahead of pins
-                      ● pins real distilled skills in capsule.lock + refresh STATUS</pre>
+  └───────────────► <span class="dee">dee</span>   <span class="mut">personal branch · Backend/API pack</span>
+                      ● pins 5 popular skills: rest-api-design, oauth2-jwt-auth, idempotency-keys,
+                        cursor-pagination, redis-caching
+                      ● 2 real upgrades → <span class="dee">rest-api-design@1.0.1 + oauth2-jwt-auth@1.0.1</span>
+                        └▶ EOD promote → <span class="mut">PR #3 merged to master</span></pre>
     </div>
     <div class="legend">
-      <span><span class="swatch" style="background:var(--energy)"></span>master · enterprise head</span>
-      <span><span class="swatch" style="background:#9333ea"></span>dee · pins &amp; consumes</span>
-      <span><span class="swatch" style="background:#0891b2"></span>ven · dedup (ML-001)</span>
-      <span><span class="swatch" style="background:var(--warn)"></span>saim · conflict (ML-002)</span>
+      <span><span class="swatch" style="background:var(--energy)"></span>master · enterprise head @ eb471fa</span>
+      <span><span class="swatch" style="background:#9333ea"></span>dee · 2 upgrades (PR #3)</span>
+      <span><span class="swatch" style="background:#0891b2"></span>ven · dedup (ML-001, PR #1)</span>
+      <span><span class="swatch" style="background:var(--warn)"></span>saim · conflict (ML-002, PR #2)</span>
     </div>
   </section>
 
@@ -392,38 +408,44 @@ skill/command-verification
     <p class="h2sub">Verbatim <span class="m">git log --all --graph --oneline --decorate</span> from the enterprise-skills
     repo. Three dev branches fan off the enterprise trunk; governance + every version bump is one commit, the RL audit trail.</p>
     <pre class="graph">
-<span class="star">*</span> <span class="ref">b116a06</span> <span class="mut">(HEAD -&gt; master, origin/master)</span> docs(governance): add MERGE-LEDGER + PROMOTION + agentic-CI gate; record ML-001 dedup (ven+dee) &amp; ML-002 conflict (saim)
-│ <span class="star">*</span> <span class="saim">76c8d9e</span> <span class="mut">(origin/saim, saim)</span> docs(my-project): CONFLICT resolution — CAP-S001 do/undo -&gt; SUPERSEDE major 2.0.0 (escalated)
-│ <span class="star">*</span> <span class="saim">aed7b40</span> feat(my-project): saim pins 3 enterprise skills + contributes CAP-S001 (contradicts api-rate-limiting)
+<span class="star">*</span> <span class="ref">eb471fa</span> <span class="mut">(HEAD -&gt; master, origin/master)</span> chore(registry): regenerate after ui-modularity promotion (28 skills)
+<span class="star">*</span> <span class="ref">56a7908</span> feat: promote skill/ui-modularity@1.0.0 from session capsule (PR #4)
+│ <span class="star">*</span> <span class="ref">f70f37f</span> <span class="mut">(origin/local-deepak)</span> feat(local): ui-modularity 1.0.0 from CAP-SESSION-1a6fcc9b
 │/
-│ <span class="star">*</span> <span class="ven">7423a00</span> <span class="mut">(origin/ven, ven)</span> docs(my-project): DEDUP resolution — CAP-V001 merged into canonical command-verification (ven+dee co-credited)
-│ <span class="star">*</span> <span class="ven">82d7910</span> feat(my-project): ven pins 3 enterprise skills + contributes CAP-V001
+<span class="star">*</span> <span class="ref">66efc53</span> chore: clean personal my-project re-added by saim merge (enterprise master = catalog only)
+<span class="star">*</span>   <span class="ref">dfd093d</span> Merge pull request #2 from aptsalt/saim
+│\
+│ <span class="star">*</span> <span class="saim">52e9cf5</span> <span class="mut">(origin/saim, saim)</span> feat(saim): personal pins + do/undo conflict capsule CAP-S001 (clean PR #2)
 │/
+<span class="star">*</span> <span class="ref">abcb3c8</span> chore: remove personal my-project re-added by dev-branch merges
+<span class="star">*</span>   <span class="ref">21d2061</span> Merge pull request #3 from aptsalt/dee
+│\
+│ <span class="star">*</span> <span class="dee">f5b1126</span> <span class="mut">(origin/dee, dee)</span> feat(dee): personal pins + 2 real session-driven skill upgrades
+│ <span class="star">*</span> <span class="ven">59607d3</span> <span class="mut">(origin/ven, ven)</span> chore(ven): rebuild personal repo on enterprise master
+│/
+<span class="star">*</span> <span class="ref">899c766</span> chore: remove personal my-project from enterprise master
+<span class="star">*</span> <span class="ref">9655cde</span> fix(registry): regenerate registry.json from all 27 skill folders
+<span class="star">*</span> <span class="ref">3e2a8a3</span> promote(creative-franchise-expansion): propose 2.0.0 from CAP-R001 — CI flat/worse +86 tok (held proposed)
+<span class="star">*</span> <span class="ref">7faad9a</span> feat(skills): add 5 enterprise skills — db-migration-safety, docker-build-caching, ci-flake-quarantine, secret-rotation, websocket-reconnection
+<span class="star">*</span> <span class="ref">8519243</span> feat: add 15 popular enterprise skills to the registry
+<span class="star">*</span>   <span class="ref">075ecc3</span> Merge pull request #1 from aptsalt/ven
+│\
+│ <span class="star">*</span> <span class="ven">7423a00</span> docs(my-project): DEDUP resolution — CAP-V001 merged into canonical command-verification (ven+dee co-credited)
+│ <span class="star">*</span> <span class="ven">82d7910</span> feat(my-project): ven pins enterprise skills + contributes CAP-V001
+│/
+<span class="star">*</span> <span class="ref">b116a06</span> docs(governance): add MERGE-LEDGER + PROMOTION + agentic-CI gate; record ML-001 dedup (ven+dee) &amp; ML-002 conflict (saim)
 <span class="star">*</span> <span class="ref">7e0424f</span> feat: regenerate enterprise skills from real distilled sessions (CAPSULE)
-│ <span class="star">*</span> <span class="dee">9e4a851</span> <span class="mut">(origin/dee, dee)</span> chore(dee): pin real distilled skills in capsule.lock + refresh STATUS
-│ <span class="star">*</span> <span class="dee">07c7859</span> chore(my-project): capsule status — 2 updates available (payment-idempotency 2.1.0, iso20022-mapper 1.3.0)
-│ <span class="star">*</span> <span class="dee">19d2e0f</span> feat(my-project): pull &amp; pin 3 enterprise skills (payment-idempotency@2.0.0, iso20022-mapper@1.2.0, pci-redaction@1.2.0)
-│/
-<span class="star">*</span> <span class="ref">211ca31</span> docs(sca-challenge): record proposed v1.1.0 from CAP-1008 (WebAuthn passkey) — gated, not yet promoted
-<span class="star">*</span> <span class="ref">75ff5e8</span> feat(sca-challenge): v1.0.0 — learned from CAP-1005 (server-side risk step-up; single-use intent-bound tokens)
-<span class="star">*</span> <span class="ref">64a71f4</span> feat(reconciliation-ledger): v1.1.0 — learned from CAP-1004 (composite (EndToEndId,amount) key + value-date fallback)
-<span class="star">*</span> <span class="ref">9f84c2d</span> feat(reconciliation-ledger): v1.0.0 — learned from CAP-1004 (single-key EndToEndId reconcile)
-<span class="star">*</span> <span class="ref">f52337d</span> feat(pci-redaction): v1.2.0 — learned from CAP-1003 (dual-boundary scrub: capsule writer + tool-call args)
-<span class="star">*</span> <span class="ref">361af9a</span> feat(pci-redaction): v1.1.0 — learned from CAP-1003 (Luhn validation cuts false positives on long IDs)
-<span class="star">*</span> <span class="ref">6c33ba8</span> feat(pci-redaction): v1.0.0 — learned from CAP-1003 (PAN regex scrubber on prompt egress)
-<span class="star">*</span> <span class="ref">98555af</span> feat(iso20022-mapper): v1.3.0 — learned from CAP-1002 (ISO 4217 exponent table for per-currency scaling; JPY/BHD)
-<span class="star">*</span> <span class="ref">d305023</span> feat(payment-idempotency): v2.1.0 — learned from CAP-1001 (transaction-scoped (debtor,amount,currency) key, 24h TTL)
-<span class="star">*</span> <span class="ref">e10a54f</span> feat(iso20022-mapper): v1.2.0 — learned from CAP-1007 (local XSD drifts; validate against network-published schema in CI)
-<span class="star">*</span> <span class="ref">ddf8706</span> feat(payment-idempotency): v2.0.0 — learned from CAP-1006 (request-hash dedup blocks legit repeats; move to a dedicated idempotency table)
 <span class="star">*</span> <span class="ref">ee9c662</span> chore: scaffold enterprise capsule-maxxed skills registry (README + layout)</pre>
-    <p class="note"><span class="dot"></span>Note <span class="m">211ca31</span>: a proposed <span class="ver">v1.1.0</span>
-    (WebAuthn passkey, CAP-1008) recorded as <em>gated, not yet promoted</em> — the same propose-before-publish discipline
-    applied earlier in the trunk.</p>
+    <p class="note"><span class="dot"></span>Real, current history: PRs <span class="m">#1</span> (ven dedup), <span class="m">#2</span>
+    (saim do/undo conflict), <span class="m">#3</span> (dee's 2 real upgrades) and <span class="m">#4</span> (self-captured
+    <span class="ver">ui-modularity@1.0.0</span> off branch <span class="m">local-deepak</span>, from <span class="m">CAP-SESSION-1a6fcc9b</span>)
+    all merged to <code>master</code>, which now carries <strong>28 skills</strong>. Note <span class="m">3e2a8a3</span>: a proposed
+    <span class="ver">2.0.0</span> held because CI measured the reward <em>flat/worse</em> — propose-before-publish, enforced.</p>
   </section>
 
   <div class="foot">
-    <span>CAPSULE · enterprise-skills · master @ b116a06</span>
-    <span>PROMOTION.md · MERGE-LEDGER.md · registry.json</span>
+    <span>CAPSULE · enterprise-skills · master @ eb471fa · 28 skills · PRs #1–#4 merged</span>
+    <span>PROMOTION.md · MERGE-LEDGER.md · registry.json · purge: scripts/purge-skills.ts → PURGE-LEDGER</span>
   </div>
 
 </div>

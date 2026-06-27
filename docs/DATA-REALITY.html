@@ -48,20 +48,26 @@
   <h1>What's real vs mock</h1>
   <p class="sub">Hackathon integrity matters. This is the exact, honest line between what CAPSULE actually
   computes and stores on your machine and the small slice that is still derived scaffolding. As of this build,
-  <b>most of CAPSULE is real</b> — the seeded Meridian scenario has been replaced by measured data.</p>
+  <b>most of CAPSULE is real</b> — the seeded Meridian scenario has been replaced by measured data, scoring is now
+  <b>LLM-judged</b> (not a trained benchmark), and the eval is a <b>multi-sample measured proxy</b>.</p>
   <div class="accentbar"></div>
 
   <h2>One-line answer</h2>
-  <div class="card g"><h3>✓ The dataset is now real</h3>
-    <p>The 8 capsules (<code>CAP-R001…R008</code>) are distilled from your <b>real <code>~/.claude</code> sessions</b>
-    by <b>local Ollama <code>qwen2.5-coder:14b</code></b>, the 7 skills carry real semver learned from those capsules,
-    the A/B panel shows <b>measured Ollama token deltas</b>, the metrics are a real roll-up, and every capsule is
-    written to <b>live Backboard memory</b> with real <code>thread_id</code>s. The workspace was rebranded
-    <code>Meridian → CAPSULE</code>.</p></div>
+  <div class="card g"><h3>✓ The dataset and the loop are real</h3>
+    <p>The capsules (<code>CAP-R001…R008</code> plus the self-captured <code>CAP-SESSION-1a6fcc9b</code>) are distilled
+    from your <b>real <code>~/.claude</code> sessions</b> by <b>local Ollama <code>qwen2.5-coder:14b</code></b>
+    (chunked map-reduce over the whole session), <b>scored by an LLM judge</b> (<code>scoreCapsuleLLM</code> +
+    <code>noveltyLLM</code>, heuristic fallback), gated, and written to <b>live Backboard memory</b> with real
+    <code>thread_id</code>s. The enterprise registry holds <b>28 skills (13 real + 15 popular)</b>; the
+    end-of-day promote opens <b>CI-gated PRs</b> into <code>master</code> (dee's two upgrades, the self-captured
+    <code>ui-modularity@1.0.0</code>). The A/B eval shows <b>measured, multi-sample Ollama token deltas</b>; metrics
+    are <b>computed</b> from the real capsule data. The workspace was rebranded <code>Meridian → CAPSULE</code>.</p></div>
   <div class="card a"><h3>~ A thin layer is still derived</h3>
-    <p>Novelty/importance scores, the non-A/B per-capsule <code>tokensSaved</code> estimates (reuses × per-reuse),
-    and the <code>requirements</code>/<code>workOrders</code> objects remain authored scaffolding. Everything else
-    below is measured or live.</p></div>
+    <p>Per-capsule <code>reuses</code>, <code>scoreDelta</code>/<code>adoptedBy</code>, the non-A/B per-capsule
+    <code>tokensSaved</code> estimates (reuses × per-reuse), and the <code>requirements</code>/<code>workOrders</code>
+    objects remain authored scaffolding. Scoring is <b>LLM-judged, not a trained model</b>, and the eval is a
+    <b>measured proxy, not production telemetry</b> — honest framings, stated plainly. Everything else below is
+    measured or live.</p></div>
 
   <h2>Component-by-component</h2>
   <table>
@@ -75,28 +81,31 @@
       <td><b>Capsule distillation</b><br><span class="file">/api/capsule · distill</span></td>
       <td><span class="tag real">REAL</span></td>
       <td>Runs <b>local Ollama <code>qwen2.5-coder:14b</code></b> on a real transcript → structured capsule
-      (intent, decisions, gotchas, mental model). Engine label reported honestly.</td>
+      (intent, decisions, gotchas, mental model). Big sessions are handled with a <b>chunked map-reduce</b> over the
+      whole session, not a truncated window. Engine label reported honestly.</td>
     </tr>
     <tr>
-      <td><b>Capsules <code>CAP-R001…R008</code></b><br><span class="file">src/lib/data.ts</span></td>
+      <td><b>Capsules <code>CAP-R001…R008</code> + self-capture</b><br><span class="file">src/lib/data.ts</span></td>
       <td><span class="tag real">REAL</span></td>
-      <td><b>8 capsules distilled from real <code>~/.claude</code> sessions</b> via local Ollama
-      <code>qwen2.5-coder:14b</code>. No longer the hand-authored Meridian story — these are captured from
-      actual coding work on this machine.</td>
+      <td><b>Capsules distilled from real <code>~/.claude</code> sessions</b> via local Ollama
+      <code>qwen2.5-coder:14b</code> — including <code>CAP-SESSION-1a6fcc9b</code>, CAPSULE's own build session.
+      No longer the hand-authored Meridian story; captured from actual coding work on this machine.</td>
     </tr>
     <tr>
-      <td><b>Skills, versions &amp; semver</b><br><span class="file">src/lib/data.ts</span></td>
+      <td><b>Skills, versions &amp; semver</b><br><span class="file">src/lib/data.ts · registry.json</span></td>
       <td><span class="tag real">REAL</span></td>
-      <td><b>7 real skills</b>, each carrying real semver, with <code>learnedFrom</code> pointing at the real
-      <code>CAP-R*</code> capsules they were distilled from.</td>
+      <td><b>28 skills in the enterprise registry (13 real + 15 popular)</b>, each carrying real semver, the real
+      ones with <code>learnedFrom</code> pointing at the capsules they were distilled from. Self-captured
+      <code>ui-modularity@1.0.0</code> is the 13th real skill.</td>
     </tr>
     <tr>
-      <td><b>A/B "with vs without capsule"</b><br><span class="file">data.abTrials</span></td>
+      <td><b>A/B eval — capsule vs cold</b><br><span class="file">src/lib/eval.ts</span></td>
       <td><span class="tag real">REAL · MEASURED</span></td>
-      <td><b>3 paired trials with measured Ollama token deltas:</b>
-      <span class="num">AB-01 saved 142</span>, <span class="num">AB-03 saved 157</span>, and — honestly —
-      <span class="num">AB-02 saved 0</span> (a real run where the capsule made no difference; we kept the
-      zero instead of faking a win).</td>
+      <td><b>Multi-sample paired A/B</b> on the local model — each task runs several samples, reported as
+      <b>mean ± stdev</b> with a <b>consistent-direction</b> check and <b>real token counts</b>, plus a regression
+      replay. Honest results: <span class="num">AB-01 saved 142</span>, <span class="num">AB-03 saved 157</span>, and —
+      honestly — <span class="num">AB-02 saved 0</span> (a real run where the capsule made no difference). This same
+      harness is what <code>promote.ts</code> gates on.</td>
     </tr>
     <tr>
       <td><b>Backboard memory store</b><br><span class="file">backboard.ts</span></td>
@@ -106,39 +115,69 @@
       <code>thread_id</code>s</b> are stored per capsule (assistant-per-tenant, thread-per-project).</td>
     </tr>
     <tr>
-      <td><b>Metrics roll-up</b><br><span class="file">data.metrics</span></td>
+      <td><b>Metrics roll-up</b><br><span class="file">src/lib/metrics.ts</span></td>
+      <td><span class="tag real">REAL · COMPUTED</span></td>
+      <td><b>Computed</b> from the real capsule data — no hand-set dashboard numbers.
+      <span class="num">tokensSaved 43,032</span>, <span class="num">avgTransfer 46</span>, adoption % all roll up
+      from the capsules + eval above.</td>
+    </tr>
+    <tr>
+      <td><b>In-app agent chat + skills composer</b><br><span class="file">/api/chat · chatContext.ts · skillCatalog.ts</span></td>
+      <td><span class="tag real">REAL · LIVE</span></td>
+      <td>A real chat with a <b>local-Ollama agent</b> that has <b>Backboard memory</b>; the skills composer loads
+      real enterprise skills into the chat context. Routes <code>/api/chat</code>, <code>/api/chat/context</code>,
+      <code>/api/chats</code>, <code>/api/chats/save</code>; UI in RightPanel (react-markdown). Shipped in PR #1.</td>
+    </tr>
+    <tr>
+      <td><b>Ambient capture</b><br><span class="file">settings.json Stop-hook · scripts/capture-watcher.ts</span></td>
       <td><span class="tag real">REAL</span></td>
-      <td>Computed roll-up: <span class="num">tokensSaved 43,032</span>, <span class="num">avgTransfer 46</span>.
-      Derived from the capsule + A/B data above, not hand-set.</td>
+      <td>A non-blocking <b>Stop-hook</b> plus a watcher auto-distills closed sessions — capture happens without a
+      manual click.</td>
+    </tr>
+    <tr>
+      <td><b>End-of-day promote + agentic CI</b><br><span class="file">scripts/eod-promote.ts · promote.ts</span></td>
+      <td><span class="tag real">REAL</span></td>
+      <td>Skill bumps land first in a <b>local registry</b> (<code>~/.capsule/local-registry</code>, branch
+      <code>local-deepak</code>); end-of-day opens <b>one CI-gated PR</b> into enterprise <code>master</code>.
+      <code>promote.ts</code> gates on the multi-sample eval. dee's two upgrades + self-captured
+      <code>ui-modularity</code> landed this way.</td>
+    </tr>
+    <tr>
+      <td><b>Purge / retire lifecycle</b><br><span class="file">scripts/purge-skills.ts · src/lib/purge.ts</span></td>
+      <td><span class="tag real">REAL</span></td>
+      <td>active → deprecated → archived → purged, recorded in a <b>PURGE-LEDGER</b>; flags
+      <code>ABSORBED</code>/<code>SUPERSEDED</code>/<code>UNUSED</code>/<code>LOW_VALUE</code>/<code>ORPHANED</code>.
+      Dry-run by default.</td>
     </tr>
     <tr>
       <td><b>enterprise-skills git repo</b><br>(master + dee + ven + saim)</td>
       <td><span class="tag real">REAL</span></td>
       <td>Real git repo with real commit history; <b>master, dee, ven and saim branches pushed</b> from the
-      real capsule/skill dataset.</td>
+      real capsule/skill dataset. 28 skills on <code>master</code>; PRs #1–#4 merged.</td>
     </tr>
     <tr>
-      <td><b>Transfer score (6-dim)</b><br><span class="file">scorer.ts</span></td>
-      <td><span class="tag partial">REAL (heuristic)</span></td>
-      <td>A real, deterministic algorithm computes the score from capsule contents — honest as "a score", not a
-      trained benchmark.</td>
+      <td><b>Transfer score (6-dim)</b><br><span class="file">scoreCapsuleLLM · eval.ts</span></td>
+      <td><span class="tag partial">REAL · LLM-JUDGED</span></td>
+      <td>An <b>LLM judge</b> (<code>scoreCapsuleLLM</code>, heuristic fallback) scores the capsule contents —
+      honest as an <b>LLM-judged proxy</b>, not a trained benchmark.</td>
     </tr>
     <tr>
       <td><b>Agentic gate decision</b><br><span class="file">CapturePanel.tsx</span></td>
       <td><span class="tag real">REAL logic</span></td>
       <td>The keep/skip gate (<code>transferScore ≥ threshold OR novelty ≥ 80</code>) runs on the real distilled
-      capsule's score.</td>
+      capsule's LLM-judged score.</td>
     </tr>
     <tr>
-      <td><b>Novelty / importance scores</b><br><span class="file">src/lib/data.ts</span></td>
-      <td><span class="tag mock">DERIVED</span></td>
-      <td>Still authored heuristics, not measured. Used by the gate and ranking display.</td>
+      <td><b>Novelty score</b><br><span class="file">noveltyLLM</span></td>
+      <td><span class="tag partial">REAL · LLM-JUDGED</span></td>
+      <td>Now derived by an <b>LLM judge</b> (<code>noveltyLLM</code>), not an authored heuristic. Feeds the gate
+      and ranking display.</td>
     </tr>
     <tr>
       <td><b>Per-capsule reuses &amp; non-A/B tokensSaved</b><br>(reuses × per-reuse)</td>
       <td><span class="tag mock">DERIVED</span></td>
       <td>For capsules without a paired A/B run, <code>tokensSaved</code> is an estimate (<code>reuses ×
-      tokensSavedPerReuse</code>), not a measured delta. The 3 A/B trials above <i>are</i> measured.</td>
+      tokensSavedPerReuse</code>), not a measured delta. The A/B eval above <i>is</i> measured.</td>
     </tr>
     <tr>
       <td><b>Requirements / workOrders</b><br><span class="file">data.requirements · data.workOrders</span></td>
@@ -150,25 +189,30 @@
   <h2>Still derived <span class="energy">honest list</span></h2>
   <p>The only things below the real line:</p>
   <ul>
-    <li><b>Novelty / importance</b> scores — authored heuristics.</li>
-    <li><b>Reuses &amp; non-A/B <code>tokensSaved</code> estimates</b> — <code>reuses × tokensSavedPerReuse</code>,
-    not measured deltas (the 3 A/B trials are measured).</li>
+    <li><b>Reuses, <code>scoreDelta</code> / <code>adoptedBy</code></b> — derived counters, not live telemetry.</li>
+    <li><b>Non-A/B <code>tokensSaved</code> estimates</b> — <code>reuses × tokensSavedPerReuse</code>,
+    not measured deltas (the A/B eval <i>is</i> measured).</li>
     <li><b>Requirements / workOrders</b> — planning scaffolding for the enterprise story.</li>
   </ul>
+  <p style="font-size:.92rem;color:var(--mut)">Two framings to state plainly: <b>scoring is LLM-judged</b>
+  (<code>scoreCapsuleLLM</code> + <code>noveltyLLM</code>), not a trained model; and the <b>A/B eval is a
+  multi-sample measured proxy</b> on the local model, not production telemetry.</p>
 
   <h2>What to say on stage</h2>
   <div class="card">
-    <p style="margin:0">"This isn't a mock anymore — <b>CAPSULE distilled 8 capsules from my real Claude Code sessions
-    on a local 14B model</b>, versioned 7 skills off them, ran <b>real A/B trials with measured token deltas</b>
-    (one honestly saved nothing), rolled the metrics up, and wrote every capsule to <b>live Backboard memory</b>
-    with real thread IDs. The only authored parts left are novelty scores and a bit of planning scaffolding —
-    and I'll tell you exactly which."</p>
+    <p style="margin:0">"This isn't a mock — <b>CAPSULE distilled capsules from my real Claude Code sessions on a
+    local 14B model</b> (chunked over whole sessions), <b>LLM-judged</b> each one, gated them, and wrote every
+    capsule to <b>live Backboard memory</b> with real thread IDs. It captured <b>its own build session</b> into
+    <code>ui-modularity</code> and promoted it to the 28-skill enterprise registry through a <b>CI-gated PR</b>. The
+    A/B is a <b>multi-sample measured proxy</b> (one trial honestly saved nothing); metrics are <b>computed</b>, not
+    hand-set. The only authored parts left are reuse counters and a bit of planning scaffolding — and I'll tell you
+    exactly which."</p>
   </div>
 
   <div class="foot">
     CAPSULE · data-honesty note · Build for Builders hackathon ·
-    <span class="pill">capsules: real</span> <span class="pill">A/B: measured</span>
-    <span class="pill">Backboard: live</span> <span class="pill">repo: pushed</span>
+    <span class="pill">scoring: LLM-judged</span> <span class="pill">eval: multi-sample proxy</span>
+    <span class="pill">Backboard: live</span> <span class="pill">28 skills · PRs #1–#4 merged</span>
   </div>
 </div>
 </body>

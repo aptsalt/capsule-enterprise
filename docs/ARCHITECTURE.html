@@ -855,7 +855,7 @@ code.inl{font-family:var(--font-mono);font-size:.88em;color:#bfe6fb;background:r
           </div>
           <div class="card">
             <h4 style="margin-top:0;"><span class="pill ok" style="margin-bottom:8px;">agentic CI</span></h4>
-            <p style="font-size:12.5px;">Before publishing, the pipeline runs the <b>A/B harness (new vs current)</b> on representative tasks <i>and</i> regression-checks prior capsules. It merges the bump <b>only if the measured reward improves</b> (token savings / pass-rate / transfer lift); else it stays <code class="inl">proposed</code> or is rejected. <b>CI-for-skills.</b></p>
+            <p style="font-size:12.5px;">Before publishing, <code class="inl">eval.ts</code> runs a <b>multi-sample A/B</b> (N paired runs, new vs current; mean ± stdev + direction-consistency, real token counts) <i>and</i> an LLM-judge <b>regression check</b> of prior capsules. It merges the bump <b>only if the measured reward improves</b>; else it stays <code class="inl">proposed</code> or is rejected. <b>CI-for-skills.</b></p>
           </div>
           <div class="card">
             <h4 style="margin-top:0;"><span class="tag capsule" style="margin-bottom:8px;">dedup</span></h4>
@@ -865,6 +865,22 @@ code.inl{font-family:var(--font-mono);font-size:.88em;color:#bfe6fb;background:r
             <h4 style="margin-top:0;"><span class="tag requirement" style="margin-bottom:8px;">conflict</span></h4>
             <p style="font-size:12.5px;">"do X" vs "undo X / do Y" on the same skill is a <b>do/undo conflict</b>, resolved by <b>measured reward + recency</b> (ties → human). Contradictory ⇒ <b>major</b>, additive ⇒ <b>minor</b>, refinement ⇒ <b>patch</b>. A <b>merge-ledger</b> records every resolution.</p>
           </div>
+        </div>
+
+        <div class="grid g2" style="margin-top:18px;">
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="tag agent" style="margin-bottom:8px;">local → EOD → enterprise</span></h4>
+            <p style="font-size:12.5px;">A two-tier promotion path. During the day every earned upgrade is committed to the developer's <b>local registry</b> (<code class="inl">~/.capsule/local-registry</code>, branch <code class="inl">local-deepak</code>, <b>not pushed</b>). The end-of-day job (<code class="inl">scripts/eod-promote.ts</code>) pushes and opens <b>one CI-gated PR</b> <code class="inl">local-deepak → master</code> against <code class="inl">aptsalt/capsule-enterprise-skills</code> (<b>28 skills</b> = 13 real + 15 popular). Merging publishes the day's learning.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin-top:0;"><span class="pill warn" style="margin-bottom:8px;">purge / retire</span></h4>
+            <p style="font-size:12.5px;">The counter-pole to promotion: <code class="inl">active → deprecated → archived → purged</code> (<code class="inl">scripts/purge-skills.ts</code>, <code class="inl">src/lib/purge.ts</code>), flagging <b>ABSORBED / SUPERSEDED / UNUSED / LOW_VALUE / ORPHANED</b>. <b>Dry-run by default</b>, every transition logged to a <b>PURGE-LEDGER</b>; archive moves (recoverable) rather than deletes, and <b>Backboard provenance is never touched</b>.</p>
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="ic">★</span>
+          <p><b>Self-capture proof.</b> CAPSULE captured its own build session (<code class="inl">CAP-SESSION-1a6fcc9b</code>) → <code class="inl">skill/ui-modularity@1.0.0</code>, promoted into enterprise <code class="inl">master</code> via PR #4; <code class="inl">dee</code> promoted <code class="inl">rest-api-design@1.0.1</code> + <code class="inl">oauth2-jwt-auth@1.0.1</code>. The loop runs on its own code.</p>
         </div>
       </section>
 
@@ -886,6 +902,7 @@ code.inl{font-family:var(--font-mono);font-size:.88em;color:#bfe6fb;background:r
                 <tr><td><span class="tag agent">A/B</span></td><td>task run <b>with capsule vs cold</b>, side by side</td></tr>
               </tbody>
             </table>
+            <p style="font-size:12.5px;margin-top:12px;">The right rail hosts the merged <b>Agent Chat + Skills Composer</b> (<code class="inl">RightPanel</code>, <code class="inl">react-markdown</code>): chat with a local-Ollama agent that has Backboard memory, and a <i>Skills ▾</i> menu to load enterprise skills into the turn. With <i>Capsule context</i> on, the latest capsule briefing + recalled memory are injected so the agent answers warm.</p>
           </div>
           <div class="card">
             <h4 style="margin-top:0;">API routes <code class="inl">relay/src/app/api</code></h4>
@@ -893,11 +910,15 @@ code.inl{font-family:var(--font-mono);font-size:.88em;color:#bfe6fb;background:r
               <thead><tr><th>Route</th><th>Does</th></tr></thead>
               <tbody>
                 <tr><td class="mono">GET /api/sessions</td><td>list real <code class="inl">~/.claude</code> sessions</td></tr>
-                <tr><td class="mono">POST /api/capsule</td><td>capture → <b>distil (local)</b> → score → store</td></tr>
+                <tr><td class="mono">POST /api/capsule</td><td>capture → <b>distil (local, chunked)</b> → <b>LLM-judge</b> → store</td></tr>
                 <tr><td class="mono">GET /api/capsules</td><td>the tenant's captured capsules</td></tr>
                 <tr><td class="mono">GET·POST /api/skills</td><td>registry · adopt a version (metadata op)</td></tr>
                 <tr><td class="mono">GET /api/graph</td><td>connected KG (nodes + <code class="inl">learns</code> edges)</td></tr>
                 <tr><td class="mono">POST /api/inherit</td><td><b>money demo</b> — cold vs capsule-warmed agent</td></tr>
+                <tr><td class="mono">POST /api/chat</td><td><b>Agent Chat</b> — streamed, capsule + skills + recalled memory</td></tr>
+                <tr><td class="mono">POST /api/chat/context</td><td>observability — exact prompt, no generation</td></tr>
+                <tr><td class="mono">GET·POST /api/chats[/save]</td><td>durable chat sessions (LLM-titled)</td></tr>
+                <tr><td class="mono">POST /api/promote</td><td><b>live</b> promotion — real A/B + git push (proposed)</td></tr>
               </tbody>
             </table>
           </div>
@@ -906,12 +927,13 @@ code.inl{font-family:var(--font-mono);font-size:.88em;color:#bfe6fb;background:r
         <h3>Distillation engine order — local first</h3>
         <p>The <code class="inl">distill()</code> pipeline (<code class="inl">relay/src/lib/cerebras.ts</code>) prefers the on-device model, falls back to optional cloud, and always backfills so a capsule is never blank:</p>
         <div class="flow" style="margin-bottom:8px;">
-          <div class="node cap"><div class="nm">Ollama · qwen2.5-coder:14b</div><div class="ds">PRIMARY · local / on-device</div></div>
+          <div class="node cap"><div class="nm">Ollama · qwen2.5-coder:14b</div><div class="ds">PRIMARY · local / on-device · chunked map-reduce for big sessions</div></div>
           <div class="arr">→</div>
           <div class="node"><div class="nm" style="color:var(--c-model)">Cerebras</div><div class="ds">optional · only if API key</div></div>
           <div class="arr">→</div>
           <div class="node"><div class="nm" style="color:var(--muted)">heuristic</div><div class="ds">last resort · always renders</div></div>
         </div>
+        <p style="font-size:12.5px;">Scoring is an <b>LLM-judge</b>: <code class="inl">scoreCapsuleLLM</code> / <code class="inl">noveltyLLM</code> have the local model <i>rate</i> the capsule on six transfer dimensions (not a trained reward), degrading to the offline heuristic <code class="inl">scoreCapsule</code> if Ollama is down. Capture also runs <b>ambient</b> — a non-blocking Stop-hook + <code class="inl">capture-watcher.ts</code> auto-distill closed sessions with no app open.</p>
         <div class="code" style="margin-top:14px;">
           <div class="bar"><span class="dot"></span><span class="nm">relay/src/lib/cerebras.ts · distill()</span><span class="tail tag capsule">local-first</span></div>
 <pre><span class="c">// PRIMARY engine — local Ollama, on-device, no API key, no network egress.</span>
@@ -978,8 +1000,10 @@ code.inl{font-family:var(--font-mono);font-size:.88em;color:#bfe6fb;background:r
             <li>Capsules <b>mint skill versions</b> nightly under <b>semver</b> (patch / minor / major).</li>
             <li>At <b>model / MCP selection</b> the user adopts or pins a version — value shown.</li>
             <li><b>Token usage everywhere</b>: spent-to-create vs saved-downstream = the reward.</li>
-            <li>Skills are an <b>enterprise repository</b> — pull, pin, or adopt latest.</li>
+            <li>Skills are an <b>enterprise repository</b> — pull, pin, or adopt latest; retired via <b>purge</b> when dead.</li>
             <li>Memory is <b>Backboard</b>: entity-keyed, tenant-siloed, store-only, model-agnostic.</li>
+            <li>An in-app <b>Agent Chat + Skills Composer</b> chats warm — capsule briefing + skills + recalled memory injected.</li>
+            <li>The loop runs <b>on itself</b>: it captured its own build (<b>ui-modularity@1.0.0</b>, PR #4).</li>
           </ul>
         </div>
 
