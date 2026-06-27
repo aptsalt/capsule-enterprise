@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAPSULE — Tech Stack & Cloud Roadmap</title>
+<style>
+  :root{
+    --bg:#fff;--ink:#1f2329;--ink2:#3c4149;--mut:#6b7280;--dim:#9aa0a6;--line:#e6e8eb;--line2:#eceef0;
+    --blue:#2b6cf0;--bluebg:#eaf1fe;--green:#16a34a;--greenbg:#e9f7ee;--amber:#b45309;--amberbg:#fef3e2;
+    --energy:#b6ff00;--violet:#7c3aed;--violetbg:#f1e9fe;--teal:#0d9488;
+    --mono:ui-monospace,"SF Mono",Consolas,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 "Inter",-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:54px 26px 130px}
+  .badge{display:inline-block;font:700 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;
+    color:var(--blue);background:var(--bluebg);padding:5px 11px;border-radius:7px}
+  h1{font-size:2.2rem;letter-spacing:-.02em;margin:16px 0 6px}
+  .sub{color:var(--mut);font-size:1.08rem;max-width:720px}
+  .accentbar{height:3px;width:54px;background:var(--energy);border-radius:2px;margin:16px 0 0}
+  h2{font-size:1.25rem;margin:48px 0 14px;padding-top:22px;border-top:1px solid var(--line)}
+  p{color:var(--ink2)}
+  code{font:13px var(--mono);background:#f6f7f9;border:1px solid var(--line2);padding:1px 6px;border-radius:5px;color:#27408b}
+  .mono{font-family:var(--mono)}
+
+  /* layered stack */
+  .stack{display:flex;flex-direction:column;gap:10px;margin:18px 0}
+  .layer{border:1px solid var(--line);border-radius:13px;padding:15px 18px;background:#fff;position:relative;
+    display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:center}
+  .layer .lname{font-weight:800;font-size:13px;letter-spacing:.01em}
+  .layer .lname small{display:block;font:600 10px var(--mono);color:var(--dim);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font:600 12px var(--mono);padding:5px 10px;border-radius:8px;background:#f6f7f9;border:1px solid var(--line);color:var(--ink2)}
+  .chip.b{background:var(--bluebg);border-color:#cfe0fe;color:var(--blue)}
+  .chip.g{background:var(--greenbg);border-color:#c8ead4;color:var(--green)}
+  .chip.v{background:var(--violetbg);border-color:#e0d3fb;color:var(--violet)}
+  .chip.t{background:#e7f7f4;border-color:#bfe9e1;color:var(--teal)}
+  .layer.energy{border-color:#dff39a;box-shadow:0 0 0 1px #dff39a inset}
+  .layer.energy .lname{color:#5b7a00}
+  .chip.energy{background:var(--energy);border-color:#a6e600;color:#1f2329;font-weight:700}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}.layer{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line);border-radius:13px;padding:16px 18px;background:#fff}
+  .card h3{margin:0 0 8px;font-size:1.02rem;display:flex;align-items:center;gap:8px}
+  .card.local{border-color:#dff39a;background:#fcfff2}
+  .card.cloud{border-color:#cfe0fe;background:#f7faff}
+  .tag{font:700 9.5px var(--mono);padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em}
+  .tag.on{background:var(--energy);color:#1f2329}
+  .tag.opt{background:var(--bluebg);color:var(--blue)}
+  .path{font:12px var(--mono);color:var(--mut);background:#f6f7f9;border:1px solid var(--line2);border-radius:7px;
+    padding:8px 10px;margin:8px 0;white-space:pre-wrap;line-height:1.5}
+  .path b{color:var(--ink)}
+  ul{color:var(--ink2);margin:8px 0;padding-left:18px}li{margin:4px 0}
+
+  /* docker placement */
+  .dk{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  @media(max-width:760px){.dk{grid-template-columns:1fr}}
+  .dk .card h3{color:#0b6bcb}
+
+  /* roadmap */
+  .road{position:relative;margin:20px 0 0;padding-left:26px}
+  .road::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:linear-gradient(#b6ff00,#2b6cf0,#7c3aed)}
+  .phase{position:relative;margin:0 0 18px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  .phase::before{content:"";position:absolute;left:-22px;top:18px;width:11px;height:11px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 0 0 2px var(--blue)}
+  .phase.now::before{background:#1f2329;box-shadow:0 0 0 2px var(--energy)}
+  .phase .pt{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .phase .pn{font:700 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+  .phase h3{margin:2px 0 6px;font-size:1.05rem}
+  .phase .when{font:600 11px var(--mono);color:var(--blue);margin-left:auto}
+  .nowtag{font:700 9.5px var(--mono);background:#1f2329;color:var(--energy);padding:2px 7px;border-radius:5px}
+
+  .foot{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:.88rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="badge">CAPSULE · Engineering</span>
+  <h1>Tech stack &amp; cloud roadmap</h1>
+  <p class="sub">CAPSULE is <b>local-first</b>: it runs entirely on your machine with no API key, then scales into
+  the cloud. Here is the full stack, exactly where the local model and the Cerebras boost live in code, where Docker
+  fits, and how it grows into a hosted 8090 Software Factory module.</p>
+  <div class="accentbar"></div>
+
+  <h2>The stack, top to bottom</h2>
+  <div class="stack">
+    <div class="layer">
+      <div class="lname">Frontend<small>UI</small></div>
+      <div class="chips">
+        <span class="chip b">Next.js 15 · App Router</span><span class="chip b">React 19</span>
+        <span class="chip">TypeScript (strict)</span><span class="chip">Tailwind v4</span>
+        <span class="chip">Zustand</span><span class="chip">hand-rolled SVG force graph</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lname">App / API<small>Route handlers</small></div>
+      <div class="chips">
+        <span class="chip mono">/api/sessions</span><span class="chip mono">/api/capsule</span>
+        <span class="chip mono">/api/capsules</span><span class="chip mono">/api/skills</span>
+        <span class="chip mono">/api/graph</span><span class="chip mono">/api/inherit</span>
+      </div>
+    </div>
+    <div class="layer energy">
+      <div class="lname">Intelligence<small>Distill + score</small></div>
+      <div class="chips">
+        <span class="chip energy">⚡ LOCAL Ollama · qwen2.5-coder:14b</span>
+        <span class="chip b">Cerebras (optional cloud)</span>
+        <span class="chip">heuristic fallback</span>
+        <span class="chip g">6-dim transfer scorer</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lname">Memory<small>Portable context</small></div>
+      <div class="chips">
+        <span class="chip t">Backboard (live) · X-API-Key · send_to_llm:false</span>
+        <span class="chip">local JSON fallback</span>
+        <span class="chip">assistant-per-tenant · thread-per-project</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lname">Knowledge<small>Versioned skills</small></div>
+      <div class="chips">
+        <span class="chip v">enterprise skills git repo</span><span class="chip v">semver · learnedFrom</span>
+        <span class="chip">multi-dev branches (dee/ven/saim)</span><span class="chip">agentic CI</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lname">Source<small>Capture</small></div>
+      <div class="chips">
+        <span class="chip mono">~/.claude/projects/*.jsonl</span><span class="chip">real coding sessions</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lname">Runtime<small>Packaging</small></div>
+      <div class="chips">
+        <span class="chip">Docker (app + Ollama)</span><span class="chip">handoff devcontainer</span>
+        <span class="chip">Node 20</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lname">Platform<small>Target</small></div>
+      <div class="chips">
+        <span class="chip b">8090 Software Factory module</span><span class="chip">MCP-ready</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Where the models live (in code)</h2>
+  <div class="grid2">
+    <div class="card local">
+      <h3>⚡ Local LLM <span class="tag on">PRIMARY · ON-DEVICE</span></h3>
+      <p>Distillation runs on your machine first — no key, no network, private by default.</p>
+      <div class="path"><b>src/lib/cerebras.ts</b>
+• OLLAMA_MODEL  (L14)  = qwen2.5-coder:14b
+• viaOllama()   (L65)  → POST localhost:11434/api/chat
+• ollamaHealth()(L98)  → GET /api/tags (honest engine)
+• distill()     (L144) → Ollama runs FIRST
+also: /api/inherit (cold-vs-warm), /api/capsule,
+      scripts/build-real-dataset.ts</div>
+    </div>
+    <div class="card cloud">
+      <h3>☁ Cerebras <span class="tag opt">OPTIONAL · DORMANT</span></h3>
+      <p>A fully-wired wafer-scale cloud boost — sub-second distillation — that activates only when a key is set.</p>
+      <div class="path"><b>src/lib/cerebras.ts</b>
+• CEREBRAS_URL   (L8)  = api.cerebras.ai/v1/chat/completions
+• CEREBRAS_MODEL (L9)  = llama-3.3-70b
+• viaCerebras()  (L44) → returns null unless
+                          CEREBRAS_API_KEY is set (L45)
+• distill()      (L145) → tries Cerebras only if key present</div>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--mut)">No key today → Ollama does 100% of the work. Set the
+      key and the same pipeline gets a cloud turbo with zero code change.</p>
+    </div>
+  </div>
+
+  <h2>Docker — three places it fits</h2>
+  <div class="dk">
+    <div class="card">
+      <h3>① App container</h3>
+      <p>Multi-stage <code>Dockerfile</code> builds the Next.js app and serves it on <code>:3010</code>.</p>
+      <div class="path">docker build -t capsule .</div>
+    </div>
+    <div class="card">
+      <h3>② Whole stack</h3>
+      <p><code>docker-compose.yml</code> boots the app <b>+ a containerized Ollama</b> — the local model in a box.</p>
+      <div class="path">docker compose up
+docker compose exec ollama \
+  ollama pull qwen2.5-coder:14b</div>
+    </div>
+    <div class="card">
+      <h3>③ Handoff devcontainer</h3>
+      <p>The thesis: a capsule ships its <b>runtime</b>, not just notes. <code>.devcontainer/</code> = the inheritor
+      gets the exact env + model, pre-wired.</p>
+      <div class="path">carry the context AND the runtime</div>
+    </div>
+  </div>
+
+  <h2>Cloud release roadmap</h2>
+  <div class="road">
+    <div class="phase now">
+      <div class="pt"><span class="pn">Phase 0</span><span class="nowtag">YOU ARE HERE</span><span class="when">shipped</span></div>
+      <h3>Local-first (hackathon build)</h3>
+      <p>Runs fully on one machine: Ollama 14b distiller, local JSON memory, the whole RL loop. Optional live
+      Backboard + Cerebras via env keys. Docker compose for one-command boot.</p>
+    </div>
+    <div class="phase">
+      <div class="pt"><span class="pn">Phase 1</span><span class="when">next</span></div>
+      <h3>Hosted SaaS · Cerebras-powered</h3>
+      <p>Flip on <b>Cerebras</b> as the cloud distiller (sub-second), <b>Backboard</b> as managed memory, multi-tenant
+      auth + billing. Capture via a Claude Code / VS Code hook + MCP so it's ambient, in the flow.</p>
+    </div>
+    <div class="phase">
+      <div class="pt"><span class="pn">Phase 2</span><span class="when">enterprise</span></div>
+      <h3>Self-host · Docker / Kubernetes</h3>
+      <p>Air-gapped deploy with BYO-model (Ollama cluster or vLLM), SSO, full audit trail, the enterprise skills
+      registry as a governed internal service. CI-for-skills (agentic A/B gate) runs in your cloud.</p>
+    </div>
+    <div class="phase">
+      <div class="pt"><span class="pn">Phase 3</span><span class="when">platform</span></div>
+      <h3>8090 Software Factory native module</h3>
+      <p>CAPSULE installs as a module inside the Factory — the capture + feedback layer that wires into Requirements
+      / Blueprints / Work Orders / Tests via the Knowledge Graph. Org-wide compounding knowledge.</p>
+    </div>
+    <div class="phase">
+      <div class="pt"><span class="pn">Phase 4</span><span class="when">network effect</span></div>
+      <h3>Skill marketplace · federated learning</h3>
+      <p>Share or sell capsule-maxxed skill packs; opt-in cross-org federated learning so a fix discovered once
+      improves everyone — without sharing raw code.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    CAPSULE · tech stack &amp; roadmap · local-first, cloud-ready ·
+    <span class="mono">Ollama 14b primary · Cerebras optional · Backboard live · Docker-packaged</span>
+  </div>
+</div>
+</body>
+</html>

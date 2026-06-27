@@ -1,0 +1,23 @@
+{
+  "// CAPSULE handoff devcontainer": "The original thesis — a capsule ships with its RUNTIME, not just its notes. Open this and the inheritor gets the exact environment + the local distiller model, already wired.",
+  "name": "CAPSULE handoff devcontainer",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+  "features": {
+    "ghcr.io/prulloac/devcontainer-features/ollama:1": {}
+  },
+  "forwardPorts": [3010, 11434],
+  "portsAttributes": {
+    "3010": { "label": "CAPSULE app" },
+    "11434": { "label": "Ollama (local model)" }
+  },
+  "postCreateCommand": "npm install && (ollama pull qwen2.5-coder:14b || true)",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+    }
+  },
+  "remoteEnv": {
+    "OLLAMA_URL": "http://localhost:11434",
+    "RELAY_OLLAMA_MODEL": "qwen2.5-coder:14b"
+  }
+}

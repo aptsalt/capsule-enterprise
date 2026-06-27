@@ -1,0 +1,36 @@
+# CAPSULE — full local stack in one command:  docker compose up
+# Boots the Next.js app + a containerized Ollama (the local distiller model).
+services:
+  app:
+    build: .
+    ports:
+      - "3010:3010"
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - RELAY_OLLAMA_MODEL=qwen2.5-coder:14b
+      # Optional live Backboard memory + Cerebras cloud distill — uncomment env_file to load them:
+      # BACKBOARD_API_KEY / CEREBRAS_API_KEY
+    # env_file:
+    #   - .env.local
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    # First boot: pull the model once with
+    #   docker compose exec ollama ollama pull qwen2.5-coder:14b
+    # GPU (NVIDIA) — uncomment to accelerate distillation:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  ollama:

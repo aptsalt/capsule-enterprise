@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+docs/assets
+**/*.log
+scripts/*.log
+.capsule
+.vscode
+.idea
+.DS_Store

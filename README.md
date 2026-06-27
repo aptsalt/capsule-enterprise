@@ -55,6 +55,18 @@ npm run dev                  # http://localhost:3010
 - **No keys required** to run: distillation falls back local-only (Ollama → heuristic), Backboard → local JSON store.
 - With `BACKBOARD_API_KEY`, capsules are written to **live Backboard memory** (`app.backboard.io/api`, `X-API-Key`, `send_to_llm:false`).
 
+### Or run the whole stack with Docker
+
+```bash
+docker compose up                                   # app + a containerized Ollama
+docker compose exec ollama ollama pull qwen2.5-coder:14b   # one-time model pull
+# → http://localhost:3010
+```
+
+Docker shows up in three places: the **app container** (`Dockerfile`), the **whole stack**
+(`docker-compose.yml`, app + Ollama), and the **handoff devcontainer** (`.devcontainer/`) — *a capsule ships its
+runtime, not just its notes.* See [`docs/TECH-STACK.html`](docs/TECH-STACK.html).
+
 ### Try the demo
 Open the app → click the **Handoff** icon → **Run handoff demo** (real cold-vs-warm on your local model).
 Then **Capture this session** (Agentic toggle on) to distill one of your real `~/.claude` sessions live.
@@ -88,6 +100,7 @@ Open any of these in a browser:
 | [`docs/CAPSULE-LAUNCH.html`](docs/CAPSULE-LAUNCH.html) | The launch site — every feature with screenshots + video |
 | [`docs/DEMO-SCRIPT.html`](docs/DEMO-SCRIPT.html) | The 3-minute pitch, mapped to the four themes + Q&A cheat-sheet |
 | [`docs/RL-LOOP.html`](docs/RL-LOOP.html) | The full RL-loop architecture diagram |
+| [`docs/TECH-STACK.html`](docs/TECH-STACK.html) | Full tech stack, where local LLM + Cerebras live in code, Docker, cloud roadmap |
 | [`docs/BACKEND.html`](docs/BACKEND.html) | The working backend architecture (pipeline + APIs + Backboard) |
 | [`docs/MULTI-DEV.html`](docs/MULTI-DEV.html) | Multi-dev flow: promotion, agentic CI, dedup, do/undo conflict |
 | [`docs/AGENTIC-VS-MANUAL.html`](docs/AGENTIC-VS-MANUAL.html) | The two capsule-creation flows, side by side |
