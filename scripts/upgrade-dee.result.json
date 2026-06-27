@@ -1,0 +1,202 @@
+{
+  "generatedAt": "2026-06-27T17:25:08.517Z",
+  "distiller": "qwen2.5-coder:14b",
+  "windowDays": 90,
+  "deePinned": [
+    "rest-api-design@1.0.1",
+    "oauth2-jwt-auth@1.0.0",
+    "idempotency-keys@1.0.0",
+    "cursor-pagination@1.0.0",
+    "redis-caching@1.0.0"
+  ],
+  "skillsWithNoGenuineMatch": [
+    "rest-api-design@1.0.1",
+    "idempotency-keys@1.0.0",
+    "cursor-pagination@1.0.0",
+    "redis-caching@1.0.0"
+  ],
+  "distilled": [
+    {
+      "session": "003a671f-df54-44e8-a570-d7e58bfdee97",
+      "project": "C--Users-deepc",
+      "messages": 8336,
+      "tools": 2423,
+      "durationMin": 5794,
+      "transferScore": 29,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Identify and remove stale automated hooks to prevent past conditions from blocking new processes."
+    },
+    {
+      "session": "2535b3ad-5ae6-4107-8fe7-e2469e8bd9d7",
+      "project": "C--Users-deepc",
+      "messages": 7975,
+      "tools": 2186,
+      "durationMin": 6442,
+      "transferScore": 40,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Ensure continuity across project phases by documenting key decisions early to prevent contradictions in future expansions."
+    },
+    {
+      "session": "12560ca4-a543-4cec-9ef6-a07c2e116054",
+      "project": "C--Users-deepc",
+      "messages": 7027,
+      "tools": 2621,
+      "durationMin": 19111,
+      "transferScore": 37,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Implement exponential backoff for handling rate limits in API requests to ensure smooth operation during server throttling."
+    },
+    {
+      "session": "85941354-b173-4753-93ab-d57c5efe328b",
+      "project": "C--Users-deepc",
+      "messages": 3241,
+      "tools": 906,
+      "durationMin": 11530,
+      "transferScore": 57,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Ensure local bridges are running for WebSocket connections in Angular applications to avoid connection issues."
+    },
+    {
+      "session": "52cdf3c2-5d8c-4bac-871b-6071504f28ac",
+      "project": "C--Users-deepc",
+      "messages": 2741,
+      "tools": 873,
+      "durationMin": 17615,
+      "transferScore": 55,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Always verify system state and configuration directly rather than relying on assumptions or inferences."
+    },
+    {
+      "session": "064374da-1b63-42e0-817f-de83524d5f91",
+      "project": "C--Users-deepc",
+      "messages": 1844,
+      "tools": 505,
+      "durationMin": 1667,
+      "transferScore": 47,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Always verify assumptions by examining actual data or code frames rather than relying on inferred consistency."
+    },
+    {
+      "session": "24abccf4-7cb5-4bd9-aa64-a9217460b0ee",
+      "project": "C--Users-deepc",
+      "messages": 1773,
+      "tools": 447,
+      "durationMin": 2896,
+      "transferScore": 50,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Ensure sufficient disk space for large model loads to prevent silent failures and optimize resource usage."
+    },
+    {
+      "session": "60f0ecf6-7918-418d-8f08-5e395948e139",
+      "project": "C--Users-deepc",
+      "messages": 1095,
+      "tools": 395,
+      "durationMin": 6408,
+      "transferScore": 44,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Ensure scripts executed by status lines or similar system integrations are robust, handle errors gracefully, and output expected results to avoid hidden failures."
+    },
+    {
+      "session": "00a76505-cf52-493a-9eb0-a2db4df75bc2",
+      "project": "C--Users-deepc",
+      "messages": 1144,
+      "tools": 296,
+      "durationMin": 733,
+      "transferScore": 50,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Always verify that your training process has started correctly and is not encountering errors during environment or model loading."
+    },
+    {
+      "session": "7d68dd21-48a3-42ad-8644-2647eec2801a",
+      "project": "C--Users-deepc",
+      "messages": 995,
+      "tools": 310,
+      "durationMin": 5578,
+      "transferScore": 52,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Ensure environment variables are set in production to avoid configuration-related issues."
+    },
+    {
+      "session": "d576fc75-dc56-46b3-9d2f-0198ea187b71",
+      "project": "C--Users-deepc",
+      "messages": 1013,
+      "tools": 284,
+      "durationMin": 11978,
+      "transferScore": 63,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "When building an interactive app for a PDF document, ensure that the PDF reader is fully functional and thoroughly tested to handle all content and edge cases."
+    },
+    {
+      "session": "cc4706ec-1651-4bc4-aade-c134b8eb6823",
+      "project": "C--Users-deepc",
+      "messages": 927,
+      "tools": 231,
+      "durationMin": 4964,
+      "transferScore": 67,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Ensure services like ComfyUI are running continuously to avoid interruptions in processing image chains."
+    },
+    {
+      "session": "b505be13-edc5-4cdd-ba30-ece7749d3b2c",
+      "project": "C--Users-deepc",
+      "messages": 792,
+      "tools": 225,
+      "durationMin": 17838,
+      "transferScore": 54,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "Always validate API credentials before making requests to avoid repeated '401 Invalid authentication credentials' errors."
+    },
+    {
+      "session": "30ec277e-2607-4ac9-8cd2-eca53425b220",
+      "project": "C--Users-deepc",
+      "messages": 698,
+      "tools": 246,
+      "durationMin": 13790,
+      "transferScore": 42,
+      "engine": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "finding": "When fixing build errors in Angular apps, ensure all curly braces `{}` are properly escaped to avoid ICU expression interpretation."
+    }
+  ],
+  "upgrades": [
+    {
+      "skillId": "oauth2-jwt-auth",
+      "skillName": "OAuth2 / JWT Auth",
+      "fromVersion": "1.0.0",
+      "newVersion": "1.0.1",
+      "bump": "patch",
+      "capsuleId": "CAP-DEE-01",
+      "finding": "Always validate API credentials before making requests to avoid repeated '401 Invalid authentication credentials' errors.",
+      "session": "b505be13-edc5-4cdd-ba30-ece7749d3b2c",
+      "project": "C--Users-deepc",
+      "model": "ollama:qwen2.5-coder:14b (local)+heuristic",
+      "transferScore": 54,
+      "confidence": 0.9,
+      "matchStrength": 79,
+      "reason": "The lesson focuses on validating API credentials, which is a core aspect of OAuth2 and JWT authentication.",
+      "scoreDelta": 2,
+      "tokenDeltaPerUse": 648,
+      "backboard": {
+        "ok": true,
+        "thread_id": "90466bf8-4b15-4065-a1ee-1b2d4bee9e57",
+        "message_id": "f201af0e-ede3-4dab-8fad-9a53ebe4a5ff"
+      },
+      "learnedFrom": {
+        "capsule": "CAP-DEE-01",
+        "finding": "Always validate API credentials before making requests to avoid repeated '401 Invalid authentication credentials' errors."
+      },
+      "publishedAt": "2026-06-27T17:25:08.517Z",
+      "filesTouched": [
+        "C:\\\\Users\\\\deepc\\\\.claude\\\\projects\\\\C--Users-deepc\\\\memory\\\\naviklab.md",
+        "C:\\\\Users\\\\deepc\\\\.claude\\\\projects\\\\C--Users-deepc\\\\memory\\\\naviklab-gtm.md",
+        "C:\\\\Users\\\\deepc\\\\.claude\\\\projects\\\\C--Users-deepc\\\\memory\\\\naviklab-vscode.md",
+        "page.ts",
+        "C:\\\\Users\\\\deepc\\\\steerlabs\\\\src\\\\app\\\\arena\\\\page.ts",
+        "docs/yc-video-scripts.md",
+        "C:\\\\Users\\\\deepc\\\\steerlabs\\\\video-yc\\\\build.sh",
+        "build.sh",
+        "docs/yc-s26-application.md",
+        "docs/ycs26-application.md"
+      ]
+    }
+  ]
+}

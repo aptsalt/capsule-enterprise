@@ -6,8 +6,12 @@
 //   factoryModules scaffolding are DERIVED. Only DISTILLED briefings were stored to Backboard.
 // A/B measured: skill/creative-franchise-expansion: with=381 without=453; skill/automation-maintenance: with=473 without=435; skill/api-rate-limiting: with=247 without=404
 import type { Dataset } from './types';
+import { computeMetrics } from './metrics';
 
-export const data: Dataset = {
+// Everything except `metrics`. The roll-up below is COMPUTED from these real
+// entities (see computeMetrics) rather than hand-authored, so the dashboard
+// numbers can never drift from the underlying capsules/skills.
+const base: Omit<Dataset, 'metrics'> = {
   "workspace": {
     "enterprise": "CAPSULE",
     "project": "Content Engine",
@@ -1404,23 +1408,8 @@ export const data: Dataset = {
         "secondaryLabel": "MCPs wired"
       }
     }
-  ],
-  "metrics": {
-    "tokensSavedTotal": 43032,
-    "sessionsCaptured": 10,
-    "capsules": 8,
-    "skillsEvolved": 7,
-    "avgTransfer": 46,
-    "adoptionRate": 63,
-    "compounding": [
-      {
-        "week": "2026-W25",
-        "tokensSaved": 16680
-      },
-      {
-        "week": "2026-W26",
-        "tokensSaved": 43032
-      }
-    ]
-  }
+  ]
 };
+
+// REAL/COMPUTED dashboard metrics (#6) — derived from `base` every load.
+export const data: Dataset = { ...base, metrics: computeMetrics(base) };

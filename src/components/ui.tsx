@@ -209,11 +209,13 @@ export function Card({ hover, selected, className, children, ...rest }: CardProp
    driven by an INLINE style so it can never be lost to Tailwind class ordering
    or a default `bg-*` winning the cascade — the blue ON state must be
    unmistakable. */
-type SwitchTone = "violet" | "green" | "blue";
+type SwitchTone = "violet" | "green" | "blue" | "ss";
 const SWITCH_ON_COLOR: Record<SwitchTone, string> = {
   violet: "var(--violet)",
   green: "var(--green)",
   blue: "#2b6cf0",
+  // SUPER-SAIYAN fluorescent ON fill — the unmistakable enterprise-active state.
+  ss: "var(--ss)",
 };
 
 type SwitchProps = {
@@ -246,7 +248,10 @@ export function Switch({
       className={cn(
         "relative h-[22px] w-[38px] flex-none rounded-full transition-[background-color,box-shadow] duration-200 ease-out disabled:opacity-50",
         checked
-          ? "shadow-[inset_0_0_0_1px_#1f5bd6]"
+          ? tone === "ss"
+            ? // fluorescent ring + outer chartreuse glow so ON is unmistakable
+              "shadow-[inset_0_0_0_1.5px_var(--ss-2),0_0_9px_2px_var(--ss-glow)]"
+            : "shadow-[inset_0_0_0_1px_#1f5bd6]"
           : "bg-[#d4d7dc]",
         className,
       )}

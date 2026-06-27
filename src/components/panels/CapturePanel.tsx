@@ -312,7 +312,7 @@ export function CapturePanel() {
           distilling ? (
             <Distilling engine={engineInfo} />
           ) : showSelected && result ? (
-            <CaptureResult capsule={result} />
+            <CaptureResult capsule={result} showPromote />
           ) : decision ? (
             <AgenticResult decision={decision} threshold={agenticThreshold} />
           ) : (
@@ -330,7 +330,7 @@ export function CapturePanel() {
             </>
           )
         ) : result ? (
-          <CaptureResult capsule={result} />
+          <CaptureResult capsule={result} showPromote />
         ) : distilling ? (
           <Distilling engine={engineInfo} />
         ) : (
@@ -618,27 +618,29 @@ function AgenticBar({
           <BrainIcon size={14} />
         </span>
         <span className="text-[12.5px] font-bold text-[var(--ink)]">
-          Agentic auto-distill
+          Agentic threshold
         </span>
         <Badge tone="blue" className="ml-auto">
           ON
         </Badge>
       </div>
-      <p className="mt-2 text-[11.5px] leading-[1.5] text-[var(--mut)]">
-        Every session is distilled on-device with Ollama, then gated. A capsule is
-        kept and promoted to the enterprise repo only if it clears the bar —
-        otherwise it’s dropped, never promoted.
-      </p>
+
+      {/* THRESHOLD CONTROL — pulled to the very top of the card so it's the
+          first thing the eye lands on. Prominent label + one-line hint, then
+          the slider and the live value side-by-side. */}
       <label
         htmlFor="agentic-threshold"
-        className="mt-3 block text-[11px] font-semibold text-[var(--ink2)]"
+        className="mt-3 flex items-baseline gap-2 text-[12.5px] font-bold text-[var(--ink2)]"
       >
-        Keep capsule if transfer score ≥ {threshold}
-        <span className="font-normal text-[var(--mut)]">
-          {" "}
-          (or novelty ≥ {NOVELTY_BAR} — a unique proposition)
+        Keep capsule if transfer score ≥
+        <span className="mono text-[15px] font-extrabold text-[var(--blue)]">
+          {threshold}
         </span>
       </label>
+      <p className="mt-[3px] text-[11px] leading-[1.45] text-[var(--mut)]">
+        Drag to set the auto-keep bar — only capsules at or above this score (or
+        novelty ≥ {NOVELTY_BAR}) are promoted.
+      </p>
       <div className="mt-2 flex items-center gap-3">
         <input
           id="agentic-threshold"
@@ -660,6 +662,12 @@ function AgenticBar({
           className="mono w-[52px] rounded-[7px] border border-[var(--line)] px-[7px] py-[5px] text-[12px] font-bold text-[var(--ink)] outline-none focus:border-[var(--blue)]"
         />
       </div>
+
+      <p className="mt-3 border-t border-[var(--line2)] pt-2 text-[11px] leading-[1.5] text-[var(--mut)]">
+        Every session is distilled on-device with Ollama, then gated against this
+        bar. A capsule is kept and promoted to the enterprise repo only if it
+        clears it — otherwise it’s dropped, never promoted.
+      </p>
     </Card>
   );
 }
@@ -685,7 +693,7 @@ function AgenticResult({
         threshold={threshold}
         heuristic={isHeuristicEngine(captured.engine)}
       />
-      <CaptureResult capsule={captured} />
+      <CaptureResult capsule={captured} showPromote={kept} />
     </div>
   );
 }
@@ -801,7 +809,15 @@ function GateMeter({
 }
 
 /* ---------- captured-capsule detail ------------------------------------- */
-function CaptureResult({ capsule }: { capsule: CapturedCapsule }) {
+function CaptureResult({
+  capsule,
+  showPromote = false,
+}: {
+  capsule: CapturedCapsule;
+  // Only a KEPT capsule (agentic kept, or any manually inspected capsule
+  // detail) gets the "Promote to enterprise" action.
+  showPromote?: boolean;
+}) {
   const dims = Object.entries(capsule.dimensions);
   return (
     <div className="flex flex-col gap-3">
@@ -928,6 +944,172 @@ function CaptureResult({ capsule }: { capsule: CapturedCapsule }) {
         )}
         <span className="mono ml-auto text-[10px] text-[var(--dim)]">{capsule.id}</span>
       </div>
+
+      {/* promote → enterprise */}
+      {showPromote && <PromoteButton capsuleId={capsule.id} />}
+    </div>
+  );
+}
+
+/* ---------- promote to enterprise --------------------------------------- */
+// The response from POST /api/promote. Mirrors PromoteResult from lib/promote.ts
+// — the live pipeline returns the measured A/B CI verdict (token cost before vs
+// after the new guidance), the proposed version, and the resulting commit sha.
+// A few loose/legacy fields are tolerated so the UI renders whatever subset the
+// endpoint returns.
+type PromoteCi = {
+  tokensBefore?: number;
+  tokensAfter?: number;
+  delta?: number;
+  improved?: boolean;
+  // tolerated alternates
+  verdict?: string;
+  passed?: boolean;
+};
+type PromoteResponse = {
+  ok?: boolean;
+  skillId?: string;
+  capsuleId?: string;
+  proposedVersion?: string;
+  version?: string;
+  ci?: PromoteCi;
+  verdict?: string;
+  passed?: boolean;
+  commit?: string;
+  commitSha?: string;
+  pushed?: boolean;
+  message?: string;
+  error?: string;
+};
+
+function promoteVersion(r: PromoteResponse): string | undefined {
+  return r.proposedVersion ?? r.version;
+}
+function promoteVerdict(r: PromoteResponse): string | undefined {
+  if (r.ci?.verdict) return r.ci.verdict;
+  if (r.verdict) return r.verdict;
+  // Derive a human verdict from the measured token A/B when present.
+  if (typeof r.ci?.improved === "boolean") {
+    const d = r.ci.delta;
+    const tok = typeof d === "number" ? ` ${d >= 0 ? "+" : ""}${d} tok` : "";
+    return r.ci.improved ? `reward improved (${d ?? "—"} tok)` : `reward flat/worse${tok}`;
+  }
+  return undefined;
+}
+function promotePassed(r: PromoteResponse): boolean {
+  if (typeof r.ci?.improved === "boolean") return r.ci.improved;
+  if (typeof r.ci?.passed === "boolean") return r.ci.passed;
+  if (typeof r.passed === "boolean") return r.passed;
+  const v = (promoteVerdict(r) ?? "").toLowerCase();
+  return v ? /pass|green|ok|success|improv/.test(v) : true;
+}
+function promoteCommit(r: PromoteResponse): string | undefined {
+  return r.commit ?? r.commitSha;
+}
+
+// The super-saiyan promote affordance: POSTs the capsule id to /api/promote and
+// renders a small loading → result (proposed version + CI verdict + commit) or
+// error state inline.
+function PromoteButton({ capsuleId }: { capsuleId: string }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<PromoteResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const promote = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/promote", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ capsuleId }),
+      });
+      const j = (await res.json()) as PromoteResponse;
+      if (!res.ok || j.error) throw new Error(j.error || `promote ${res.status}`);
+      setResult(j);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [capsuleId]);
+
+  if (result) {
+    const version = promoteVersion(result);
+    const verdict = promoteVerdict(result);
+    const passed = promotePassed(result);
+    const commit = promoteCommit(result);
+    return (
+      <Card className="border-[var(--ss)] bg-[var(--ss-tint)] shadow-[0_0_10px_var(--ss-glow)]">
+        <div className="flex items-center gap-2">
+          <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-[var(--ss)] text-[12px] font-bold text-[var(--ss-ink)]">
+            ↑
+          </span>
+          <span className="text-[12.5px] font-bold text-[var(--ink)]">
+            Promoted to enterprise
+          </span>
+          {version && (
+            <Chip tone="default" className="ml-auto bg-white text-[var(--ink2)]">
+              {version}
+            </Chip>
+          )}
+        </div>
+        <div className="mt-[10px] flex flex-col gap-[7px]">
+          <div className="flex items-center gap-2 text-[11.5px]">
+            <span className="w-[60px] flex-none text-[var(--mut)]">CI</span>
+            <Badge tone={passed ? "green" : "amber"}>
+              {verdict ?? (passed ? "passed" : "failed")}
+            </Badge>
+          </div>
+          {commit && (
+            <div className="flex items-center gap-2 text-[11.5px]">
+              <span className="w-[60px] flex-none text-[var(--mut)]">Commit</span>
+              <span className="mono text-[11px] font-bold text-[var(--blue)]">
+                {commit.length > 14 ? commit.slice(0, 12) : commit}
+              </span>
+            </div>
+          )}
+          {result.message && (
+            <p className="text-[11px] leading-[1.45] text-[var(--mut)]">
+              {result.message}
+            </p>
+          )}
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <ActionButton
+        onClick={promote}
+        disabled={loading}
+        className="w-full border-[2px]! border-[var(--ss)] py-[9px] text-[13px] shadow-[0_0_8px_var(--ss-glow)]"
+      >
+        {loading ? (
+          <>
+            <ReloadIcon size={14} className="animate-spin" />
+            Promoting…
+          </>
+        ) : (
+          <>
+            <SparkIcon size={14} />
+            Promote to enterprise
+            <span aria-hidden className="text-[14px] leading-none">
+              →
+            </span>
+          </>
+        )}
+      </ActionButton>
+      {error && (
+        <ErrorCard
+          title="Couldn’t promote this capsule"
+          hint="The promote pipeline didn’t finish. Check the /api/promote endpoint, then try again."
+          detail={error}
+          onRetry={promote}
+          retryLabel="Try promote again"
+        />
+      )}
     </div>
   );
 }

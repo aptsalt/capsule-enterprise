@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { captureSession, listSessions } from "@/lib/capture";
-import { distill } from "@/lib/cerebras";
-import { scoreCapsule } from "@/lib/scorer";
+import { distillChunked } from "@/lib/cerebras";
+import { scoreCapsuleLLM } from "@/lib/scorer";
 import { storeCapsule } from "@/lib/backboard";
 
 export const dynamic = "force-dynamic";
@@ -27,8 +27,11 @@ export async function POST(req: NextRequest) {
       path = pick.path;
     }
     const raw = captureSession(path);
-    const { capsule, engine, ms } = await distill(raw);
-    const score = scoreCapsule(capsule);
+    // Prefer the chunked map-reduce distiller: it self-routes big sessions through
+    // chunking and falls through to the single-pass distiller for small ones.
+    const { capsule, engine, ms } = await distillChunked(raw);
+    // LLM-judge the transfer score (local Ollama); falls back to the offline heuristic.
+    const score = await scoreCapsuleLLM(capsule);
     capsule.handoff_score = score;
     const store = await storeCapsule(capsule);
     return NextResponse.json({ capsule, engine, ms, score, store });

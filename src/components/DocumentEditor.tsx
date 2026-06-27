@@ -11,7 +11,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { useStore, type PanelId } from "@/lib/store";
-import { docs, resolveDoc, TAB_LABEL, type Doc, type DocStatus } from "@/lib/docs";
+import { resolveDoc, type DocStatus } from "@/lib/docs";
 import { cn } from "@/components/ui";
 import { LinkIcon } from "@/components/icons";
 
@@ -150,8 +150,6 @@ export function DocumentEditor() {
   const activeDocId = useStore((s) => s.activeDocId);
   const activeSectionId = useStore((s) => s.activeSectionId);
   const docStatus = useStore((s) => s.docStatus);
-  const setActiveDoc = useStore((s) => s.setActiveDoc);
-  const setActiveSection = useStore((s) => s.setActiveSection);
   const setDocStatus = useStore((s) => s.setDocStatus);
 
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -198,12 +196,6 @@ export function DocumentEditor() {
     }
   };
 
-  // Switching tabs also resets the section to that doc's first one; the status
-  // sync effect picks up the new doc's default mode.
-  const selectDoc = (doc: Doc) => {
-    setActiveDoc(doc.id);
-    setActiveSection(doc.sections[0]?.id ?? null);
-  };
 
   const runCmd = (btn: FmtButton) => {
     if (!editing || !btn.cmd) return;
@@ -226,33 +218,8 @@ export function DocumentEditor() {
 
   return (
     <section className="flex min-h-0 min-w-0 flex-col bg-[#fbfcfd]">
-      {/* top doc-tabs */}
-      <div className="flex items-center gap-1 border-b border-[var(--line)] bg-white px-3 pt-[7px]">
-        {docs.map((doc) => {
-          const on = doc.id === activeDoc.id;
-          return (
-            <button
-              key={doc.id}
-              type="button"
-              onClick={() => selectDoc(doc)}
-              aria-current={on ? "page" : undefined}
-              className={cn(
-                "relative -mb-px rounded-t-[8px] border border-b-0 px-[13px] py-[7px] text-[12.5px] font-semibold transition-colors",
-                on
-                  ? "border-[var(--line)] bg-[#fbfcfd] text-[var(--blue)]"
-                  : "border-transparent text-[var(--mut)] hover:text-[var(--ink)]",
-              )}
-            >
-              {TAB_LABEL[doc.id]}
-              {on && (
-                <span className="absolute inset-x-[10px] top-0 h-[2px] rounded-full bg-[var(--blue)]" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* header + status controls + top-level icon toolbar */}
+      {/* header + status controls + top-level icon toolbar
+          (the document tabs live once, in the TopBar) */}
       <div className="flex items-center gap-3 border-b border-[var(--line)] bg-white px-4 py-[11px]">
         <div className="grid h-6 w-6 flex-none place-items-center rounded-[7px] bg-[#eef4ff] text-[var(--blue)]">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

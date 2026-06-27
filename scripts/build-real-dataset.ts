@@ -11,8 +11,8 @@
 import { readFileSync, writeFileSync, appendFileSync, existsSync } from "fs";
 import { join } from "path";
 import { listSessions, captureSession } from "../src/lib/capture";
-import { distill } from "../src/lib/cerebras";
-import { scoreCapsule } from "../src/lib/scorer";
+import { distillChunked } from "../src/lib/cerebras";
+import { scoreCapsuleLLM } from "../src/lib/scorer";
 import { capsuleMemoryBriefing, storeCapsuleMemory } from "../src/lib/backboard";
 import type {
   Dataset, Capsule, Skill, SkillVersion, Agent, Bump, AbTrial, AbRun,
@@ -185,10 +185,10 @@ async function main() {
       log(`[${tag}] project=${projectName}`);
 
       log(`[${tag}] distilling locally (${MODEL}) ...`);
-      const { capsule: hc, engine, ms } = await distill(raw);
+      const { capsule: hc, engine, ms } = await distillChunked(raw);
       log(`[${tag}] distilled via ${engine} in ${ms}ms`);
 
-      const score = scoreCapsule(hc);
+      const score = await scoreCapsuleLLM(hc);
       const transferScore = score.overall;
 
       // extract the single most important learnable finding (local model)

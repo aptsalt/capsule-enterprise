@@ -122,24 +122,34 @@ export function SkillsPanel() {
         </span>
       }
       action={
-        <div className="mr-1 flex items-center gap-2">
+        <div
+          className={cn(
+            // SUPER-SAIYAN: when ENTERPRISE is ON the whole toggle group wears a
+            // fluorescent border + chartreuse glow so the active state is
+            // unmistakable at a glance.
+            "mr-1 flex items-center gap-2 rounded-[9px] border px-[7px] py-[4px] transition-[box-shadow,border-color,background-color]",
+            enterprise
+              ? "border-[var(--ss)] bg-[var(--ss-tint)] shadow-[0_0_10px_var(--ss-glow)]"
+              : "border-transparent",
+          )}
+        >
           <span
             className={cn(
               "mono text-[10px] font-bold tracking-[.04em] transition-colors",
-              enterprise ? "text-[var(--blue)]" : "text-[var(--dim)]",
+              enterprise ? "text-[var(--ss-ink)]" : "text-[var(--dim)]",
             )}
           >
             ENTERPRISE
           </span>
           {enterprise && (
-            <span className="mono rounded-[5px] bg-[var(--blue)] px-[5px] py-[2px] text-[8.5px] font-bold uppercase leading-none tracking-[.05em] text-white">
+            <span className="mono rounded-[5px] bg-[var(--ss)] px-[5px] py-[2px] text-[8.5px] font-bold uppercase leading-none tracking-[.05em] text-[var(--ss-ink)] shadow-[0_0_6px_var(--ss-glow)]">
               ON
             </span>
           )}
           <Switch
             checked={enterprise}
             onChange={() => toggleEnterprise()}
-            tone="blue"
+            tone="ss"
             aria-label="Toggle enterprise skill set"
           />
         </div>

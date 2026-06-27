@@ -138,24 +138,9 @@ function heuristic(s: RawSession): Distilled {
   };
 }
 
-export async function distill(session: RawSession): Promise<{ capsule: HandoffCapsule; engine: string; ms: number }> {
-  // PRIMARY: local Ollama (qwen2.5-coder:14b, on-device). Cerebras is an OPTIONAL cloud boost —
-  // only attempted when CEREBRAS_API_KEY is set. Heuristic is the last-resort backfill.
-  const r = (await viaOllama(session.transcript))
-    || (process.env.CEREBRAS_API_KEY ? await viaCerebras(session.transcript) : null);
-  let d = r?.d || heuristic(session);
-  let engine = r?.engine || "heuristic";
-  const ms = r?.ms || 0;
-  // backfill any empty fields from the heuristic so a capsule is never blank
-  if (r) {
-    const h = heuristic(session);
-    if (!d.intent?.trim()) { d.intent = h.intent; engine += "+heuristic"; }
-    if (!d.current_state?.trim()) d.current_state = h.current_state;
-    if (!d.decisions?.length) d.decisions = h.decisions;
-    if (!d.gotchas?.length) d.gotchas = h.gotchas;
-    if (!d.next_steps?.length) d.next_steps = h.next_steps;
-  }
-  const capsule: HandoffCapsule = {
+// Assemble the final capsule from a Distilled payload + the source session.
+function buildCapsule(session: RawSession, d: Distilled): HandoffCapsule {
+  return {
     project: session.project,
     session_id: session.sessionId,
     generated_at: new Date().toISOString(),
@@ -166,5 +151,191 @@ export async function distill(session: RawSession): Promise<{ capsule: HandoffCa
     files_touched: session.filesTouched,
     stats: { messages: session.messages, tools: session.tools, durationMin: session.durationMin },
   };
-  return { capsule, engine, ms };
+}
+
+// Backfill any empty fields from the heuristic so a capsule is never blank.
+// Returns the (possibly amended) engine label.
+function backfill(session: RawSession, d: Distilled, engine: string): string {
+  const h = heuristic(session);
+  let e = engine;
+  if (!d.intent?.trim()) { d.intent = h.intent; e += "+heuristic"; }
+  if (!d.current_state?.trim()) d.current_state = h.current_state;
+  if (!d.decisions?.length) d.decisions = h.decisions;
+  if (!d.gotchas?.length) d.gotchas = h.gotchas;
+  if (!d.next_steps?.length) d.next_steps = h.next_steps;
+  return e;
+}
+
+// Single-pass distill core — the original behavior. Used for normal-sized
+// transcripts and as the MAP/REDUCE fallback path when chunking can't run.
+async function distillOnce(session: RawSession): Promise<{ capsule: HandoffCapsule; engine: string; ms: number }> {
+  // PRIMARY: local Ollama (qwen2.5-coder:14b, on-device). Cerebras is an OPTIONAL cloud boost —
+  // only attempted when CEREBRAS_API_KEY is set. Heuristic is the last-resort backfill.
+  const r = (await viaOllama(session.transcript))
+    || (process.env.CEREBRAS_API_KEY ? await viaCerebras(session.transcript) : null);
+  const d = r?.d || heuristic(session);
+  const engine = r ? backfill(session, d, r.engine) : "heuristic";
+  return { capsule: buildCapsule(session, d), engine, ms: r?.ms || 0 };
+}
+
+// ---------------------------------------------------------------------------
+// CHUNKED (map-reduce) distillation for oversized transcripts.
+// The local model (qwen2.5-coder:14b) runs with a bounded working context; a
+// transcript that would overflow it is split into N sequential chunks, each
+// distilled to a PARTIAL capsule (MAP), then merged into one coherent
+// whole-session capsule (REDUCE). NOTE: token counts here are ESTIMATED
+// (chars/4), NOT tokenizer-measured — the engine label says "(chunked Nx)" so
+// the provenance is honest about how the capsule was produced.
+// ---------------------------------------------------------------------------
+const estTokens = (s: string) => Math.ceil(s.length / 4);
+const MODEL_CTX_TOKENS = 16_000;                               // working context we target for the local model
+const RESERVE_TOKENS = 2_600;                                  // headroom for SYS prompt + JSON generation
+const SINGLE_PASS_BUDGET = MODEL_CTX_TOKENS - RESERVE_TOKENS;  // ~13.4k input tokens before we must chunk
+const CHUNK_BUDGET_TOKENS = 6_000;                             // safe per-chunk input budget
+const CHUNK_CHARS = CHUNK_BUDGET_TOKENS * 4;                   // ~24k chars per chunk
+const REDUCE_INPUT_CAP = 12_000;                               // est. tokens of partials the model can merge in one pass
+
+const REDUCE_SYS = `You are CAPSULE's REDUCE stage. You are given an ordered JSON array of PARTIAL
+handoff capsules, each distilled from a sequential CHUNK of ONE long coding session (chunk 0 first).
+Merge them into ONE coherent capsule covering the WHOLE session. Rules:
+- Deduplicate decisions and gotchas — drop near-duplicates, keep the most specific phrasing.
+- Synthesize a SINGLE 'intent' for the whole session and a unified 'mental_model'.
+- 'current_state' must reflect the END of the session (favor the LAST chunk).
+- Merge 'next_steps' and 'open_questions'; dedupe; keep only what is still unresolved.
+Return STRICT JSON only, matching this shape:
+{
+ "intent": string,
+ "decisions": [{"what":string,"why":string,"file":string}],
+ "tried_and_rejected": [{"approach":string,"why_rejected":string}],
+ "current_state": string,
+ "next_steps": string[],
+ "gotchas": string[],
+ "mental_model": {string: string},
+ "open_questions": string[]
+}
+No prose outside JSON.`;
+
+// Split a transcript into chunks of at most `budgetChars`, preferring line boundaries.
+function chunkTranscript(transcript: string, budgetChars = CHUNK_CHARS): string[] {
+  const lines = transcript.split("\n");
+  const chunks: string[] = [];
+  let cur = "";
+  for (const line of lines) {
+    if (line.length > budgetChars) {
+      // a single oversized line — hard-split it
+      if (cur) { chunks.push(cur); cur = ""; }
+      for (let i = 0; i < line.length; i += budgetChars) chunks.push(line.slice(i, i + budgetChars));
+      continue;
+    }
+    if (cur && cur.length + line.length + 1 > budgetChars) { chunks.push(cur); cur = ""; }
+    cur = cur ? `${cur}\n${line}` : line;
+  }
+  if (cur) chunks.push(cur);
+  return chunks;
+}
+
+// Generic local-Ollama JSON distill call (used by both MAP and REDUCE stages).
+// numCtx bounds the model's working context for the call.
+async function ollamaDistill(system: string, user: string, numCtx: number): Promise<{ d: Distilled; ms: number } | null> {
+  const base = process.env.OLLAMA_URL || "http://localhost:11434";
+  const t0 = Date.now();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 120_000);
+  try {
+    const res = await fetch(`${base}/api/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        model: OLLAMA_MODEL, stream: false, format: "json",
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        options: { temperature: 0.2, num_ctx: numCtx },
+      }),
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    const d = parseJson(j.message?.content || "");
+    return d ? { d, ms: Date.now() - t0 } : null;
+  } catch { return null; }
+  finally { clearTimeout(timer); }
+}
+
+// Deterministic, model-free merge of partial capsules — the REDUCE fallback
+// when Ollama is unavailable or the partials are too large to merge in one pass.
+function mergePartials(parts: Distilled[]): Distilled {
+  const out = empty();
+  const seenDec = new Set<string>();
+  const seenRej = new Set<string>();
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+  const pushUniq = (arr: string[], seen: Set<string>, v: string) => {
+    const k = norm(v);
+    if (v && k && !seen.has(k)) { seen.add(k); arr.push(v); }
+  };
+  const nextSeen = new Set<string>();
+  const gotchaSeen = new Set<string>();
+  const oqSeen = new Set<string>();
+  for (const p of parts) {
+    if (!out.intent && p.intent?.trim()) out.intent = p.intent; // first non-empty intent
+    if (p.current_state?.trim()) out.current_state = p.current_state; // last non-empty wins (ordered)
+    for (const d of p.decisions || []) {
+      const k = norm(d.what);
+      if (k && !seenDec.has(k)) { seenDec.add(k); out.decisions.push(d); }
+    }
+    for (const r of p.tried_and_rejected || []) {
+      const k = norm(r.approach);
+      if (k && !seenRej.has(k)) { seenRej.add(k); out.tried_and_rejected.push(r); }
+    }
+    for (const s of p.next_steps || []) pushUniq(out.next_steps, nextSeen, s);
+    for (const g of p.gotchas || []) pushUniq(out.gotchas, gotchaSeen, g);
+    for (const q of p.open_questions || []) pushUniq(out.open_questions, oqSeen, q);
+    for (const [k, v] of Object.entries(p.mental_model || {})) if (!(k in out.mental_model)) out.mental_model[k] = v;
+  }
+  return out;
+}
+
+// CHUNKED distill: MAP each chunk -> partial capsule, then REDUCE -> one capsule.
+// Small sessions fall through to the single-pass distillOnce(). Exposed so callers
+// can force the chunked path; distill() delegates here automatically when oversized.
+export async function distillChunked(session: RawSession): Promise<{ capsule: HandoffCapsule; engine: string; ms: number }> {
+  if (estTokens(session.transcript) <= SINGLE_PASS_BUDGET) return distillOnce(session);
+
+  const chunks = chunkTranscript(session.transcript);
+  // MAP: distill each chunk into a partial capsule.
+  const partials: Distilled[] = [];
+  let mapMs = 0;
+  for (const chunk of chunks) {
+    const r = await ollamaDistill(SYS, chunk, 8_192);
+    if (r) { partials.push(r.d); mapMs += r.ms; }
+  }
+  // If the local model couldn't process any chunk, fall back to the single-pass
+  // path (which itself degrades to the heuristic) rather than emit nothing.
+  if (partials.length === 0) {
+    const once = await distillOnce(session);
+    return { ...once, engine: `${once.engine} (chunk-fallback)` };
+  }
+
+  // REDUCE: merge partials into one whole-session capsule.
+  const n = chunks.length;
+  const partialsJson = JSON.stringify(partials);
+  let d: Distilled;
+  let reduceMode: "ollama" | "local-merge";
+  let reduceMs = 0;
+  if (estTokens(partialsJson) <= REDUCE_INPUT_CAP) {
+    const rr = await ollamaDistill(REDUCE_SYS, partialsJson, 16_384);
+    if (rr) { d = rr.d; reduceMode = "ollama"; reduceMs = rr.ms; }
+    else { d = mergePartials(partials); reduceMode = "local-merge"; }
+  } else {
+    d = mergePartials(partials); reduceMode = "local-merge";
+  }
+
+  let engine = `ollama:${OLLAMA_MODEL} (local, chunked ${n}x${reduceMode === "local-merge" ? ", local-merge" : ""})`;
+  engine = backfill(session, d, engine);
+  return { capsule: buildCapsule(session, d), engine, ms: mapMs + reduceMs };
+}
+
+// PUBLIC entry — unchanged signature. Oversized transcripts route through the
+// chunked map-reduce path; everything else uses the single-pass core.
+export async function distill(session: RawSession): Promise<{ capsule: HandoffCapsule; engine: string; ms: number }> {
+  if (estTokens(session.transcript) > SINGLE_PASS_BUDGET) return distillChunked(session);
+  return distillOnce(session);
 }

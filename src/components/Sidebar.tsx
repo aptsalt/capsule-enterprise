@@ -243,11 +243,12 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* capture session — super-saiyan ACTION button: fluorescent
-          green-yellow border + glow on hover, dark ink, arrow affordance. */}
+      {/* capture session — super-saiyan ACTION button: ALWAYS-ON fluorescent
+          green-yellow border + a persistent (not hover-only) chartreuse glow,
+          dark ink, arrow affordance. Hover blooms the glow brighter. */}
       <ActionButton
         onClick={openCapture}
-        className="mx-3 my-2 w-[calc(100%-1.5rem)] py-[9px] text-[13px]"
+        className="mx-3 my-2 w-[calc(100%-1.5rem)] border-[2px]! border-[var(--ss)] py-[9px] text-[13px] shadow-[0_0_10px_var(--ss-glow)] hover:shadow-[0_0_16px_2px_var(--ss-glow)]"
       >
         <SparkIcon size={15} />
         Capture this session
