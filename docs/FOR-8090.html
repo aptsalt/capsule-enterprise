@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CAPSULE — for 8090 · Deepak Singh Kandari</title>
+<style>
+  :root{--bg:#fff;--ink:#1f2329;--mut:#6b7280;--dim:#9aa0a6;--line:#e6e8eb;--line2:#eceef0;
+    --blue:#2b6cf0;--bluebg:#eaf1fe;--green:#16a34a;--greenbg:#e9f7ee;--amber:#b45309;--amberbg:#fef3e2;
+    --energy:#b6ff00;--mono:ui-monospace,"SF Mono",Consolas,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 "Inter",-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:940px;margin:0 auto;padding:56px 26px 120px}
+  .badge{display:inline-block;font:700 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;
+    color:var(--blue);background:var(--bluebg);padding:5px 11px;border-radius:7px}
+  h1{font-size:2.3rem;letter-spacing:-.02em;margin:16px 0 6px}
+  .sub{color:var(--mut);font-size:1.08rem;max-width:760px}
+  .who{color:var(--dim);font:600 13px var(--mono);margin:10px 0 0}
+  .who a{color:var(--blue);text-decoration:none}
+  h2{font-size:1.25rem;margin:46px 0 12px;padding-top:24px;border-top:1px solid var(--line)}
+  h3{font-size:1.02rem;margin:0 0 6px}
+  p{color:#3c4149}
+  code{font:13px var(--mono);background:#f6f7f9;border:1px solid var(--line2);padding:1px 6px;border-radius:5px;color:#27408b}
+  pre{background:#0f1419;color:#d6deeb;border-radius:11px;padding:18px 20px;overflow:auto;font:12.5px/1.7 var(--mono);margin:16px 0}
+  pre code{background:none;border:none;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.95rem}
+  th,td{border:1px solid var(--line);padding:11px 13px;text-align:left;vertical-align:top}
+  th{background:#f7f8f9;font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+  ul{color:#3c4149;margin:8px 0;padding-left:20px}
+  li{margin:6px 0}
+  .card{border:1px solid var(--line);border-radius:13px;padding:20px 22px;margin:18px 0;background:#fff}
+  .card.g{border-color:#c8ead4;background:#f6fcf8}
+  .card.b{border-color:#cfe0fb;background:#f5f9ff}
+  .card.k{border-color:#1f2329;background:#0f1419;color:#e7edf5}
+  .card.k h3{color:#fff} .card.k p{color:#b8c2d0} .card.k b{color:#d6ff5e}
+  .card.g h3{color:var(--green)} .card.b h3{color:var(--blue)}
+  .lead{font-size:1.05rem;color:#2a2f36}
+  blockquote{margin:16px 0;padding:12px 18px;border-left:3px solid var(--energy);background:#fbffe9;color:#3c4149;border-radius:0 8px 8px 0}
+  .foot{margin-top:54px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:.88rem}
+  .foot a{color:var(--blue);text-decoration:none}
+  .energy{background:var(--energy);color:#1f2329;font:700 10.5px var(--mono);padding:3px 8px;border-radius:6px;letter-spacing:.03em;display:inline-block}
+  .accentbar{height:3px;width:54px;background:var(--energy);border-radius:2px;margin:18px 0 0}
+  .ol{counter-reset:step;list-style:none;padding-left:0}
+  .ol li{counter-increment:step;position:relative;padding-left:38px;margin:10px 0}
+  .ol li::before{content:counter(step);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;
+    background:var(--ink);color:#fff;font:700 13px var(--mono);display:grid;place-items:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="badge">CAPSULE · for 8090</span>
+  <h1>The layer your Software Factory is missing — built.</h1>
+  <p class="sub">A one-page case study for the <b>Full Stack Engineer</b> role: why I built CAPSULE, the exact
+  gap it closes in 8090's Software Factory, how it maps to the job, and what it says about how I work.</p>
+  <p class="who">Deepak Singh Kandari · <a href="https://github.com/aptsalt">github.com/aptsalt</a></p>
+  <div class="accentbar"></div>
+
+  <div class="card k">
+    <h3>TL;DR</h3>
+    <p>The Software Factory — <b>Requirements → Blueprints → Work Orders → Tests → Knowledge Graph</b> — runs
+    forward beautifully but has no <b>return path</b>. The hard-won context an agent generates delivering a Work
+    Order evaporates when the session closes; the next session starts cold and re-learns it.</p>
+    <p>So I designed and shipped <b>CAPSULE</b>: the missing <b>capture + reinforcement-feedback layer</b> that
+    closes the loop. It distills each finished session into a scored, versioned <b>capsule</b>, stores it as
+    portable memory, compounds capsules into <b>versioned enterprise skills</b>, and feeds them back so every
+    future session starts <b>warm</b>. The reward is measured in tokens saved — the loop pays for itself.</p>
+    <p>Built solo, end-to-end: product thesis → architecture → a working Next.js app → the local-model pipeline →
+    the multi-developer promotion/CI/governance model → Docker. <b>It is not a mock</b> — it captured its own
+    build session and promoted that into the enterprise registry. That self-closing loop is the proof it runs.</p>
+  </div>
+
+  <h2>The gap I found in the Software Factory</h2>
+  <p class="lead">8090's thesis is that the leverage in software is <b>upstream</b> — requirements,
+  architecture, planning — not in generating more code faster. I agree, and CAPSULE extends that thesis one
+  step further:</p>
+  <blockquote>If the leverage is upstream, then the <b>context</b> that produced good upstream decisions is the
+  most valuable artifact in the building — and today it is the one thing the pipeline throws away.</blockquote>
+  <table>
+    <tr><th>8090 component</th><th>What CAPSULE adds</th></tr>
+    <tr><td><b>Requirements</b></td><td>Capsules and skills stay traceable to the requirement they served, so retrieval at session-open biases toward the active requirement's prior context.</td></tr>
+    <tr><td><b>Blueprints</b></td><td>Past decisions and gotchas surface <i>before</i> a new design is drafted — blueprints stop re-litigating solved questions.</td></tr>
+    <tr><td><b>Work Orders</b></td><td>When a Work Order completes, its session capsule is minted automatically; open Work Orders scope what gets recalled next.</td></tr>
+    <tr><td><b>Tests</b></td><td>Gotchas become regression guards. The A/B harness <i>is</i> an agentic-CI gate that re-checks prior capsules before a skill version publishes.</td></tr>
+    <tr><td><b>Knowledge Graph</b></td><td>CAPSULE renders as an overlay on the native graph, adding <code>capsule</code>, <code>skill@version</code>, and <code>memory</code> nodes plus the edges that close the loop.</td></tr>
+  </table>
+  <p>This is the same intuition behind 8090's <b>Assembly Lines</b> — "memorize and automate a pattern so you can
+  repeat it with increasing accuracy." CAPSULE is the mechanism that <i>learns</i> those patterns from real work
+  instead of requiring someone to hand-author them.</p>
+
+  <h2>What I built</h2>
+  <p>A real <b>Next.js 15 / React 19 / TypeScript</b> app with a real server-side pipeline:</p>
+  <pre><code>session  →  CAPTURE  →  DISTILL (local Ollama)  →  SCORE (LLM-judge)  →  GATE
+         →  STORE (Backboard memory)  →  LOCAL REGISTRY (git)  →  EOD PROMOTE (CI-gated PR)
+         →  ENTERPRISE REGISTRY  →  token savings feed the next session</code></pre>
+  <ul>
+    <li><b>Local-first distillation.</b> Capture runs on-device on <code>qwen2.5-coder:14b</code> — private, free, offline, no transcript egress. That is what makes capturing <i>every</i> session affordable, which is what makes the reward signal real instead of aspirational. Cerebras is an optional cloud boost; a heuristic is the last-resort backfill. The whole app runs with <b>zero API keys</b> via graceful degradation.</li>
+    <li><b>Portable memory.</b> Capsules persist to Backboard keyed by <b>entity (tenant), not model</b> — switch any of 17,000+ models and the memory re-fits, never re-derives. Store-only writes (<code>send_to_llm=false</code>) mean capture can never exfiltrate through an LLM round-trip.</li>
+    <li><b>Versioned skills + governance.</b> Capsules compound into semver-tagged enterprise skills. Nothing auto-publishes on tokens alone — a clearing capsule is staged as a <code>proposed</code> version and an <b>agentic CI</b> A/B harness merges it only if measured reward improves. Multi-developer reconciliation is real: dedup, do/undo conflict resolution by reward + recency, and a reverse <b>purge</b> pole so the registry never silts up. Every step is ledgered and auditable.</li>
+    <li><b>The warm-start, made tangible.</b> An in-app agent chat talks to a local model that already holds the latest capsule + recalled tenant memory, with a context inspector that shows <i>exactly</i> what the agent sees before it generates.</li>
+  </ul>
+
+  <h2>How it maps to the role</h2>
+  <table>
+    <tr><th>The role asks for</th><th>CAPSULE shows</th></tr>
+    <tr><td><b>Full-stack TypeScript + React</b></td><td>Next.js 15 App Router, React 19, TS strict, Zustand, Tailwind v4 — a real workspace UI over a real server-side pipeline.</td></tr>
+    <tr><td><b>End-to-end problem ownership</b></td><td>One person took this from product thesis → architecture → shipping app → docs. Every API route, the distiller chain, the registry, the CI gate, the Docker stack.</td></tr>
+    <tr><td><b>LLM / ML-engineering depth</b></td><td>Local-model distillation with chunked map-reduce over long transcripts, an LLM-judge scorer, a measured paired-A/B eval harness, and entity-keyed vector + LLM-guided retrieval.</td></tr>
+    <tr><td><b>DevOps / cloud / security</b></td><td><code>Dockerfile</code> + <code>docker-compose</code> (app + Ollama) + a handoff <code>.devcontainer</code>; an end-of-day CI-gated PR flow; tenant isolation, provenance on every memory, store-only no-egress writes.</td></tr>
+    <tr><td><b>Data structures + systems thinking</b></td><td>A connected knowledge graph with a single-hub invariant, immutable append-only version history, and a reward function (<code>tokens_saved − tokens_spent</code>) as the only promotion signal.</td></tr>
+    <tr><td><b>Stakeholder communication</b></td><td>This document, an honest what's-real-vs-derived breakdown, and a presentation-grade doc set a non-engineer can follow.</td></tr>
+  </table>
+  <p>Stack alignment is deliberate: the role lists Python/TypeScript/React/AWS, Docker, and GitHub Actions —
+  CAPSULE is built natively on the TS/React/Docker/CI half, and the cloud-scale roadmap (hosted Backboard
+  tenants, the A/B runner moved into GitHub Actions, an AWS-hosted nightly distill) is mapped, not hand-waved.</p>
+
+  <h2>How it maps to how 8090 works</h2>
+  <p>8090 names its values explicitly — <i>engineering excellence, insatiable curiosity, bias for action,
+  ownership, agency, honesty, radical candor.</i> I built CAPSULE to those, not around them:</p>
+  <div class="card b">
+    <ul>
+      <li><b>Bias for action / agency.</b> I didn't ask whether the gap was worth closing — I designed the layer and shipped a working version that closes it. (It began as my <b>"Build for Builders" hackathon</b> entry and I kept building it into an enterprise-grade system after.)</li>
+      <li><b>Ownership.</b> End-to-end, solo, including the unglamorous parts: graceful degradation so the demo never fails, governance so nothing publishes unaudited, a purge path so the system can shrink.</li>
+      <li><b>Honesty / radical candor.</b> The repo ships a <code>DATA-REALITY</code> doc and an honesty note that label, line by line, <b>what is measured vs derived</b> — the scorer is LLM-judged not trained, the eval is a measured proxy not a p-value claim. I'd rather under-claim and be trusted than oversell and be caught.</li>
+    </ul>
+  </div>
+
+  <h2>Honest scope</h2>
+  <p>The <b>pipeline is real</b>: it reads real sessions, distills + scores + stores locally or in live
+  Backboard, bumps a real local git registry, and opens a real enterprise PR. The labels matter:</p>
+  <ul>
+    <li><b>Scoring is LLM-judged, not a trained reward model.</b></li>
+    <li><b>The eval is a multi-sample measured proxy</b> — mean ± stdev over real token counts, consistent-direction — not a statistical-significance claim.</li>
+    <li><b>A thin layer is derived</b> — novelty/importance heuristics, non-A/B reuse estimates, and the requirements/work-order scaffolding used to make the demo legible.</li>
+  </ul>
+  <p><code>DATA-REALITY.html</code> is the canonical, line-by-line breakdown.</p>
+
+  <h2>What I'd build first at 8090</h2>
+  <p>CAPSULE is a working argument, not a finished product. If I joined, the first moves I'd push for:</p>
+  <ol class="ol">
+    <li><b>Move the A/B reward harness into GitHub Actions</b> on the enterprise registry, so skill promotion is gated by CI on every PR rather than an end-of-day script.</li>
+    <li><b>Hosted, SSO'd Backboard tenants</b> — per-org assistant isolation so a real team shares one warm memory instead of a per-laptop one.</li>
+    <li><b>Replace the LLM-judge with a trained reward model</b> fine-tuned on accepted-vs-rejected capsules — the honest next step from "measured proxy" to "learned signal."</li>
+    <li><b>An IDE / Factory surface</b> so warm-start injection happens where engineers already are, not only in the in-app chat.</li>
+  </ol>
+
+  <h2>The 5-minute review path</h2>
+  <div class="card g">
+    <ol class="ol">
+      <li>Read this page (you're here).</li>
+      <li><code>npm install &amp;&amp; npm run dev</code> → open <code>http://localhost:3010</code>. Runs with <b>no keys</b>. (Or <code>docker compose up</code>.)</li>
+      <li>Skim <code>ARCHITECTURE.md</code> §1–§6 for the loop, then <code>RL-LOOP.html</code> for the picture.</li>
+      <li>Read <code>DATA-REALITY.html</code> to see exactly where the line between <i>measured</i> and <i>derived</i> sits — the part most demos hide.</li>
+    </ol>
+  </div>
+
+  <div class="foot">
+    The enterprise skills registry CAPSULE promotes into is a separate component:
+    <a href="https://github.com/aptsalt/capsule-enterprise-skills">github.com/aptsalt/capsule-enterprise-skills</a>.
+    <br><span class="energy">CAPSULE</span> &nbsp;Capture what's novel · version what's learned · reinforce every session — locally, for free.
+  </div>
+</div>
+</body>
+</html>

@@ -241,7 +241,7 @@ Start with **[`FOR-8090.md`](docs/FOR-8090.md)**; the rest is the engineering re
 
 | Doc | What it is |
 |---|---|
-| [`FOR-8090.md`](docs/FOR-8090.md) | **Start here** — why CAPSULE exists, the gap it closes in the Software Factory, role fit, and what it demonstrates |
+| [`FOR-8090.md`](docs/FOR-8090.md) · [`FOR-8090.html`](docs/FOR-8090.html) | **Start here** — why CAPSULE exists, the gap it closes in the Software Factory, role fit, and what it demonstrates |
 | [`ARCHITECTURE.html`](docs/ARCHITECTURE.html) · [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Full system design — data model, RL loop, governance, 8090 integration points |
 | [`RL-LOOP.html`](docs/RL-LOOP.html) | The end-to-end RL-loop architecture diagram |
 | [`BACKEND.html`](docs/BACKEND.html) | The working backend — pipeline + API routes + Backboard write envelope |

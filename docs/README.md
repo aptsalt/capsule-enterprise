@@ -7,8 +7,9 @@ engineering and presentation record. `.html` files are self-contained — open t
 
 ## Start here
 
-- **[`FOR-8090.md`](FOR-8090.md)** — the one-page case study: why CAPSULE exists, the gap it closes in the
-  Software Factory, how it maps to the role, and what it demonstrates.
+- **[`FOR-8090.md`](FOR-8090.md)** · **[`FOR-8090.html`](FOR-8090.html)** — the one-page case study: why
+  CAPSULE exists, the gap it closes in the Software Factory, how it maps to the role, and what it demonstrates.
+  (The `.html` is the presentation-grade version — open it in a browser.)
 
 ## System design
 
