@@ -4,6 +4,7 @@
 // so a capsule always renders, even fully offline.
 import type { HandoffCapsule } from "./capsule";
 import type { RawSession } from "./capture";
+import { geminiJSON, GEMINI_MODEL, preferGemini } from "./gemini";
 
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
 const CEREBRAS_MODEL = process.env.CEREBRAS_MODEL || "llama-3.3-70b";
@@ -68,6 +69,17 @@ async function viaCerebras(transcript: string): Promise<{ d: Distilled; engine: 
   const j = await res.json();
   const d = parseJson(j.choices?.[0]?.message?.content || "");
   return d ? { d, engine: `cerebras:${CEREBRAS_MODEL}`, ms: Date.now() - t0 } : null;
+}
+
+// FREE cloud engine — Gemini. Used so the HOSTED app (no local Ollama) can still
+// distill; only runs when GEMINI_API_KEY is set.
+async function viaGemini(transcript: string): Promise<{ d: Distilled; engine: string; ms: number } | null> {
+  if (!process.env.GEMINI_API_KEY) return null;
+  const t0 = Date.now();
+  const text = await geminiJSON(SYS, transcript);
+  if (!text) return null;
+  const d = parseJson(text);
+  return d ? { d, engine: `gemini:${GEMINI_MODEL}`, ms: Date.now() - t0 } : null;
 }
 
 // PRIMARY engine — local Ollama (qwen2.5-coder:14b on-device). Local models are slower than
@@ -184,9 +196,11 @@ function backfill(session: RawSession, d: Distilled, engine: string): string {
 // Single-pass distill core — the original behavior. Used for normal-sized
 // transcripts and as the MAP/REDUCE fallback path when chunking can't run.
 async function distillOnce(session: RawSession): Promise<{ capsule: HandoffCapsule; engine: string; ms: number }> {
-  // PRIMARY: local Ollama (qwen2.5-coder:14b, on-device). Cerebras is an OPTIONAL cloud boost —
-  // only attempted when CEREBRAS_API_KEY is set. Heuristic is the last-resort backfill.
-  const r = (await viaOllama(session.transcript))
+  // PRIMARY: local Ollama (on-device). On the hosted app Gemini is preferred (no Ollama to reach);
+  // otherwise Gemini/Cerebras are cloud fallbacks only when their key is set. Heuristic is last resort.
+  const r = (preferGemini() ? await viaGemini(session.transcript) : null)
+    || (await viaOllama(session.transcript))
+    || (process.env.GEMINI_API_KEY ? await viaGemini(session.transcript) : null)
     || (process.env.CEREBRAS_API_KEY ? await viaCerebras(session.transcript) : null);
   const d = r?.d || heuristic(session);
   const engine = r ? backfill(session, d, r.engine) : "heuristic";

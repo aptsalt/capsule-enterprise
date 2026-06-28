@@ -4,6 +4,7 @@
 // agent answers oriented, not cold. Streams plain text chunks back so the UI fills in live.
 import { NextRequest } from "next/server";
 import { OLLAMA_MODEL } from "@/lib/cerebras";
+import { geminiChatStream, geminiEnabled, preferGemini } from "@/lib/gemini";
 import { retrieveMemory, storeCapsuleMemory } from "@/lib/backboard";
 import {
   CHAT_THREAD_KEY,
@@ -38,12 +39,26 @@ export async function POST(req: NextRequest) {
 
   // Cap the turns sent to the model so token cost stays bounded; older turns still
   // live in Backboard memory and resurface via recall above.
-  const messages: Msg[] = [
-    { role: "system", content: buildSystemPrompt(capsuleOn, skills, recalled) },
-    ...history.slice(-MAX_CONTEXT_MSGS),
-  ];
+  const systemContent = buildSystemPrompt(capsuleOn, skills, recalled);
+  const recent = history.slice(-MAX_CONTEXT_MSGS);
+  const messages: Msg[] = [{ role: "system", content: systemContent }, ...recent];
 
-  let upstream: Response;
+  const respond = (s: ReadableStream<Uint8Array>) =>
+    new Response(s, {
+      headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+    });
+  // Persist the completed turn as durable tenant memory (send_to_llm:false). Shared by both engines.
+  const onDone = (full: string) => {
+    if (full.trim()) void storeCapsuleMemory(CHAT_THREAD_KEY, chatMemoryRecord(lastUser, full));
+  };
+
+  // HOSTED path: no local Ollama (e.g. Vercel), so go straight to the free cloud model.
+  if (preferGemini()) {
+    const g = await geminiChatStream(systemContent, recent, onDone);
+    if (g) return respond(g);
+  }
+
+  let upstream: Response | null = null;
   try {
     upstream = await fetch(`${OLLAMA_BASE}/api/chat`, {
       method: "POST",
@@ -56,10 +71,18 @@ export async function POST(req: NextRequest) {
       }),
     });
   } catch {
-    return new Response("Local model unavailable — start Ollama (ollama serve).", { status: 503 });
+    upstream = null;
   }
-  if (!upstream.ok || !upstream.body) {
-    return new Response("Local model error.", { status: 502 });
+  // Ollama unreachable or errored — fall back to Gemini if configured.
+  if (!upstream || !upstream.ok || !upstream.body) {
+    if (geminiEnabled()) {
+      const g = await geminiChatStream(systemContent, recent, onDone);
+      if (g) return respond(g);
+    }
+    return new Response(
+      "No model available. Start Ollama locally (ollama serve), or set GEMINI_API_KEY for the hosted demo.",
+      { status: 503 },
+    );
   }
 
   // Re-stream: Ollama emits NDJSON ({message:{content}, done}); forward just the
@@ -75,12 +98,8 @@ export async function POST(req: NextRequest) {
       const { done, value } = await reader.read();
       if (done) {
         controller.close();
-        // WRITE side: persist the completed turn as durable tenant memory. Distilled
-        // form (User/Agent lines), send_to_llm:false — a memory op, never billed inference.
-        // Fire-and-forget; storeCapsuleMemory logs failures and never throws.
-        if (reply.trim()) {
-          void storeCapsuleMemory(CHAT_THREAD_KEY, chatMemoryRecord(lastUser, reply));
-        }
+        // WRITE side: persist the completed turn as durable tenant memory (shared onDone).
+        onDone(reply);
         return;
       }
       buf += decoder.decode(value, { stream: true });
@@ -104,7 +123,5 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return new Response(stream, {
-    headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
-  });
+  return respond(stream);
 }
