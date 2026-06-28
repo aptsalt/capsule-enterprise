@@ -531,7 +531,7 @@ const base: Omit<Dataset, 'metrics'> = {
       "scope": "enterprise",
       "description": "When expanding a creative franchise, it's crucial to maintain consistent continuity across all parts to avoid contradictions and ensure a cohesive narrative.",
       "repoPath": "capsule://skills/creative-franchise-expansion",
-      "currentVersion": "1.0.0",
+      "currentVersion": "1.1.0",
       "optedIn": true,
       "adoptionPolicy": "auto",
       "usedByAgents": [
@@ -550,6 +550,36 @@ const base: Omit<Dataset, 'metrics'> = {
           "tokenDeltaPerUse": -72,
           "scoreDelta": 1,
           "adoptedBy": 2,
+          "publishedAt": "2026-06-20T09:10:00.000Z",
+          "status": "published"
+        },
+        {
+          "version": "1.1.0",
+          "bump": "minor",
+          "derivedFromCapsule": "CAP-R001",
+          "learnedFrom": {
+            "capsule": "CAP-R001",
+            "finding": "Locking one continuity decision before fanning out keeps the nine seasons from contradicting each other on the big reveals."
+          },
+          "changelog": "Added a continuity-lock checklist so fanned-out seasons can't contradict each other on the big reveals.",
+          "tokenDeltaPerUse": -210,
+          "scoreDelta": 3,
+          "adoptedBy": 3,
+          "publishedAt": "2026-06-24T11:30:00.000Z",
+          "status": "published"
+        },
+        {
+          "version": "2.0.0",
+          "bump": "major",
+          "derivedFromCapsule": "CAP-R001",
+          "learnedFrom": {
+            "capsule": "CAP-R001",
+            "finding": "When expanding a creative franchise, it's crucial to maintain consistent continuity across all parts to avoid contradictions and ensure a cohesive narrative."
+          },
+          "changelog": "Restructured into a reusable franchise-bible template (loglines, canon ledger, delivery-marker normalizer) ready for subagent fan-out.",
+          "tokenDeltaPerUse": -360,
+          "scoreDelta": 6,
+          "adoptedBy": 1,
           "publishedAt": "2026-06-26T16:24:25.314Z",
           "status": "proposed"
         }
@@ -562,7 +592,7 @@ const base: Omit<Dataset, 'metrics'> = {
       "description": "Automated hooks can become stale and require manual intervention to resolve, highlighting the need for engineers to regularly review and update automation scrip",
       "repoPath": "capsule://skills/automation-maintenance",
       "currentVersion": "1.0.0",
-      "optedIn": true,
+      "optedIn": false,
       "adoptionPolicy": "auto",
       "usedByAgents": [
         "agent/factory-implementer"
@@ -581,6 +611,21 @@ const base: Omit<Dataset, 'metrics'> = {
           "scoreDelta": 6,
           "adoptedBy": 1,
           "publishedAt": "2026-06-22T02:05:48.200Z",
+          "status": "published"
+        },
+        {
+          "version": "2.0.0",
+          "bump": "major",
+          "derivedFromCapsule": "CAP-R002",
+          "learnedFrom": {
+            "capsule": "CAP-R002",
+            "finding": "Automated hooks can become stale and require manual intervention to resolve, highlighting the need for engineers to regularly review and update automation scripts to prevent such issues."
+          },
+          "changelog": "Added a stale-hook audit pass that locates and disables Stop-hooks pinned to past-session conditions before they fire.",
+          "tokenDeltaPerUse": -1540,
+          "scoreDelta": 9,
+          "adoptedBy": 0,
+          "publishedAt": "2026-06-25T08:00:00.000Z",
           "status": "proposed"
         }
       ]
@@ -592,7 +637,7 @@ const base: Omit<Dataset, 'metrics'> = {
       "description": "When integrating third-party APIs, be prepared for unexpected rate limits that may not be directly related to your usage.",
       "repoPath": "capsule://skills/api-rate-limiting",
       "currentVersion": "1.0.0",
-      "optedIn": true,
+      "optedIn": false,
       "adoptionPolicy": "auto",
       "usedByAgents": [
         "agent/factory-implementer"
@@ -611,7 +656,7 @@ const base: Omit<Dataset, 'metrics'> = {
           "scoreDelta": 6,
           "adoptedBy": 2,
           "publishedAt": "2026-06-19T04:20:00.708Z",
-          "status": "proposed"
+          "status": "published"
         }
       ]
     },
@@ -621,7 +666,7 @@ const base: Omit<Dataset, 'metrics'> = {
       "scope": "enterprise",
       "description": "When upgrading Angular versions, ensure that local bridges and WebSocket servers are correctly configured to avoid connection issues.",
       "repoPath": "capsule://skills/angular-upgrade",
-      "currentVersion": "1.0.0",
+      "currentVersion": "1.1.0",
       "optedIn": true,
       "adoptionPolicy": "auto",
       "usedByAgents": [
@@ -641,6 +686,21 @@ const base: Omit<Dataset, 'metrics'> = {
           "scoreDelta": 5,
           "adoptedBy": 3,
           "publishedAt": "2026-06-26T16:24:26.374Z",
+          "status": "published"
+        },
+        {
+          "version": "1.1.0",
+          "bump": "minor",
+          "derivedFromCapsule": "CAP-R004",
+          "learnedFrom": {
+            "capsule": "CAP-R004",
+            "finding": "When upgrading Angular versions, ensure that local bridges and WebSocket servers are correctly configured to avoid connection issues."
+          },
+          "changelog": "Extended coverage to the Angular 15 to 22 path with control-flow migration gotchas (raw @case/@placeholder in template strings vs JSDoc comments).",
+          "tokenDeltaPerUse": -2240,
+          "scoreDelta": 7,
+          "adoptedBy": 4,
+          "publishedAt": "2026-06-27T10:00:00.000Z",
           "status": "published"
         }
       ]
@@ -671,6 +731,21 @@ const base: Omit<Dataset, 'metrics'> = {
           "scoreDelta": 3,
           "adoptedBy": 2,
           "publishedAt": "2026-06-24T03:59:25.378Z",
+          "status": "published"
+        },
+        {
+          "version": "1.1.0",
+          "bump": "minor",
+          "derivedFromCapsule": "CAP-R007",
+          "learnedFrom": {
+            "capsule": "CAP-R007",
+            "finding": "When working with local commands, always verify assumptions by directly inspecting the system state rather than relying solely on inferred information."
+          },
+          "changelog": "Added a pre-answer state-inspection step (read the actual frames/files) so the agent stops assuming consistency.",
+          "tokenDeltaPerUse": -1824,
+          "scoreDelta": 4,
+          "adoptedBy": 2,
+          "publishedAt": "2026-06-24T03:59:25.420Z",
           "status": "published"
         },
         {
@@ -1412,4 +1487,17 @@ const base: Omit<Dataset, 'metrics'> = {
 };
 
 // REAL/COMPUTED dashboard metrics (#6) — derived from `base` every load.
-export const data: Dataset = { ...base, metrics: computeMetrics(base) };
+// Two fields are overridden to mirror the skills state matrix directly:
+//   adoptionRate = share of skills the org has opted into; skillsEvolved =
+//   skills carrying more than one forged version.
+const computed = computeMetrics(base);
+export const data: Dataset = {
+  ...base,
+  metrics: {
+    ...computed,
+    adoptionRate: Math.round(
+      (base.skills.filter((s) => s.optedIn).length / base.skills.length) * 100,
+    ),
+    skillsEvolved: base.skills.filter((s) => s.versions.length > 1).length,
+  },
+};

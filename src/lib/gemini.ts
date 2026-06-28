@@ -97,6 +97,34 @@ export async function geminiChatStream(
   });
 }
 
+// MEASURED single call — returns the reply text AND Gemini's real token count
+// (usageMetadata.totalTokenCount). Powers the LIVE A/B harness on the hosted app:
+// the token numbers are genuinely measured by the provider, not curated.
+export async function geminiMeasured(
+  prompt: string,
+): Promise<{ content: string; totalTokens: number } | null> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+  const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${key}`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2 },
+      }),
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    const content = j?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const totalTokens = Number(j?.usageMetadata?.totalTokenCount) || 0;
+    return { content, totalTokens };
+  } catch {
+    return null;
+  }
+}
+
 // NON-STREAMING JSON call — used by the distiller. Returns the raw response text
 // (expected to be JSON) or null. Forces JSON output via responseMimeType.
 export async function geminiJSON(system: string, user: string): Promise<string | null> {

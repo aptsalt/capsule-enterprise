@@ -494,6 +494,34 @@ export function ForceGraph({
             );
           })}
         </svg>
+
+        {/* Legend + provenance hint — a compact, unobtrusive overlay pinned to
+            the bottom-left. pointer-events-none so it never intercepts a node
+            click. The hint fades out once the user selects their first node. */}
+        <div className="pointer-events-none absolute bottom-[8px] left-[8px] max-w-[62%] rounded-[9px] border border-[var(--line)] bg-white/85 px-[8px] py-[6px] backdrop-blur-[2px]">
+          <div className="grid grid-cols-2 gap-x-[10px] gap-y-[3px]">
+            {presentTypes.map((t) => (
+              <span
+                key={t}
+                className="mono flex items-center gap-[5px] text-[8.5px] font-semibold text-[var(--ink2)]"
+              >
+                <i
+                  className="h-[7px] w-[7px] flex-none rounded-full"
+                  style={{ background: TYPE_COLOR[t] }}
+                />
+                {TYPE_LABEL[t]}
+              </span>
+            ))}
+          </div>
+          <div
+            className={cn(
+              "mt-[5px] border-t border-[var(--line2)] pt-[4px] text-[8.5px] italic leading-[1.3] text-[var(--dim)] transition-opacity duration-300",
+              selectedNodeId ? "opacity-0" : "opacity-100",
+            )}
+          >
+            Click any node for its provenance trace.
+          </div>
+        </div>
       </div>
     </>
   );

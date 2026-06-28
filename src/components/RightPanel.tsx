@@ -11,7 +11,7 @@ import remarkGfm from "remark-gfm";
 import { data } from "@/lib/data";
 import { capsulesForSkill } from "@/lib/selectors";
 import { useStore, type PanelId } from "@/lib/store";
-import { ActionButton, Toggle, cn } from "@/components/ui";
+import { ActionButton, Chip, Toggle, cn } from "@/components/ui";
 import {
   CommentIcon,
   DocIcon,
@@ -52,6 +52,35 @@ function savedForSkill(skillId: string): number {
   return capsulesForSkill(skillId).reduce(
     (sum, c) => sum + c.reuses * c.tokensSavedPerReuse,
     0,
+  );
+}
+
+// One-tap starter prompts that prefill the composer (Chip styling).
+const EXAMPLE_PROMPTS = [
+  "What did CAP-R004 learn?",
+  "Summarize the enterprise skills",
+] as const;
+
+// Animated three-dot "assistant is typing" indicator, shown until the first
+// streamed chunk lands. Pure CSS animation (keyframe in globals.css).
+function TypingDots() {
+  return (
+    <span
+      className="inline-flex items-center gap-[4px] py-[2px]"
+      role="status"
+      aria-label="Assistant is typing"
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="typing-dot h-[6px] w-[6px] rounded-full bg-[var(--dim)]"
+          style={{
+            animation: "capsule-typing 1.2s ease-in-out infinite",
+            animationDelay: `${i * 0.16}s`,
+          }}
+        />
+      ))}
+    </span>
   );
 }
 
@@ -361,7 +390,7 @@ export function RightPanel() {
                       {m.content}
                     </ReactMarkdown>
                   ) : chatBusy ? (
-                    <span className="text-[var(--dim)]">Thinking…</span>
+                    <TypingDots />
                   ) : null}
                 </div>
               ),
@@ -458,6 +487,33 @@ export function RightPanel() {
 
       {/* Composer */}
       <div className="border-t border-[var(--line)] bg-white px-3 py-[11px]">
+        {/* Example-prompt chips — prefill the composer on click. Hidden once the
+            user starts typing or attaches a skill so they never crowd a draft. */}
+        {!prompt.trim() && chips.length === 0 && (
+          <div className="mb-2 flex flex-wrap gap-[6px]">
+            {EXAMPLE_PROMPTS.map((ex) => (
+              <Chip
+                key={ex}
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  setPrompt(ex);
+                  requestAnimationFrame(() => inputRef.current?.focus());
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setPrompt(ex);
+                    requestAnimationFrame(() => inputRef.current?.focus());
+                  }
+                }}
+                className="cursor-pointer normal-case transition-colors hover:bg-[var(--activebg)] hover:text-[var(--blue)]"
+              >
+                {ex}
+              </Chip>
+            ))}
+          </div>
+        )}
         <div className="mb-2 text-[11px] text-[var(--dim)]">
           Use <b>@</b> to mention requirements, <b>/</b> to use skills
         </div>
@@ -733,10 +789,16 @@ export function RightPanel() {
             <button
               type="button"
               onClick={sendPrompt}
-              disabled={chatBusy}
-              title={chatBusy ? "Generating…" : "Send"}
+              disabled={chatBusy || (!prompt.trim() && chips.length === 0)}
+              title={
+                chatBusy
+                  ? "Generating…"
+                  : !prompt.trim() && chips.length === 0
+                    ? "Type a message to send"
+                    : "Send"
+              }
               aria-label="Send"
-              className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-[var(--blue)] text-white hover:bg-[var(--blue-d)] disabled:opacity-60"
+              className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-[var(--blue)] text-white hover:bg-[var(--blue-d)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {chatBusy ? (
                 <span className="h-[14px] w-[14px] animate-spin rounded-full border-2 border-white/40 border-t-white" />

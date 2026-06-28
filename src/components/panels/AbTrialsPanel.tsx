@@ -111,6 +111,10 @@ function AbCard({ trial }: { trial: AbTrial }) {
   // Negative %: how much the capsuled run cut tokens vs the cold run.
   const delta = c.tokens ? Math.round(((w.tokens - c.tokens) / c.tokens) * 100) : 0;
   const stepsSaved = c.steps - w.steps;
+  // No positive token delta captured (capsuled run used as many / more tokens).
+  // We surface this honestly rather than hiding the trial — the reward signal is
+  // MEASURED, not curated. An ⓘ affordance makes the deliberate zero unmistakable.
+  const noSavings = w.tokens >= c.tokens;
   // Finer detail (durations, full outcomes, per-metric breakdown) is collapsed
   // by default so the headline comparison stays crisp.
   const [open, setOpen] = useState(false);
@@ -128,7 +132,22 @@ function AbCard({ trial }: { trial: AbTrial }) {
         <AbCol heading="Cold · no capsule" run={c} kind={c.passed ? "cold" : "fail"} />
       </div>
       <div className="mt-[9px] border-t border-[var(--line2)] pt-[9px] text-[11.5px] leading-[1.45] text-[var(--ink2)]">
-        <b className="text-[var(--green)]">{delta}% tokens</b>
+        {noSavings ? (
+          <span className="inline-flex items-center gap-[5px] align-middle">
+            <b className="text-[var(--mut)]">No token savings</b>
+            <span
+              tabIndex={0}
+              role="note"
+              title="Single-shot agent loop — no token savings captured here. Shown rather than faked: the reward signal is measured, not curated."
+              aria-label="Single-shot agent loop — no token savings captured here. Shown rather than faked: the reward signal is measured, not curated."
+              className="grid h-[14px] w-[14px] cursor-help place-items-center rounded-full border border-[var(--line)] bg-[var(--side2)] text-[9px] font-bold text-[var(--mut)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
+            >
+              i
+            </span>
+          </span>
+        ) : (
+          <b className="text-[var(--green)]">{delta}% tokens</b>
+        )}
         {stepsSaved > 0 && (
           <>
             {" · "}
@@ -152,6 +171,113 @@ function AbCard({ trial }: { trial: AbTrial }) {
         <div className="mt-[9px] grid grid-cols-2 gap-[9px] border-t border-[var(--line2)] pt-[10px]">
           <AbDetailCol heading="With capsule" run={w} />
           <AbDetailCol heading="Cold · no capsule" run={c} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- LIVE A/B (measured now, on the hosted free model) ------------- */
+type LiveResult = {
+  skillName: string;
+  model: string;
+  nRuns: number;
+  withMean: number;
+  withoutMean: number;
+  deltaMean: number;
+  deltaStdev: number;
+  passRate: number;
+  consistentDirection: boolean;
+};
+
+function LiveAb() {
+  const [state, setState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [res, setRes] = useState<LiveResult | null>(null);
+  const [err, setErr] = useState<string>("");
+
+  const run = async () => {
+    setState("running");
+    setErr("");
+    try {
+      const r = await fetch("/api/eval", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        // A skill with a real capsule finding to inject; the route measures both arms.
+        body: JSON.stringify({ skillId: "skill/api-rate-limiting", nRuns: 3 }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        setErr(j?.error || "Live A/B failed.");
+        setState("error");
+        return;
+      }
+      setRes(j as LiveResult);
+      setState("done");
+    } catch {
+      setErr("Network error running the live A/B.");
+      setState("error");
+    }
+  };
+
+  const cheaper = res ? res.deltaMean < 0 : false;
+
+  return (
+    <div className="mb-[14px] rounded-[13px] border border-[var(--ss-2)] bg-[var(--ss-tint)]/50 p-[13px]">
+      <div className="mb-[7px] flex items-center gap-2">
+        <span className="mono rounded-[5px] bg-[var(--ss)] px-[6px] py-[2px] text-[9px] font-bold uppercase tracking-[.04em] text-[var(--ss-ink)] shadow-[0_0_6px_var(--ss-glow)]">
+          Live
+        </span>
+        <b className="text-[12.5px]">Run a real A/B, measured now</b>
+      </div>
+      <p className="mb-[10px] text-[11.3px] leading-[1.45] text-[var(--mut)]">
+        The trials below are recorded measurements (local qwen2.5-coder). This runs a{" "}
+        <b className="text-[var(--ink2)]">fresh paired A/B</b> on the hosted free model and reads its{" "}
+        <b className="text-[var(--ink2)]">real token counts</b> — proof the reward signal is measured, not curated.
+      </p>
+
+      <ActionButton onClick={run} disabled={state === "running"} className="text-[11.5px]">
+        {state === "running" ? "Measuring 3 paired runs…" : res ? "Re-run live A/B" : "Run a live A/B"}
+      </ActionButton>
+
+      {state === "error" && (
+        <div className="mt-[9px] rounded-[8px] border border-[#f6c9d2] bg-[#fff7f9] px-[10px] py-[7px] text-[11px] text-[var(--rose)]">
+          {err}
+        </div>
+      )}
+
+      {res && state === "done" && (
+        <div className="mt-[10px] rounded-[10px] border border-[var(--line)] bg-white p-[11px]">
+          <div className="mb-[7px] grid grid-cols-2 gap-[9px]">
+            <div className="rounded-[8px] border border-[#cdebd9] bg-[#fbfefc] p-[9px]">
+              <div className="mono text-[9px] font-bold uppercase tracking-[.04em] text-[var(--dim)]">
+                With capsule
+              </div>
+              <div className="mono text-[18px] font-extrabold leading-none text-[var(--ink)]">
+                {fmt(res.withMean)} <span className="text-[9px] text-[var(--dim)]">tok</span>
+              </div>
+            </div>
+            <div className="rounded-[8px] border border-[var(--line)] bg-[#fbfbfc] p-[9px]">
+              <div className="mono text-[9px] font-bold uppercase tracking-[.04em] text-[var(--dim)]">
+                Cold · no capsule
+              </div>
+              <div className="mono text-[18px] font-extrabold leading-none text-[var(--ink)]">
+                {fmt(res.withoutMean)} <span className="text-[9px] text-[var(--dim)]">tok</span>
+              </div>
+            </div>
+          </div>
+          <div className="text-[11.5px] leading-[1.45] text-[var(--ink2)]">
+            <b className={cheaper ? "text-[var(--green)]" : "text-[var(--mut)]"}>
+              Δ {res.deltaMean >= 0 ? "+" : ""}
+              {res.deltaMean} ± {res.deltaStdev} tok
+            </b>{" "}
+            over {res.nRuns} paired runs · {cheaper ? "capsule cheaper" : "no saving"} ·{" "}
+            {Math.round(res.passRate * 100)}% win-rate ·{" "}
+            {res.consistentDirection ? "consistent direction" : "mixed direction"}.
+          </div>
+          <div className="mono mt-[7px] text-[9.5px] leading-[1.4] text-[var(--dim)]">
+            measured live on {res.model} · mean ± stdev with sign-consistency, not a t-test · a different
+            model than the recorded qwen baseline, so absolute numbers differ.
+          </div>
         </div>
       )}
     </div>
@@ -195,6 +321,7 @@ export function AbTrialsPanel() {
           tokens and steps — and the cold runs sometimes{" "}
           <b className="text-[var(--rose)]">fail validation outright</b>.
         </p>
+        <LiveAb />
         {data.abTrials.map((t) => (
           <AbCard key={t.id} trial={t} />
         ))}

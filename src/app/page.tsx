@@ -13,6 +13,8 @@ import { TopBar } from "@/components/TopBar";
 import { Sidebar } from "@/components/Sidebar";
 import { DocumentEditor } from "@/components/DocumentEditor";
 import { RightPanel } from "@/components/RightPanel";
+import { DemoBanner } from "@/components/DemoBanner";
+import { Onboarding } from "@/components/Onboarding";
 import { Toast } from "@/components/ui";
 import { KnowledgeGraphPanel } from "@/components/panels/KnowledgeGraphPanel";
 import { SkillsPanel } from "@/components/panels/SkillsPanel";
@@ -31,11 +33,32 @@ const PANELS: Record<Exclude<PanelId, null>, ComponentType> = {
   inherit: InheritPanel,
 };
 
-// Body columns: sidebar 248 · editor 1fr · side-panel (panelWidth, 0 when closed)
-// · right rail 322. panelWidth is store-owned and clamped to [PANEL_MIN, PANEL_MAX],
-// so it survives panel swaps and never collapses the canvas.
-const columns = (open: boolean, width: number) =>
-  `248px 1fr ${open ? width : 0}px 322px`;
+// Body columns: sidebar · editor 1fr · side-panel (panelWidth, 0 when closed)
+// · right rail. panelWidth is store-owned and clamped to [PANEL_MIN, PANEL_MAX],
+// so it survives panel swaps and never collapses the canvas. The sidebar and
+// right-rail widths are responsive (see layoutFor) so a ~1280px laptop or a
+// narrow window never crushes the editor when a side panel is open.
+const columns = (
+  open: boolean,
+  width: number,
+  sidebar: number,
+  rail: number,
+) => `${sidebar}px 1fr ${open ? width : 0}px ${rail}px`;
+
+// Responsive rail/sidebar sizing. `vw === null` is the pre-mount/SSR default
+// (full widths) so the first client paint matches the server. When a side panel
+// is open on a narrow viewport the right rail collapses to give the editor +
+// panel room — the chat returns automatically as the window widens.
+function layoutFor(
+  vw: number | null,
+  panelOpen: boolean,
+): { sidebar: number; rail: number; railVisible: boolean } {
+  if (vw === null) return { sidebar: 248, rail: 322, railVisible: true };
+  const sidebar = vw < 1280 ? 212 : 248;
+  if (vw < 1180 && panelOpen) return { sidebar, rail: 0, railVisible: false };
+  const rail = vw < 1280 ? 288 : 322;
+  return { sidebar, rail, railVisible: true };
+}
 
 export default function Page() {
   const openPanel = useStore((s) => s.openPanel);
@@ -51,6 +74,17 @@ export default function Page() {
   // Pointer-down anchor: where the drag started and the width at that moment.
   // The panel grows to the LEFT, so dragging left (clientX shrinks) widens it.
   const drag = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  // Live viewport width drives the responsive column sizing. Null until mounted
+  // so SSR + first client paint use the full-width default (no hydration shift).
+  const [vw, setVw] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => setVw(window.innerWidth);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const layout = layoutFor(vw, !!Panel);
 
   // Escape dismisses the open side panel (approved keyboard affordance).
   useEffect(() => {
@@ -83,13 +117,21 @@ export default function Page() {
   };
 
   return (
-    <div className="grid h-screen grid-rows-[46px_1fr] overflow-hidden bg-[var(--bg)]">
+    <div className="grid h-screen grid-rows-[auto_46px_1fr] overflow-hidden bg-[var(--bg)]">
+      {/* Hosted-demo strip — renders only on the deployed host, after mount. The
+          `auto` grid row collapses to 0 height when the banner returns null. */}
+      <DemoBanner />
       <TopBar />
 
       <div
         className="grid min-h-0"
         style={{
-          gridTemplateColumns: columns(!!Panel, panelWidth),
+          gridTemplateColumns: columns(
+            !!Panel,
+            panelWidth,
+            layout.sidebar,
+            layout.rail,
+          ),
           transition: dragging
             ? "none"
             : "grid-template-columns .24s cubic-bezier(.4,0,.2,1)",
@@ -117,10 +159,11 @@ export default function Page() {
           )}
         </div>
 
-        <RightPanel />
+        {layout.railVisible && <RightPanel />}
       </div>
 
       <Toast />
+      <Onboarding />
     </div>
   );
 }

@@ -239,6 +239,29 @@ a:hover {
   }
 }
 
+/* ---------- agent typing indicator ----------
+   Three dots that breathe in sequence while the assistant reply is streaming.
+   Pure opacity/translate so it never shifts surrounding layout. */
+@keyframes capsule-typing {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot {
+    animation: none !important;
+    opacity: 0.55;
+  }
+}
+
 /* tiny tooltip used by the editor's top-level icon toolbar */
 .tip {
   position: absolute;

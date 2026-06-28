@@ -420,6 +420,11 @@ function RowsBody({
 
   return (
     <>
+      {compareIds.length < 2 && (
+        <div className="mb-[12px] rounded-[10px] border border-dashed border-[var(--line)] bg-[var(--side)] px-[12px] py-[10px] text-[11.5px] leading-[1.45] text-[var(--mut)]">
+          Tick two versions to see a word-level changelog diff.
+        </div>
+      )}
       {order.map((key) => (
         <Fragment key={key}>
           <div className="mono mx-[2px] mb-2 mt-[14px] text-[10.5px] font-bold uppercase tracking-[.06em] text-[var(--dim)] first:mt-0">
