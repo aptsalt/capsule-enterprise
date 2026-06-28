@@ -34,6 +34,15 @@ function engineCaption(engine: string): { label: string; local: boolean } {
     const model = engine.replace(/^ollama:/i, "").replace(/\s*\(local\)\s*$/i, "");
     return { label: `Ollama ${model}`, local: true };
   }
+  if (/gemini:/i.test(engine)) {
+    const m = engine
+      .replace(/^gemini:/i, "")
+      .replace(/\s*\(.*\)\s*$/, "")
+      .replace(/^gemini-?/i, "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    return { label: `Gemini ${m}`.trim(), local: false };
+  }
   if (/cerebras:/i.test(engine)) {
     return { label: `Cerebras ${engine.replace(/^cerebras:/i, "")}`, local: false };
   }

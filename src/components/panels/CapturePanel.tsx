@@ -37,15 +37,17 @@ type SessionMeta = {
 // Mirror of cerebras.ts EngineHealth (the GET /api/sessions `engine` field).
 // Tells the UI which distiller will ACTUALLY run before the first capture, so
 // the picker/distilling chips never claim Ollama when it's unreachable.
-type EngineInfo = { ollama: boolean; cerebras: boolean; model: string };
+type EngineInfo = { ollama: boolean; cerebras: boolean; gemini: boolean; model: string; geminiModel: string };
 
 // Resolve the engine snapshot into an honest chip label + locality. Before the
 // probe returns (info === null) we stay optimistic about the local model — the
 // result card later corrects to "● fallback" if the heuristic actually ran.
 function engineChip(info: EngineInfo | null): { label: string; local: boolean } {
   const model = info?.model || DEFAULT_OLLAMA_MODEL;
-  if (!info || info.ollama) return { label: `Ollama ${model}`, local: true };
-  if (info.cerebras) return { label: "Cerebras (cloud boost)", local: false };
+  if (info?.ollama) return { label: `Ollama ${model}`, local: true };
+  if (info?.gemini) return { label: `Gemini ${info.geminiModel}`, local: false };
+  if (info?.cerebras) return { label: "Cerebras (cloud boost)", local: false };
+  if (!info) return { label: `Ollama ${model}`, local: true };
   return { label: "local heuristic", local: true };
 }
 

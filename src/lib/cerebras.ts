@@ -4,7 +4,7 @@
 // so a capsule always renders, even fully offline.
 import type { HandoffCapsule } from "./capsule";
 import type { RawSession } from "./capture";
-import { geminiJSON, GEMINI_MODEL, preferGemini } from "./gemini";
+import { geminiJSON, GEMINI_MODEL, preferGemini, geminiEnabled } from "./gemini";
 
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
 const CEREBRAS_MODEL = process.env.CEREBRAS_MODEL || "llama-3.3-70b";
@@ -115,16 +115,17 @@ async function viaOllama(transcript: string): Promise<{ d: Distilled; engine: st
 // than fall back to the heuristic); `cerebras` reflects whether the optional
 // cloud boost is configured. Used by /api/sessions to keep the capture chips
 // honest about which engine will run BEFORE the first distillation.
-export type EngineHealth = { ollama: boolean; cerebras: boolean; model: string };
+export type EngineHealth = { ollama: boolean; cerebras: boolean; gemini: boolean; model: string; geminiModel: string };
 
 export async function ollamaHealth(): Promise<EngineHealth> {
   const base = process.env.OLLAMA_URL || "http://localhost:11434";
   const cerebras = !!process.env.CEREBRAS_API_KEY;
+  const gemini = geminiEnabled();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 1500);
   try {
     const res = await fetch(`${base}/api/tags`, { signal: ctrl.signal });
-    if (!res.ok) return { ollama: false, cerebras, model: OLLAMA_MODEL };
+    if (!res.ok) return { ollama: false, cerebras, gemini, geminiModel: GEMINI_MODEL, model: OLLAMA_MODEL };
     const j = await res.json().catch(() => null);
     const names: string[] = Array.isArray(j?.models)
       ? j.models.map((m: { name?: string }) => m?.name).filter((n: unknown): n is string => typeof n === "string")
@@ -132,9 +133,9 @@ export async function ollamaHealth(): Promise<EngineHealth> {
     const family = OLLAMA_MODEL.split(":")[0];
     // Present if the exact tag is pulled, or any tag of the same model family.
     const present = names.some((n) => n === OLLAMA_MODEL || n.startsWith(`${family}:`) || n === family);
-    return { ollama: present, cerebras, model: OLLAMA_MODEL };
+    return { ollama: present, cerebras, gemini, geminiModel: GEMINI_MODEL, model: OLLAMA_MODEL };
   } catch {
-    return { ollama: false, cerebras, model: OLLAMA_MODEL };
+    return { ollama: false, cerebras, gemini, geminiModel: GEMINI_MODEL, model: OLLAMA_MODEL };
   } finally {
     clearTimeout(timer);
   }

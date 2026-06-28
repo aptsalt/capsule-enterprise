@@ -34,7 +34,11 @@ const clamp = (n: number, lo: number, hi: number) =>
 // cerebras.ts stamps on a successful Ollama run ("ollama:<model> (local)").
 // The TopBar pill falls back to this before the first real capture.
 export const DEFAULT_OLLAMA_MODEL = 'qwen2.5-coder:14b';
-export const DEFAULT_ENGINE = `ollama:${DEFAULT_OLLAMA_MODEL} (local)`;
+export const DEFAULT_MODEL = 'gemini-2.5-flash';
+// The hosted demo runs on Gemini, so that's the default engine pill. A local
+// install with Ollama up stamps its own "ollama:<model>" label at runtime,
+// which overrides this.
+export const DEFAULT_ENGINE = `gemini:${DEFAULT_MODEL}`;
 
 // CapturedCapsule — the client-side projection of a REAL capture (POST /api/capsule).
 // Kept as a store OVERLAY so the sidebar can show today's freshly-distilled

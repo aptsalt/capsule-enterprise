@@ -230,8 +230,8 @@ function LiveAb() {
         <b className="text-[12.5px]">Run a real A/B, measured now</b>
       </div>
       <p className="mb-[10px] text-[11.3px] leading-[1.45] text-[var(--mut)]">
-        The trials below are recorded measurements (local qwen2.5-coder). This runs a{" "}
-        <b className="text-[var(--ink2)]">fresh paired A/B</b> on the hosted free model and reads its{" "}
+        The trials below are recorded measurements. This runs a{" "}
+        <b className="text-[var(--ink2)]">fresh paired A/B</b> on the live model right now and reads its{" "}
         <b className="text-[var(--ink2)]">real token counts</b> — proof the reward signal is measured, not curated.
       </p>
 
@@ -275,8 +275,8 @@ function LiveAb() {
             {res.consistentDirection ? "consistent direction" : "mixed direction"}.
           </div>
           <div className="mono mt-[7px] text-[9.5px] leading-[1.4] text-[var(--dim)]">
-            measured live on {res.model} · mean ± stdev with sign-consistency, not a t-test · a different
-            model than the recorded qwen baseline, so absolute numbers differ.
+            measured live on {res.model} · mean ± stdev with sign-consistency, not a t-test · measured
+            just now, so absolute numbers differ from the recorded trials above.
           </div>
         </div>
       )}
