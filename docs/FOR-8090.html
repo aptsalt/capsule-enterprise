@@ -61,6 +61,15 @@
   <p style="color:var(--dim);font-size:.82rem;margin:8px 0 0">The live app runs the full workspace UI on the bundled real dataset — click through the Knowledge Graph, Skills, Versions, and A/B panels. The chat agent and the "run a live A/B" button work right on the hosted demo (powered by Gemini); only the local session-capture, which reads your own <code>~/.claude</code> sessions, needs Ollama on your machine.</p>
   <div class="accentbar"></div>
 
+  <figure style="margin:24px 0 0">
+    <video controls preload="metadata" poster="assets/img/capsule-goku.png"
+      style="width:100%;border-radius:14px;border:1px solid var(--line);background:#000;display:block">
+      <source src="assets/video/CAPSULE-walkthrough.mp4" type="video/mp4">
+      Your browser can't play the embedded video — <a href="assets/video/CAPSULE-walkthrough.mp4">download it here</a>.
+    </video>
+    <figcaption style="color:var(--dim);font-size:.82rem;margin-top:8px">▶ 2:43 walkthrough — the thesis, the loop, capsule→skill versioning, measured A/B, the registry integration layer, and the self-closing proof.</figcaption>
+  </figure>
+
   <div class="card k">
     <h3>TL;DR</h3>
     <p>The Software Factory — <b>Requirements → Blueprints → Work Orders → Tests → Knowledge Graph</b> — runs
@@ -99,11 +108,31 @@
          →  STORE (Backboard memory)  →  LOCAL REGISTRY (git)  →  EOD PROMOTE (CI-gated PR)
          →  ENTERPRISE REGISTRY  →  token savings feed the next session</code></pre>
   <ul>
-    <li><b>Local-first distillation.</b> Capture runs on-device on <code>qwen2.5-coder:14b</code> — private, free, offline, no transcript egress. That is what makes capturing <i>every</i> session affordable, which is what makes the reward signal real instead of aspirational. Cerebras is an optional cloud boost; a heuristic is the last-resort backfill. The whole app runs with <b>zero API keys</b> via graceful degradation.</li>
+    <li><b>Local-first distillation, with a hosted cloud path.</b> Locally, capture runs on-device on Ollama (<code>qwen2.5-coder:14b</code>) — private, free, offline, no transcript egress — which is what makes capturing <i>every</i> session affordable, so the reward signal is real instead of aspirational. The <b>hosted demo</b> you can click runs the same pipeline on <b>Gemini</b> (a heuristic is the last-resort backfill), so the whole thing works with <b>zero setup</b> via graceful degradation.</li>
     <li><b>Portable memory.</b> Capsules persist to Backboard keyed by <b>entity (tenant), not model</b> — switch any of 17,000+ models and the memory re-fits, never re-derives. Store-only writes (<code>send_to_llm=false</code>) mean capture can never exfiltrate through an LLM round-trip.</li>
     <li><b>Versioned skills + governance.</b> Capsules compound into semver-tagged enterprise skills. Nothing auto-publishes on tokens alone — a clearing capsule is staged as a <code>proposed</code> version and an <b>agentic CI</b> A/B harness merges it only if measured reward improves. Multi-developer reconciliation is real: dedup, do/undo conflict resolution by reward + recency, and a reverse <b>purge</b> pole so the registry never silts up. Every step is ledgered and auditable.</li>
-    <li><b>The warm-start, made tangible.</b> An in-app agent chat talks to a local model that already holds the latest capsule + recalled tenant memory, with a context inspector that shows <i>exactly</i> what the agent sees before it generates.</li>
+    <li><b>The warm-start, made tangible.</b> An in-app agent chat talks to a model that already holds the latest capsule + recalled tenant memory, with a context inspector that shows <i>exactly</i> what the agent sees before it generates.</li>
   </ul>
+
+  <h2>The integration layer — enterprise registry &amp; multi-dev flow</h2>
+  <p>The piece that makes this an <b>enterprise</b> system and not a single-player tool is how a learning travels
+  from one developer's session into a governed, shared registry the whole org pulls from. CAPSULE models that as a
+  real branch + PR flow, not a hand-wave — this is the layer that plugs it into 8090's Software Factory as shared
+  infrastructure:</p>
+  <div class="card b">
+    <ul>
+      <li><b>Personal → enterprise.</b> Each developer keeps a local registry on their own branch (<code>dee</code> / <code>ven</code> / <code>saim</code>). A capsule that clears the gate is promoted as a <code>proposed</code> skill version on a <code>promotion/&lt;skill&gt;</code> staging ref of <code>master</code> — never force-pushed straight in.</li>
+      <li><b>Agentic-CI gate.</b> The A/B harness re-runs new-vs-current and regression-checks every prior capsule; the version bump merges <b>only if measured reward improves</b>.</li>
+      <li><b>Conflict reconciliation.</b> Near-identical capsules from different devs <b>dedup</b> into one canonical capsule (all authors kept); a "do X" / "undo X" clash is resolved by reward + recency in a merge-ledger; a reverse <b>purge</b> pole retires stale skills so the registry never silts up.</li>
+      <li><b>Reproducible pull.</b> Any repo pins an exact, immutable version with <code>capsule pull skill/&lt;id&gt;@x.y.z</code> — the registry is the single integration surface every project and agent reads from.</li>
+    </ul>
+  </div>
+  <p>Full diagrams of this layer:
+    <a href="REPO-FLOW.html"><b>REPO-FLOW.html</b></a> — enterprise registry vs personal repos ·
+    <a href="MULTI-DEV.html"><b>MULTI-DEV.html</b></a> — promotion · agentic CI · dedup · do/undo conflict ·
+    <a href="REGISTRY-MAP.html">REGISTRY-MAP.html</a> — the registry map.
+    The published registry is its own repo:
+    <a href="https://github.com/aptsalt/capsule-enterprise-skills">capsule-enterprise-skills</a>.</p>
 
   <h2>How it maps to the role</h2>
   <table>
