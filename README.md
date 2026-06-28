@@ -2,6 +2,8 @@
 
 **The capture + feedback (RL) layer for [8090](https://www.8090.ai/)'s Software Factory.**
 
+**▶ Live app: [capsule-8090.vercel.app](https://capsule-8090.vercel.app)**  ·  **Case study: [FOR-8090](https://aptsalt.github.io/capsule-enterprise/FOR-8090.html)**  ·  the hosted app runs the full UI on the bundled real dataset (local-only capture/chat no-op when there's no Ollama).
+
 > Every AI coding session creates knowledge — the *why*, the dead-ends, the gotchas, the intent.
 > Today it evaporates the moment the session ends. **CAPSULE captures it, scores it, versions it into
 > enterprise skills, and feeds it back** so the next developer or agent inherits full context instantly.

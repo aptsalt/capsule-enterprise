@@ -33,3 +33,5 @@ Thumbs.db
 
 # TS incremental build cache
 /tsconfig.tsbuildinfo
+
+.vercel

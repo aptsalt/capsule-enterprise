@@ -1,0 +1,6 @@
+.env*.local
+.relay
+.capsule
+scripts/*.log
+docs/assets/video
+*.tsbuildinfo
