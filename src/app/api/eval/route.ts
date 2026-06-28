@@ -60,7 +60,10 @@ export async function POST(req: NextRequest) {
 
   const n = Math.min(withTokens.length, withoutTokens.length);
   if (n === 0) {
-    return Response.json({ error: "Live model unreachable — try again." }, { status: 502 });
+    return Response.json(
+      { error: "The free model is busy right now — give it a moment and try again." },
+      { status: 502 },
+    );
   }
 
   const deltas = Array.from({ length: n }, (_, i) => withTokens[i] - withoutTokens[i]);

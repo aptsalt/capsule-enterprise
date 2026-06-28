@@ -9,6 +9,12 @@ import type { Msg } from "./chatContext";
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
+// Disable "thinking" on 2.5-class models: snappier first token, cheaper, and the
+// measured token counts reflect the actual task (not variable thinking overhead).
+const NO_THINK = { thinkingConfig: { thinkingBudget: 0 } };
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export function geminiEnabled(): boolean {
   return !!process.env.GEMINI_API_KEY;
 }
@@ -49,7 +55,7 @@ export async function geminiChatStream(
       body: JSON.stringify({
         system_instruction: { parts: [{ text: system }] },
         contents: toContents(history),
-        generationConfig: { temperature: 0.4 },
+        generationConfig: { temperature: 0.4, ...NO_THINK },
       }),
     });
   } catch {
@@ -102,27 +108,38 @@ export async function geminiChatStream(
 // the token numbers are genuinely measured by the provider, not curated.
 export async function geminiMeasured(
   prompt: string,
+  attempts = 3,
 ): Promise<{ content: string; totalTokens: number } | null> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${key}`;
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2 },
-      }),
-    });
-    if (!res.ok) return null;
-    const j = await res.json();
-    const content = j?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    const totalTokens = Number(j?.usageMetadata?.totalTokenCount) || 0;
-    return { content, totalTokens };
-  } catch {
-    return null;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.2, ...NO_THINK },
+        }),
+      });
+      if (res.ok) {
+        const j = await res.json();
+        const content = j?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const totalTokens = Number(j?.usageMetadata?.totalTokenCount) || 0;
+        return { content, totalTokens };
+      }
+      // Transient (429 rate-limit / 5xx overload) — back off and retry.
+      if (res.status === 429 || res.status >= 500) {
+        await sleep(700 * (i + 1));
+        continue;
+      }
+      return null; // non-retryable (e.g. 400)
+    } catch {
+      await sleep(500 * (i + 1));
+    }
   }
+  return null;
 }
 
 // NON-STREAMING JSON call — used by the distiller. Returns the raw response text
@@ -138,7 +155,7 @@ export async function geminiJSON(system: string, user: string): Promise<string |
       body: JSON.stringify({
         system_instruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: user }] }],
-        generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
+        generationConfig: { temperature: 0.2, responseMimeType: "application/json", ...NO_THINK },
       }),
     });
     if (!res.ok) return null;

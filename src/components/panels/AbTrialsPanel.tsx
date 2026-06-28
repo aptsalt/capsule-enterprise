@@ -203,7 +203,7 @@ function LiveAb() {
         method: "POST",
         headers: { "content-type": "application/json" },
         // A skill with a real capsule finding to inject; the route measures both arms.
-        body: JSON.stringify({ skillId: "skill/api-rate-limiting", nRuns: 3 }),
+        body: JSON.stringify({ skillId: "skill/api-rate-limiting", nRuns: 2 }),
       });
       const j = await r.json();
       if (!r.ok) {
@@ -236,7 +236,7 @@ function LiveAb() {
       </p>
 
       <ActionButton onClick={run} disabled={state === "running"} className="text-[11.5px]">
-        {state === "running" ? "Measuring 3 paired runs…" : res ? "Re-run live A/B" : "Run a live A/B"}
+        {state === "running" ? "Measuring 2 paired runs…" : res ? "Re-run live A/B" : "Run a live A/B"}
       </ActionButton>
 
       {state === "error" && (
