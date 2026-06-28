@@ -13,19 +13,23 @@ learned — distilled **locally** (Ollama `qwen2.5-coder:14b`), judged by an **L
 session makes the next one cheaper and better. There's also an **in-app agent chat** so you can feel the
 warm-start directly — talk to a local model that already remembers.
 
+> **Reviewing this as part of my 8090 application?** Start with **[`docs/FOR-8090.md`](docs/FOR-8090.md)** —
+> why I built CAPSULE, the exact gap it closes in the Software Factory, how it maps to the role, and what it
+> says about how I'd work on the team. Everything below is the engineering detail behind that.
+
 ---
 
-## One root cause → four hackathon themes
+## One root cause → four compounding wins
 
-CAPSULE is built on a single thesis: **context dies at the session boundary.** That one root cause is the
-source of all four "Build for Builders" themes — and CAPSULE solves them together:
+CAPSULE is built on a single thesis: **context dies at the session boundary.** That one root cause quietly
+taxes every stage of the enterprise SDLC — and closing it compounds in four directions at once:
 
-| Theme | How CAPSULE serves it |
+| Value pillar | How CAPSULE delivers it |
 |---|---|
 | **Handoff** | The capsule *is* the handoff artifact. The in-app **agent chat** lets the next dev/agent inherit it and keep going — warm, not cold. |
 | **Productivity & flow** | **Warm-start** injection (real Backboard retrieval) + measured token savings — a new session starts oriented, not from scratch. |
 | **Code quality & confidence** | Provenance trail (every skill version → the capsule/finding that produced it) + a measured **agentic-CI gate** before a version publishes. |
-| **Junior developer** | Each capsule's distilled finding coaches the dev; loading an enterprise skill into the chat hands a junior the senior's distilled knowledge. |
+| **Onboarding & leverage** | Each capsule's distilled finding coaches the next engineer; loading an enterprise skill into the chat hands a newcomer a senior's hard-won knowledge instantly. |
 
 ---
 
@@ -233,26 +237,24 @@ into enterprise `master` (PR #4)**. Independently, `dee` promoted `rest-api-desi
 
 ## Documentation (`/docs`)
 
-Open any of these in a browser:
+Start with **[`FOR-8090.md`](docs/FOR-8090.md)**; the rest is the engineering record. Open the `.html` files in a browser.
 
 | Doc | What it is |
 |---|---|
-| [`docs/CAPSULE-LAUNCH.html`](docs/CAPSULE-LAUNCH.html) | The launch site — every feature with screenshots + video |
-| [`docs/DEMO-SCRIPT.html`](docs/DEMO-SCRIPT.html) · [`docs/DEMO-SCRIPT.md`](docs/DEMO-SCRIPT.md) | The 3-minute pitch, mapped to the four themes + Q&A cheat-sheet |
-| [`docs/PITCH.html`](docs/PITCH.html) | The pitch deck |
-| [`docs/RL-LOOP.html`](docs/RL-LOOP.html) | The full RL-loop architecture diagram |
-| [`docs/TECH-STACK.html`](docs/TECH-STACK.html) | Full stack, where local LLM + Cerebras live in code, Docker, cloud roadmap |
-| [`docs/BACKEND.html`](docs/BACKEND.html) | The working backend architecture (pipeline + APIs + Backboard) |
-| [`docs/MULTI-DEV.html`](docs/MULTI-DEV.html) | Multi-dev flow: promotion, agentic CI, dedup, do/undo conflict |
-| [`docs/AGENTIC-VS-MANUAL.html`](docs/AGENTIC-VS-MANUAL.html) | The two capsule-creation flows, side by side |
-| [`docs/FEATURES.html`](docs/FEATURES.html) | Plain-language explainer of every feature |
-| [`docs/REPO-FLOW.html`](docs/REPO-FLOW.html) | Enterprise registry vs personal repo flow |
-| [`docs/DATA-REALITY.html`](docs/DATA-REALITY.html) | **Honest** what's-real-vs-derived breakdown (canonical) |
-| [`docs/ARCHITECTURE.html`](docs/ARCHITECTURE.html) · [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Architecture notes |
-| [`docs/VALUE.md`](docs/VALUE.md) · [`docs/MEMORY-MODEL.md`](docs/MEMORY-MODEL.md) | Engineering notes |
-| [`docs/UX-AUDIT.html`](docs/UX-AUDIT.html) · [`docs/UX-AUDIT.md`](docs/UX-AUDIT.md) · [`docs/RELAY.html`](docs/RELAY.html) | UX audit + legacy RELAY note |
-| [`docs/README.md`](docs/README.md) | Docs index |
-| `docs/factory.html` · `docs/factory-v1.html` · `docs/index.html` | Earlier standalone HTML prototypes |
+| [`FOR-8090.md`](docs/FOR-8090.md) | **Start here** — why CAPSULE exists, the gap it closes in the Software Factory, role fit, and what it demonstrates |
+| [`ARCHITECTURE.html`](docs/ARCHITECTURE.html) · [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Full system design — data model, RL loop, governance, 8090 integration points |
+| [`RL-LOOP.html`](docs/RL-LOOP.html) | The end-to-end RL-loop architecture diagram |
+| [`BACKEND.html`](docs/BACKEND.html) | The working backend — pipeline + API routes + Backboard write envelope |
+| [`PIPELINE.html`](docs/PIPELINE.html) | The capture → distill → score → gate → store → promote pipeline, stage by stage |
+| [`MULTI-DEV.html`](docs/MULTI-DEV.html) | Multi-dev flow: promotion, agentic CI, dedup, do/undo conflict |
+| [`REPO-FLOW.html`](docs/REPO-FLOW.html) | Enterprise registry vs personal-repo branching model |
+| [`AGENTIC-VS-MANUAL.html`](docs/AGENTIC-VS-MANUAL.html) | The two capsule-creation flows, side by side |
+| [`REGISTRY-MAP.html`](docs/REGISTRY-MAP.html) | The enterprise skills registry map |
+| [`FEATURES.html`](docs/FEATURES.html) | Plain-language explainer of every feature |
+| [`TECH-STACK.html`](docs/TECH-STACK.html) | Full stack — where the local LLM + Cerebras live in code, Docker, cloud roadmap |
+| [`DATA-REALITY.html`](docs/DATA-REALITY.html) | **Honest** what's-real-vs-derived breakdown (canonical) |
+| [`DEMO-SCRIPT.html`](docs/DEMO-SCRIPT.html) · [`DEMO-SCRIPT.md`](docs/DEMO-SCRIPT.md) | A 3-minute guided walkthrough of the running app |
+| [`VALUE.md`](docs/VALUE.md) · [`MEMORY-MODEL.md`](docs/MEMORY-MODEL.md) | Strategy brief + the durable-memory engineering reference |
 
 ---
 

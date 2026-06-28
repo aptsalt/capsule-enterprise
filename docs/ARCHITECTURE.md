@@ -364,7 +364,7 @@ hub through which all memory flows (`DATA.graph`).
 Topology rule: the graph is fully connected with `mem/backboard` as hub — every capsule `stores`
 into it, every model `reads` from it, every skill is `produced` by a capsule and `used` by an agent
 that `executes` a work order that `implements` a requirement. That single connected picture is the
-"reinforcement loop made visible" for judges.
+the "reinforcement loop made visible."
 
 ---
 
@@ -411,9 +411,9 @@ validator), `claude-code` (work-order / session source). All three are `connecte
 
 ---
 
-## 12. Sponsor Alignment
+## 12. Technology & Ecosystem Fit
 
-| Sponsor | Role in CAPSULE |
+| Technology | Role in CAPSULE |
 | --- | --- |
 | **8090** | The Software Factory CAPSULE extends. CAPSULE is the missing CAPTURE + FEEDBACK layer on top of Requirements → Blueprints → Work Orders → Tests → Knowledge Graph — turning the one-way pipeline into a compounding RL loop. |
 | **Local model (Ollama · qwen2.5-coder:14b)** | **On-device distillation — the default engine.** Capsules are distilled locally first: private, free, no network egress, offline-capable. This is what makes capturing *every* session affordable, so the token-reward signal is real rather than aspirational. |

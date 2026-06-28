@@ -154,7 +154,7 @@ requirement. Privacy and zero marginal cost are what make "capture everything" a
 
 ---
 
-## 3. Why this wins for 8090 / the hackathon
+## 3. Why this wins for 8090
 
 8090's pitch is the Software Factory: enterprise software built by governed agents, where **no
 change exists without a requirement behind it**. CAPSULE is the **capture + feedback (RL) layer** that

@@ -1,18 +1,18 @@
 # CAPSULE — 3-Minute Demo Script
 
-**Build for Builders · 8090 Software Factory · CAPSULE module**
-One root cause. Four themes. A real pipeline — not a mockup.
+**8090 Software Factory · CAPSULE module**
+One root cause. Four compounding wins. A real pipeline — not a mockup.
 
 > Run it: `cd relay && npm run dev` → `localhost:3010`
 > Engine: local **Ollama `qwen2.5-coder:14b`** · Memory: **live Backboard** · Repo: real **git** (master + dee/ven/saim)
 
 ---
 
-## 1 · The hook — one root cause, four themes (0:00–0:30)
+## 1 · The hook — one root cause, four wins (0:00–0:30)
 
 > "Every coding session your team runs teaches something. And every time the session window closes, that lesson **dies at the session boundary**. The next developer — or the next agent — starts from zero and pays for the same mistake again.
 >
-> That single failure shows up as **four different problems** the hackathon asked us to solve:
+> That single failure shows up as **four different problems** across the SDLC:
 > - the **handoff** breaks,
 > - **flow** stalls when you re-derive what someone already knew,
 > - **quality and confidence** drop because nothing is verified or traceable,
@@ -78,7 +78,7 @@ One root cause. Four themes. A real pipeline — not a mockup.
 | 4–6 · Provenance · agentic CI · dedup/conflict | **Quality & Confidence** | Nothing ships unverified: promotion-as-PR, A/B-gated CI ("merge only if reward improves"), full audit trail, and dedup/conflict governance keep the registry trustworthy. |
 | 3 (technique) · Skills registry · Enterprise toggle | **Junior** | A junior flips **ENTERPRISE · BEST** and instantly works from the most-learned, capsule-maxxed playbook — plus the human-readable "technique to learn." One agent's discovery lifts everyone. |
 
-**The unifying line:** four themes, one fix — *make context survive the session boundary.*
+**The unifying line:** four wins, one fix — *make context survive the session boundary.*
 
 ---
 
